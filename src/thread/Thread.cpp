@@ -1,0 +1,142 @@
+#include "Thread.h"
+#include <unistd.h>
+#include <sys/prctl.h>
+#include <exception>
+#include "Exception.h"
+
+namespace Hohnor
+{
+	/**
+	 * Data carrier struct, helps void*(void*) interface pass parameters.
+	 */
+	struct ThreadData
+	{
+		pid_t &tid_;
+		Thread::ThreadFunc func_;
+		std::string name_;
+		CountDownLatch &latch_;
+		explicit ThreadData(Thread::ThreadFunc func, const string &name, pid_t &tid, CountDownLatch &latch) : tid_(tid), func_(std::move(func)), name_(name), latch_(latch) {}
+	};
+	/**
+	 * We use this function as a starter which fits with function interface void*(void*) that pthread requires,
+	 * this is how we make workaround between the Thread interface that accepts std::function<void()> and phread requirement
+	 * In short, this is a function for pthread to call
+	 */
+	void *threadStarter(void *args)
+	{
+		ThreadData *data = static_cast<ThreadData *>(args);
+
+		data->tid_ = CurrentThread::tid();
+		data->latch_.countDown();
+		CurrentThread::t_threadName = data->name_.empty()?"HohnorThread":data->name_;
+		::prctl(PR_SET_NAME, CurrentThread::t_threadName);
+
+		try
+		{
+			data->func_();
+			CurrentThread::t_threadName = "finished";
+		}
+		catch (const Exception &ex)
+		{
+			CurrentThread::t_threadName = "crashed";
+			fprintf(stderr, "exception caught in Thread %s\n", data->name_.c_str());
+			fprintf(stderr, "reason: %s\n", ex.what());
+			fprintf(stderr, "stack trace: %s\n", ex.stackTrace());
+			abort();
+		}
+		catch (const std::exception &ex)
+		{
+			CurrentThread::t_threadName = "crashed";
+			fprintf(stderr, "exception caught in Thread %s\n", data->name_.c_str());
+			fprintf(stderr, "reason: %s\n", ex.what());
+			abort();
+		}
+		catch (...)
+		{
+			CurrentThread::t_threadName = "crashed";
+			fprintf(stderr, "unknown exception caught in Thread %s\n", data->name_.c_str());
+			throw; // rethrow
+		}
+
+		//std::cout<<"before delete countdown status:"<<data->latch_.getCount()<<std::endl;
+		delete data;
+		return NULL;
+	}
+
+}
+
+std::atomic_int32_t Hohnor::Thread::numCreated_;
+
+Hohnor::Thread::Thread(ThreadFunc func, const std::string name) : started_(false), joined_(false), pthreadId_(0), tid_(0), func_(std::move(func)), name_(name), latch_(1)
+{
+	int num = ++(this->numCreated_);
+	if (name_.empty())
+	{
+		name_ = "HohnorThread" + std::to_string(num) ;
+	}
+}
+
+void Hohnor::Thread::start()
+{
+	assert(!started_);
+	started_ = true;
+	ThreadData *data = new ThreadData(func_, name_, tid_, latch_);
+	if (pthread_create(&pthreadId_, NULL, threadStarter, data))
+	{
+		started_ = false;
+		delete data; 
+		std::cout<< "Failed in pthread_create"<<std::endl;
+	}
+	else
+	{
+		latch_.wait();
+		assert(tid_ > 0);
+	}
+}
+
+int Hohnor::Thread::join()
+{
+	assert(started_);
+	assert(!joined_);
+	joined_ = true;
+	return pthread_join(pthreadId_, NULL);
+} 
+
+Hohnor::Thread::~Thread()
+{
+	if (started_ && !joined_)
+	{
+		pthread_detach(pthreadId_);
+	}
+}
+
+namespace Hohnor
+{
+	/*
+	The ThreadNameInitializer will be initialized every time a new process is forked from our Thread,
+	This handler ensures that the new process correctly handle its thread name.
+	This will also work for the starter process.
+	*/
+	namespace NewProcessAutoHandler
+	{
+		void afterFork()
+		{
+			CurrentThread::t_tid = 0;
+			CurrentThread::t_threadName = "main";
+			CurrentThread::tid();
+		}
+
+		class ThreadNameInitializer
+		{
+		public:
+			ThreadNameInitializer()
+			{
+				CurrentThread::t_threadName = "main";
+				CurrentThread::tid();
+				pthread_atfork(NULL, NULL, &afterFork);
+			}
+		};
+
+		ThreadNameInitializer init;
+	}
+}
