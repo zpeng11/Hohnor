@@ -65,6 +65,9 @@ namespace Hohnor
 
 }
 
+/**
+ * Static variable that needs sperate space in .cpp
+ */
 std::atomic_int32_t Hohnor::Thread::numCreated_;
 
 Hohnor::Thread::Thread(ThreadFunc func, const std::string name) : started_(false), joined_(false), pthreadId_(0), tid_(0), func_(std::move(func)), name_(name), latch_(1)
@@ -115,7 +118,7 @@ namespace Hohnor
 	/*
 	The ThreadNameInitializer will be initialized every time a new process is forked from our Thread,
 	This handler ensures that the new process correctly handle its thread name.
-	This will also work for the starter process.
+	This will also work for the starter process that has int main()
 	*/
 	namespace NewProcessAutoHandler
 	{
@@ -136,7 +139,9 @@ namespace Hohnor
 				pthread_atfork(NULL, NULL, &afterFork);
 			}
 		};
-
+		/**
+		 * We use mechanism that glocal object would be re-initialize when fork
+		 */
 		ThreadNameInitializer init;
 	}
 }
