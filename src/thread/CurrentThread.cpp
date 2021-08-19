@@ -90,4 +90,34 @@ namespace Hohnor
 			return stack;
 		}
 	}
+
+	/*
+	The ThreadNameInitializer will be initialized every time a new process is forked from our Thread,
+	This handler ensures that the new process correctly handle its thread name.
+	This will also work for the starter process that has int main()
+	*/
+	namespace NewProcessAutoHandler
+	{
+		void afterFork()
+		{
+			CurrentThread::t_tid = 0;
+			CurrentThread::t_threadName = "main";
+			CurrentThread::tid();
+		}
+
+		class ThreadNameInitializer
+		{
+		public:
+			ThreadNameInitializer()
+			{
+				CurrentThread::t_threadName = "main";
+				CurrentThread::tid();
+				pthread_atfork(NULL, NULL, &afterFork);
+			}
+		};
+		/**
+		 * We use mechanism that glocal object would be re-initialize when been forked
+		 */
+		ThreadNameInitializer init;
+	}
 }

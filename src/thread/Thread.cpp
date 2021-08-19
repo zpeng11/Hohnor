@@ -15,7 +15,7 @@ namespace Hohnor
 		Thread::ThreadFunc func_;
 		std::string name_;
 		CountDownLatch &latch_;
-		explicit ThreadData(Thread::ThreadFunc func, const string &name, pid_t &tid, CountDownLatch &latch) : tid_(tid), func_(std::move(func)), name_(name), latch_(latch) {}
+		explicit ThreadData(Thread::ThreadFunc func, const string &name, pid_t &tid, CountDownLatch &latch) : tid_(tid), func_(func), name_(name), latch_(latch) {}
 	};
 	/**
 	 * We use this function as a starter which fits with function interface void*(void*) that pthread requires,
@@ -70,7 +70,7 @@ namespace Hohnor
  */
 std::atomic_int32_t Hohnor::Thread::numCreated_;
 
-Hohnor::Thread::Thread(ThreadFunc func, const std::string name) : started_(false), joined_(false), pthreadId_(0), tid_(0), func_(std::move(func)), name_(name), latch_(1)
+Hohnor::Thread::Thread(ThreadFunc func, const std::string name) : started_(false), joined_(false), pthreadId_(0), tid_(0), func_(func), name_(name), latch_(1)
 {
 	int num = ++(this->numCreated_);
 	if (name_.empty())
@@ -113,35 +113,3 @@ Hohnor::Thread::~Thread()
 	}
 }
 
-namespace Hohnor
-{
-	/*
-	The ThreadNameInitializer will be initialized every time a new process is forked from our Thread,
-	This handler ensures that the new process correctly handle its thread name.
-	This will also work for the starter process that has int main()
-	*/
-	namespace NewProcessAutoHandler
-	{
-		void afterFork()
-		{
-			CurrentThread::t_tid = 0;
-			CurrentThread::t_threadName = "main";
-			CurrentThread::tid();
-		}
-
-		class ThreadNameInitializer
-		{
-		public:
-			ThreadNameInitializer()
-			{
-				CurrentThread::t_threadName = "main";
-				CurrentThread::tid();
-				pthread_atfork(NULL, NULL, &afterFork);
-			}
-		};
-		/**
-		 * We use mechanism that glocal object would be re-initialize when fork
-		 */
-		ThreadNameInitializer init;
-	}
-}

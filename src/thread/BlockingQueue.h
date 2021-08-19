@@ -1,6 +1,5 @@
 #pragma once
 
-#include "NonCopyable.h"
 #include "Mutex.h"
 #include "Condition.h"
 #include <deque>
@@ -8,7 +7,7 @@
 namespace Hohnor
 {
 	template <typename T>
-	class BlockingQueue: NonCopyable
+	class BlockingQueue : NonCopyable
 	{
 	public:
 		using queue_type = std::deque<T>;
@@ -28,18 +27,18 @@ namespace Hohnor
 								// http://www.domaigne.com/blog/computing/condvars-signal-with-mutex-locked-or-not/
 		}
 
-		void put(T &&x)
+		void put(T &&x) 
 		{
 			MutexGuard lock(mutex_);
 			queue_.push_back(std::move(x));
 			notEmpty_.notify();
 		}
 
-		T take()
+		T take() 
 		{
 			MutexGuard lock(mutex_);
 			// always use a while-loop, due to spurious wakeup
-			while (queue_.empty())
+			while (queue_.empty() )
 			{
 				notEmpty_.wait();
 			}
@@ -60,16 +59,17 @@ namespace Hohnor
 			return queue;
 		}
 
-		size_t size() const
+		size_t size() const 
 		{
 			MutexGuard lock(mutex_);
 			return queue_.size();
 		}
 
+
 	private:
 		mutable Mutex mutex_;
 		Condition notEmpty_;
-		queue_type queue_ ;
+		queue_type queue_;
 	};
 
 }

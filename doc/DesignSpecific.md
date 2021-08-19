@@ -12,5 +12,8 @@ Please Read them by the sequence provided here. If there is any concept that you
 + `Condition.h` wrapped pthread cond
 + `CountDownLatch.h` a multithread countdown latch that uses Condition mechanism, but only for synchronize and count.
 + `Thread.h` a actual thread implementation
+### Thread safe tools
 + `BlockingQueue.h` use mutex to rebuild deque that is thread safe.
-+ `BoundedBlocingQueue` same as last one but limited in size.
++ `CircularBuffer.h` prepare for BoundedBlockingQueue
++ `BoundedBlockingQueue.h` same as last one but limited in size, prepared for thread pool
+### Threadpool

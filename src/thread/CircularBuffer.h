@@ -20,7 +20,13 @@ namespace Hohnor
 		T empty_item;
 
 	public:
-		explicit CircularBuffer(std::size_t maxSize) : buffer(std::unique_ptr<T[]>(new T[max_size])), max_size(maxSize), empty_item() {}
+		explicit CircularBuffer(std::size_t maxSize) : buffer(), max_size(maxSize){
+			buffer = std::move(std::unique_ptr<T[]>(new T[max_size]));
+			if(maxSize<2)
+			{
+				throw new std::runtime_error("Size is not allowed");
+			}
+		}
 		// Add an item to this circular buffer.
 		void enqueue(const T &item)
 		{
@@ -56,6 +62,7 @@ namespace Hohnor
 			T item = T(std::move(buffer[head]));
 
 			// set item at head to be empty
+			T empty_item;
 			buffer[head] = empty_item;
 
 			// move head foward
@@ -76,7 +83,7 @@ namespace Hohnor
 			return (tail + 1) % max_size == head; }
 
 		// Return the size of this circular buffer.
-		size_t size()
+		size_t size() const
 		{
 			if (tail >= head)
 				return tail - head;

@@ -7,7 +7,7 @@
 namespace Hohnor
 {
 	template <typename T>
-	class BoundedBlockingQueue : Hohnor::NonCopyable
+	class BoundedBlockingQueue : NonCopyable
 	{
 	public:
 		explicit BoundedBlockingQueue(int maxSize)
@@ -18,36 +18,48 @@ namespace Hohnor
 		{
 		}
 
-		void put(const T &x)
+		void put(const T &x) 
 		{
 			MutexGuard lock(mutex_);
-			while (queue_.full())
+			while (queue_.full() &&!end_)
 			{
 				notFull_.wait();
+			}
+			if(UNLIKELY(end_))
+			{
+				return;
 			}
 			assert(!queue_.full());
 			queue_.enqueue(x);
 			notEmpty_.notify();
 		}
 
-		void put(T &&x)
+		void put(T &&x) 
 		{
 			MutexGuard lock(mutex_);
-			while (queue_.full())
+			while (queue_.full() &&!end_)
 			{
 				notFull_.wait();
+			}
+			if(UNLIKELY(end_))
+			{
+				return;
 			}
 			assert(!queue_.full());
 			queue_.enqueue(std::move(x));
 			notEmpty_.notify();
 		}
 
-		T take()
+		T take() 
 		{
 			MutexGuard lock(mutex_);
-			while (queue_.empty())
+			while (queue_.empty() && !end_)
 			{
 				notEmpty_.wait();
+			}
+			if(UNLIKELY(end_))
+			{
+				return T();
 			}
 			assert(!queue_.empty());
 			T front(std::move(queue_.dequeue()));
@@ -67,7 +79,7 @@ namespace Hohnor
 			return queue_.full();
 		}
 
-		size_t size() const
+		size_t size() const 
 		{
 			MutexGuard lock(mutex_);
 			return queue_.size();
@@ -78,11 +90,31 @@ namespace Hohnor
 			MutexGuard lock(mutex_);
 			return queue_.capacity();
 		}
+		//Give up all contains inside the queue, and disable the functionality of putting and getting(please do not use it after)
+		void giveUp() 
+		{
+			MutexGuard guard(mutex_);
+			end_ = true;
+			notEmpty_.notifyAll();
+			notFull_.notifyAll();
+		}
+
+		// queue_type drain()
+		// {
+		// 	std::deque<T> queue;
+		// 	{
+		// 		MutexGuard lock(mutex_);
+		// 		queue = std::move(queue_);
+		// 		assert(queue_.empty());
+		// 	}
+		// 	return queue;
+		// }
 
 	private:
 		mutable Mutex mutex_;
 		Condition notEmpty_ ;
 		Condition notFull_ ;
 		CircularBuffer<T> queue_;
+		bool end_ = false;
 	};
 }
