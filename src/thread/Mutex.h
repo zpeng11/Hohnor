@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CurrentThread.h"
-#include "Noncopyable.h"
+#include "../Noncopyable.h"
 #include <assert.h>
 #include <pthread.h>
 #include <iostream>
@@ -76,6 +76,9 @@ namespace Hohnor
 			return &mutex_t;
 		}
 	};
+	/**
+	 * Use RAII to manage lock and unlock
+	 */
 	class MutexGuard : NonCopyable
 	{
 	private:

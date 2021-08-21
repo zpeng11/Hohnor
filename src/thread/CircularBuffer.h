@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-#include "Types.h"
-#include "NonCopyable.h"
+#include "../Types.h"
+#include "../NonCopyable.h"
 
 namespace Hohnor
 {
@@ -22,10 +22,7 @@ namespace Hohnor
 	public:
 		explicit CircularBuffer(std::size_t maxSize) : buffer(), max_size(maxSize){
 			buffer = std::move(std::unique_ptr<T[]>(new T[max_size]));
-			if(maxSize<2)
-			{
-				throw new std::runtime_error("Size is not allowed");
-			}
+			assert(maxSize>=2);
 		}
 		// Add an item to this circular buffer.
 		void enqueue(const T &item)
@@ -79,18 +76,16 @@ namespace Hohnor
 		bool empty() { return head == tail; }
 
 		// Return true if this circular buffer is full, and false otherwise.
-		bool full() { 
+		bool full()const { 
 			return (tail + 1) % max_size == head; }
 
 		// Return the size of this circular buffer.
-		size_t size() const
+		std::size_t size() const
 		{
-			if (tail >= head)
-				return tail - head;
-			return max_size - head - tail;
+			return (tail >= head)?tail - head : max_size - (head - tail);
 		}
 
-		size_t capacity() const
+		std::size_t capacity() const
 		{
 			return max_size;
 		}

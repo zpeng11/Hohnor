@@ -1,12 +1,15 @@
 # Design path
-## Thread related design
-Please Read them by the sequence provided here. If there is any concept that you have no idea about, please do research 
-### Create basic tools 
+## Comoon tools
++ `StringPiece.h` a string class that does not care about life cycle of char byte arrary "Copy-on-write" string in other word, which has fastest speed. see `string_view` in c++14
 + `Types.h` memset and upper down type cast
-+ `Copyable.h` enable copy function
 + `NonCopyable.h` for classes to inherit so that child classes become uncopyable, also see `Copyable`
+## Thread related design
+ 
+### Create basic tools 
 + `Atomic.h` for atomic variables(we now replace with c++11 std::atomic, leave here just to explain basic implementation of atomic)
 + `CurrentThread.h` for monitoring thread information from thread local level
++ `Exception.h` exception class for multi-thread env
++ `Singleton.h` Thread level Singleton object template class
 ### Wrap pthread functions into classes
 + `Mutex.h` wrapped pthread mutex
 + `Condition.h` wrapped pthread cond
@@ -15,5 +18,12 @@ Please Read them by the sequence provided here. If there is any concept that you
 ### Thread safe tools
 + `BlockingQueue.h` use mutex to rebuild deque that is thread safe.
 + `CircularBuffer.h` prepare for BoundedBlockingQueue
-+ `BoundedBlockingQueue.h` same as last one but limited in size, prepared for thread pool
++ `BoundedBlockingQueue.h` same as blocking queue but limited in size, prepared for thread pool
 ### Threadpool
++ `ThreadPool.h` implement threadpool
+
+
+## Time and Date
++ `Date.h` use Julian date time calculation algorithm to record dates
++ `Timestamp` wrapper for C style time_t, in the unit of microsecond since epoch
++ `TimeZone` it is too hard! I am not sure if this is necesarry

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>
-#include <string.h>//for memsest
+#include "StringPiece.h"
 #ifndef NDEBUG
 #include <assert.h>
 #endif

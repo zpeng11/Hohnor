@@ -79,18 +79,20 @@ namespace Hohnor
 			return queue_.full();
 		}
 
-		size_t size() const 
+		std::size_t size() const 
 		{
 			MutexGuard lock(mutex_);
 			return queue_.size();
 		}
 
-		size_t capacity() const
+		std::size_t capacity() const
 		{
 			MutexGuard lock(mutex_);
 			return queue_.capacity();
 		}
-		//Give up all contains inside the queue, and disable the functionality of putting and getting(please do not use it after)
+		//Give up all contains inside the queue, and disable the functionality of putting and taking
+		//The blocking take() will return defualt contructed T object.
+		//(please do not use the object after calling)
 		void giveUp() 
 		{
 			MutexGuard guard(mutex_);

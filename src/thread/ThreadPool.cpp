@@ -7,7 +7,7 @@ namespace Hohnor
 
 	ThreadPool::ThreadPool(const string &name) : name_(name), queue_(),
 												 preThreadCallback_(), preTaskCallback_(), postTaskCallback_(),
-												 pool_(), running_(false)
+												 pool_(), running_(false),busyThreads_(0)
 	{
 		//The answer to the universe
 		setMaxQueueSize(42);
@@ -44,6 +44,10 @@ namespace Hohnor
 		}
 	}
 
+	/**
+	 * Stop the thread will 
+	 * 1. Wakeup all threads that are waiting to put tasks in or waiting to take tasks out, takings will have returned nullptr
+	 */
 	void ThreadPool::stop()
 	{
 		running_ = false;
@@ -77,7 +81,8 @@ namespace Hohnor
 			while (running_)
 			{
 				Task t = queue_->take();
-				if (LIKELY(t))
+				busyThreads_++;
+				if (LIKELY(t))//See if the task return is nullptr, if so that means the stop() is called
 				{
 					if (preTaskCallback_)
 					{
@@ -89,6 +94,11 @@ namespace Hohnor
 						postTaskCallback_();
 					}
 				}
+				busyThreads_--;
+			}
+			if(postThreadCallback_)
+			{
+				postThreadCallback_();
 			}
 		}
 		catch (const Exception &ex)
