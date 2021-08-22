@@ -205,5 +205,5 @@ template<> struct __type_traits<pcrecpp::StringPiece> {
 };
 #endif
 
-// allow StringPiece to be logged
+// allow StringPiece to be printed
 std::ostream& operator<<(std::ostream& o,const Hohnor::StringPiece& piece);

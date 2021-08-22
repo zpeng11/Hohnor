@@ -12,7 +12,7 @@ namespace Hohnor
 	/// This class is immutable.
 	/// It's recommended to pass it by value, since it's passed in register on x64.
 	///
-	class Date 
+	class Date
 	{
 	public:
 		struct YearMonthDay
@@ -20,6 +20,12 @@ namespace Hohnor
 			int year;  // [1900..2500]
 			int month; // [1..12]
 			int day;   // [1..31]
+			string toString()
+			{
+				char buf[32];
+				snprintf(buf, sizeof buf, "%4d-%02d-%02d", year, month, day);
+				return buf;
+			}
 		};
 
 		static const int kDaysPerWeek = 7;
@@ -105,4 +111,4 @@ namespace Hohnor
 		return x.julianDayNumber() == y.julianDayNumber();
 	}
 
-} 
+}

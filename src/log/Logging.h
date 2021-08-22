@@ -1,7 +1,8 @@
 #pragma once
 
 #include "LogStream.h"
-#include "../time/Timestamp.h"
+#include "TimeZone.h"
+#include "Timestamp.h"
 
 namespace Hohnor
 {
@@ -47,12 +48,19 @@ namespace Hohnor
 		static void setOutput(OutputFunc);
 		//Set the global flush callback function
 		static void setFlush(FlushFunc);
+		//Set the glocal time zone variable
+		static void setTimeZone(const TimeZone &tz);
 
 	private:
 		LogStream stream_;
 		Timestamp time_;
 		int line_;
-		StringPiece basename_;
+		StringPiece fileBaseName_;
+		//log level of this piece of log
+		LogLevel level_;
+		void init(LogLevel level, int savedErrno, const StringPiece &file, int line);
+		void formatTime();
+		void finish();
 	};
 
 	extern Logger::LogLevel g_logLevel;
@@ -81,7 +89,7 @@ namespace Hohnor
 
 //Reference to glog CHECK() macro
 
-#define CHECK(condition) if(condition) \
+#define CHECK(condition) if(!(condition)) \
 	(LOG_FATAL) << "'" #condition "' Must be true "
 
 #define CHECK_EQ(lhs, rhs) if(lhs != rhs) \

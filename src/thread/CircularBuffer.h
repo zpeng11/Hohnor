@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-#include "../Types.h"
-#include "../NonCopyable.h"
+#include "Types.h"
+#include "NonCopyable.h"
 
 namespace Hohnor
 {

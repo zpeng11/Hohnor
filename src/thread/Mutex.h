@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CurrentThread.h"
-#include "../Noncopyable.h"
+#include "NonCopyable.h"
 #include <assert.h>
 #include <pthread.h>
 #include <iostream>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../NonCopyable.h"
+#include "NonCopyable.h"
 #include <assert.h>
 #include <pthread.h>
 #include <stdlib.h> // atexit
@@ -21,7 +21,7 @@ namespace Hohnor
 	};
 
 	template <typename T>
-	class Singleton : noncopyable
+	class Singleton : NonCopyable
 	{
 	public:
 		Singleton() = delete;

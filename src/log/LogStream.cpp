@@ -95,8 +95,6 @@ void FixedBuffer<SIZE>::cookieEnd()
 {
 }
 
-
-
 void LogStream::staticCheck()
 {
 	static_assert(kMaxNumericSize - 10 > std::numeric_limits<double>::digits10,
@@ -114,7 +112,7 @@ void LogStream::formatInteger(T v)
 {
 	if (buffer_.avail() >= kMaxNumericSize)
 	{
-		size_t len = convert(buffer_.current(), v);
+		size_t len = StringConverter::convert(buffer_.current(), v);
 		buffer_.add(len);
 	}
 }
@@ -297,10 +295,27 @@ namespace Hohnor
 	}
 }
 
-#include <iostream>
-int main()
+template <typename T>
+Fmt::Fmt(const char *fmt, T val)
 {
-	FixedBuffer<100> fb;
+	static_assert(std::is_arithmetic<T>::value == true, "Must be arithmetic type");
 
-	std::cout << fb.debugString() << std::endl;
+	length_ = snprintf(buf_, sizeof buf_, fmt, val);
+	assert(static_cast<size_t>(length_) < sizeof buf_);
 }
+
+// Explicit instantiations
+
+template Fmt::Fmt(const char *fmt, char);
+
+template Fmt::Fmt(const char *fmt, short);
+template Fmt::Fmt(const char *fmt, unsigned short);
+template Fmt::Fmt(const char *fmt, int);
+template Fmt::Fmt(const char *fmt, unsigned int);
+template Fmt::Fmt(const char *fmt, long);
+template Fmt::Fmt(const char *fmt, unsigned long);
+template Fmt::Fmt(const char *fmt, long long);
+template Fmt::Fmt(const char *fmt, unsigned long long);
+
+template Fmt::Fmt(const char *fmt, float);
+template Fmt::Fmt(const char *fmt, double);

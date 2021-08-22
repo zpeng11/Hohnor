@@ -27,3 +27,5 @@
 + `Date.h` use Julian date time calculation algorithm to record dates
 + `Timestamp` wrapper for C style time_t, in the unit of microsecond since epoch
 + `TimeZone` it is too hard! I am not sure if this is necesarry
+
+## Logging
