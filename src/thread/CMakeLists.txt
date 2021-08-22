@@ -9,6 +9,3 @@ target_link_libraries(THREAD PUBLIC Threads::Threads)
 
 #add current directory *.h for upper level to include
 target_include_directories(THREAD INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-#add include to common src/*.h files
-target_include_directories(THREAD PUBLIC "${PROJECT_SOURCE_DIR}/src")

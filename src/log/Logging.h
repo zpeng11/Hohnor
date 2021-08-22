@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LogStream.h"
-#include "TimeZone.h"
+// #include "TimeZone.h"
 #include "Timestamp.h"
 
 namespace Hohnor
@@ -49,7 +49,7 @@ namespace Hohnor
 		//Set the global flush callback function
 		static void setFlush(FlushFunc);
 		//Set the glocal time zone variable
-		static void setTimeZone(const TimeZone &tz);
+		//static void setTimeZone(const TimeZone &tz);
 
 	private:
 		LogStream stream_;
