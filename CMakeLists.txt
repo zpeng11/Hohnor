@@ -14,11 +14,12 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(src/thread)
 add_subdirectory(src/time)
 add_subdirectory(src/log)
-
+add_subdirectory(src/file)
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)
 list(APPEND libs LOG)
+list(APPEND libs FILE)
 
 
 add_executable(Test test/Test.cpp)

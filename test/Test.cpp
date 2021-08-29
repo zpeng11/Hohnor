@@ -4,6 +4,7 @@
 #include "Timestamp.h"
 #include "Date.h"
 #include "Logging.h"
+#include "FileUtils.h"
 using namespace std;
 
 
@@ -12,8 +13,10 @@ using namespace std;
 
 int main()
 {
+	Hohnor::g_logLevel = Hohnor::Logger::WARN;
 	Hohnor::Thread t([]()
 	{
+		LOG_INFO<<"Enter thread";
 		cout<<Hohnor::CurrentThread::tid()<<endl;
 		cout<<Hohnor::CurrentThread::name()<<endl;
 		cout<<Hohnor::Timestamp::now().toString()<<endl;

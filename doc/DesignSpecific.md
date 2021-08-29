@@ -29,3 +29,9 @@
 + `TimeZone` it is too hard! I am not sure if this is necesarry
 
 ## Logging
++ `LogStream` simulated output stream, use macros to do dynamaic checking and logging infomation
+(refer interface from glog)
++ `logging` provide lower level support for LogStream
+
+## File
+
