@@ -1,6 +1,7 @@
 /**
  * logging interface to log information and dynamic check
  */
+//TODO enable message with defferent level to have differnt way of write and flush
 #pragma once
 
 #include "LogStream.h"
@@ -36,12 +37,13 @@ namespace Hohnor
 		~Logger();
 
 		LogStream &stream() { return stream_; }
+		LogLevel level() { return level_; }
 
 		//Get global log level
-		static LogLevel logLevel();
+		static LogLevel globalLogLevel();
 		//Set global log level
-		static void setLogLevel(LogLevel level);
-		
+		static void setGlobalLogLevel(LogLevel level);
+
 		//Define callback output function type that can be changed for different output target
 		typedef void (*OutputFunc)(const char *msg, int len);
 		//Define callback flush function type that works with output function
@@ -68,19 +70,19 @@ namespace Hohnor
 
 	extern Logger::LogLevel g_logLevel;
 
-	inline Logger::LogLevel Logger::logLevel()
+	inline Logger::LogLevel Logger::globalLogLevel()
 	{
 		return g_logLevel;
 	}
 
 #define LOG_TRACE                                            \
-	if (Hohnor::Logger::logLevel() <= Hohnor::Logger::TRACE) \
+	if (Hohnor::Logger::globalLogLevel() <= Hohnor::Logger::TRACE) \
 	Hohnor::Logger(__FILE__, __LINE__, Hohnor::Logger::TRACE, __func__).stream()
 #define LOG_DEBUG                                            \
-	if (Hohnor::Logger::logLevel() <= Hohnor::Logger::DEBUG) \
+	if (Hohnor::Logger::globalLogLevel() <= Hohnor::Logger::DEBUG) \
 	Hohnor::Logger(__FILE__, __LINE__, Hohnor::Logger::DEBUG, __func__).stream()
 #define LOG_INFO                                            \
-	if (Hohnor::Logger::logLevel() <= Hohnor::Logger::INFO) \
+	if (Hohnor::Logger::globalLogLevel() <= Hohnor::Logger::INFO) \
 	Hohnor::Logger(__FILE__, __LINE__).stream()
 #define LOG_WARN Hohnor::Logger(__FILE__, __LINE__, Hohnor::Logger::WARN).stream()
 #define LOG_ERROR Hohnor::Logger(__FILE__, __LINE__, Hohnor::Logger::ERROR).stream()
@@ -90,16 +92,21 @@ namespace Hohnor
 
 	const char *strerror_tl(int savedErrno);
 
-//Reference to glog CHECK() macro
+	//Reference to glog CHECK() macro
 
-#define CHECK(condition) if(!(condition)) \
+#define CHECK(condition) \
+	if (!(condition))    \
 	(LOG_FATAL) << "'" #condition "' Must be true "
 
-#define CHECK_EQ(lhs, rhs) if(lhs != rhs) \
-	(LOG_FATAL) << "'" #lhs "' Must be equal to " << "'" #rhs "' "
+#define CHECK_EQ(lhs, rhs)                        \
+	if (lhs != rhs)                               \
+	(LOG_FATAL) << "'" #lhs "' Must be equal to " \
+				<< "'" #rhs "' "
 
-#define CHECK_NE(lhs, rhs) if(lhs == rhs) \
-	(LOG_FATAL) << "'" #lhs "' Must not equal to " << "'" #rhs "' "
+#define CHECK_NE(lhs, rhs)                         \
+	if (lhs == rhs)                                \
+	(LOG_FATAL) << "'" #lhs "' Must not equal to " \
+				<< "'" #rhs "' "
 
 #define CHECK_NOTNULL(val) \
 	CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))

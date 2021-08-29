@@ -55,7 +55,7 @@ namespace Hohnor
 	}
 
 	//Log level initilization according to running environment
-	Logger::LogLevel initLogLevel()
+	Logger::LogLevel initGlobalLogLevel()
 	{
 		if (::getenv("HOHNOR_LOG_TRACE"))
 			return Logger::TRACE;
@@ -67,7 +67,7 @@ namespace Hohnor
 
 	Logger::OutputFunc g_output = defaultOutput;
 	Logger::FlushFunc g_flush = defaultFlush;
-	Logger::LogLevel g_logLevel = initLogLevel();
+	Logger::LogLevel g_logLevel = initGlobalLogLevel();
 	// TimeZone g_logTimeZone;
 
 	thread_local char t_errnobuf[512];
@@ -133,7 +133,7 @@ Logger::Logger(StringPiece file, int line)
 Logger::Logger(StringPiece file, int line, LogLevel level, const char *func)
 {
 	init(level, 0, file, line);
-	stream_ << func << ' ';
+	stream_ <<"In "<< func << "(): ";
 }
 
 Logger::Logger(StringPiece file, int line, LogLevel level)
@@ -158,9 +158,14 @@ Logger::~Logger()
 	}
 }
 
-void Logger::setLogLevel(Logger::LogLevel level)
+void Logger::setGlobalLogLevel(Logger::LogLevel level)
 {
 	g_logLevel = level;
+}
+
+Logger::LogLevel GlobalLogLevel()
+{
+	return g_logLevel;
 }
 
 void Logger::setOutput(OutputFunc out)
@@ -173,7 +178,3 @@ void Logger::setFlush(FlushFunc flush)
 	g_flush = flush;
 }
 
-// void Logger::setTimeZone(const TimeZone &tz)
-// {
-// 	g_logTimeZone = tz;
-// }

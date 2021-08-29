@@ -1,3 +1,8 @@
+/**
+ * Logging classes, currently we only need part of the file io functionality:
+ * 1. Append file for writing logs
+ * 2. Read file that can easily get string from files
+ */
 #pragma once
 #include "Types.h"
 #include "NonCopyable.h"

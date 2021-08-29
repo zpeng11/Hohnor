@@ -1,7 +1,7 @@
 /**
- * Lower level stream object that saves text information
+ * Lower level stream object that saves text information, we implement our own buffer and own stream,
+ * since the std::basic_buffer and std::ostream are too heavy and hard to understand and use(unreadable)
  */
-//TODO use implementation on ostream
 #pragma once
 #include "Types.h"
 #include "NonCopyable.h"

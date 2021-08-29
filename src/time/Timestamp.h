@@ -1,3 +1,6 @@
+/**
+ * Timestamp that records time in micro seconds since epoch.
+ */
 #pragma once
 
 #include "Types.h"
