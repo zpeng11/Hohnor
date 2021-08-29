@@ -77,7 +77,12 @@ namespace Hohnor
 	//Use thread safe strerror call to safe erro number information in thread-local variable
 	const char *strerror_tl(int savedErrno)
 	{
+		#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
+		strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
+		return t_errnobuf;
+		#else
 		return strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
+		#endif
 	}
 }
 

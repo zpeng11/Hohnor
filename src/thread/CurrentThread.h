@@ -3,7 +3,7 @@
 #include "Types.h"
 #include <string>
 #include <unistd.h>
-#include <sys/syscall.h>
+
 namespace Hohnor
 {
 	namespace CurrentThread

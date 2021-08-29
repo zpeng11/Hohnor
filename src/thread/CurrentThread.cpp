@@ -1,7 +1,13 @@
 #include "CurrentThread.h"
 
 #include <cxxabi.h>
+#ifndef __CYGWIN__
+#include <sys/syscall.h>
 #include <execinfo.h>
+#else //linux
+#include <windows.h>
+#endif
+
 #include <stdlib.h>
 namespace Hohnor
 {
@@ -14,7 +20,11 @@ namespace Hohnor
 		int tid()
 		{
 			if (UNLIKELY(t_tid == 0))
+			#ifndef __CYGWIN__
 				t_tid = static_cast<pid_t>(::syscall(SYS_gettid));
+			#else
+				t_tid = static_cast<pid_t>(GetCurrentThreadId());
+			#endif
 			return t_tid;
 		}
 
@@ -35,7 +45,7 @@ namespace Hohnor
 			ts.tv_nsec = static_cast<long>(usec % 1000);
 			::nanosleep(&ts, NULL);
 		}
-
+#ifndef __CYGWIN__
 		string stackTrace(bool demangle)
 		{
 			string stack;
@@ -89,7 +99,13 @@ namespace Hohnor
 			}
 			return stack;
 		}
-	}
+#else
+		string stackTrace(bool b)
+		{
+			return "";
+		}
+#endif
+	}//::currentThread
 
 	/*
 	The ThreadNameInitializer will be initialized every time a new process is forked from our Thread,

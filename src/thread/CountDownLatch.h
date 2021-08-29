@@ -28,7 +28,7 @@ namespace Hohnor
 			MutexGuard guard(this->mutex_);
 			return count_;
 		}
-		int countDown()
+		void countDown()
 		{
 			MutexGuard guard(this->mutex_);
 			--count_;
