@@ -22,8 +22,9 @@ int main()
 		cout<<"thread name:"<<Hohnor::CurrentThread::name()<<endl;
 		cout<<"Time now:"<<Hohnor::Timestamp::now().toFormattedString()<<endl;
 		cout<<"Hostname:"<<Hohnor::ProcessInfo::hostname()<<endl;
+		cout<<"Max open:"<<Hohnor::ProcessInfo::maxOpenFiles()<<endl;
 	};
-	tp.setPreThreadCallback([&](){cout<<"--------------\n\n"<<endl;});
+	tp.setPostTaskCallback([&](){cout<<"--------------\n\n"<<endl;});
 	tp.start(4);
 	for(int i = 0 ;i<20;i++)
 	tp.run(func);

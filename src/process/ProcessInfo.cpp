@@ -15,6 +15,7 @@ namespace Hohnor
         int g_pageSize = static_cast<int>(::sysconf(_SC_PAGE_SIZE));
 
         thread_local int t_numOpenedFiles = 0;
+        //create file descripter finder that has right form that we can put into scanDir filter
         int fdDirFilter(const struct dirent *d)
         {
             if (::isdigit(d->d_name[0]))
@@ -23,8 +24,10 @@ namespace Hohnor
             }
             return 0;
         }
-
+        
+        //make the vector global so that it can help the following task filter
         thread_local std::vector<pid_t> *t_pids = NULL;
+        //create task finder that has right form that we can put into scanDir filter
         int taskDirFilter(const struct dirent *d)
         {
             if (::isdigit(d->d_name[0]))
@@ -34,6 +37,7 @@ namespace Hohnor
             return 0;
         }
 
+        //Wrapper for scanning directory function in <dirent.h>
         int scanDir(const char *dirpath, int (*filter)(const struct dirent *))
         {
             struct dirent **namelist = NULL;
@@ -44,6 +48,28 @@ namespace Hohnor
             assert(namelist == NULL);
             return result;
         }
+
+        //cpu time infomation struct, get from boost.vxworks.hpp
+        struct tms
+        {
+            clock_t tms_utime;  // User CPU time
+            clock_t tms_stime;  // System CPU time
+            clock_t tms_cutime; // User CPU time of terminated child processes
+            clock_t tms_cstime; // System CPU time of terminated child processes
+        };
+        //cpu time infomation function, get from boost.vxworks.hpp
+        clock_t times(struct tms *t)
+        {
+            struct timespec ts;
+            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
+            clock_t ticks(static_cast<clock_t>(static_cast<double>(ts.tv_sec) * CLOCKS_PER_SEC +
+                                            static_cast<double>(ts.tv_nsec) * CLOCKS_PER_SEC / 1000000.0));
+            t->tms_utime = ticks / 2U;
+            t->tms_stime = ticks / 2U;
+            t->tms_cutime = 0; // vxWorks is lacking the concept of a child process!
+            t->tms_cstime = 0; // -> Set the wait times for childs to 0
+            return ticks;
+        }
     }
 }
 
@@ -51,6 +77,7 @@ using namespace Hohnor;
 using namespace Hohnor::ProcessInfo;
 using namespace Hohnor::GlobalInfo;
 
+//Get username of the os
 string ProcessInfo::username()
 {
     const char *name = "Unknown";
@@ -68,16 +95,19 @@ string ProcessInfo::username()
     return name;
 }
 
+//Timestamp object that has been initilaized since the program started running
 Timestamp ProcessInfo::startTime()
 {
     return g_startTime;
 }
 
+//Clock rate that has been initilaized since the program started running
 int ProcessInfo::clockTicksPerSecond()
 {
     return g_clockTicks;
 }
 
+//Paging size of the os
 int ProcessInfo::pageSize()
 {
     return g_pageSize;
@@ -92,6 +122,7 @@ bool ProcessInfo::isDebugBuild()
 #endif
 }
 
+//host name
 string ProcessInfo::hostname()
 {
     // HOST_NAME_MAX 64
@@ -108,11 +139,13 @@ string ProcessInfo::hostname()
     }
 }
 
+//get process information
 string ProcessInfo::procname()
 {
     return procname(procStat()).as_string();
 }
 
+//get the name of the current running process
 StringPiece ProcessInfo::procname(const string &stat)
 {
     StringPiece name;
@@ -125,6 +158,7 @@ StringPiece ProcessInfo::procname(const string &stat)
     return name;
 }
 
+//read self process information
 string ProcessInfo::procStatus()
 {
     string result;
@@ -134,6 +168,7 @@ string ProcessInfo::procStatus()
     return result;
 }
 
+//statistic information for current process
 string ProcessInfo::procStat()
 {
     string result;
@@ -186,4 +221,40 @@ int ProcessInfo::maxOpenFiles()
     {
         return static_cast<int>(rl.rlim_cur);
     }
+}
+
+
+ProcessInfo::CpuTime ProcessInfo::cpuTime()
+{
+    ProcessInfo::CpuTime t;
+    struct tms tms;
+    if (::times(&tms) >= 0)
+    {
+        const double hz = static_cast<double>(clockTicksPerSecond());
+        t.userSeconds = static_cast<double>(tms.tms_utime) / hz;
+        t.systemSeconds = static_cast<double>(tms.tms_stime) / hz;
+    }
+    return t;
+}
+
+int ProcessInfo::numThreads()
+{
+    int result = 0;
+    string status = procStatus();
+    size_t pos = status.find("Threads:");
+    if (pos != string::npos)
+    {
+        result = ::atoi(status.c_str() + pos + 8);
+    }
+    return result;
+}
+
+std::vector<pid_t> ProcessInfo::threads()
+{
+    std::vector<pid_t> result;
+    t_pids = &result;
+    scanDir("/proc/self/task", taskDirFilter);
+    t_pids = NULL;
+    std::sort(result.begin(), result.end());
+    return result;
 }
