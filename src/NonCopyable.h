@@ -1,3 +1,4 @@
+//Interface to disable class copyable functionality
 #pragma once
 
 namespace Hohnor

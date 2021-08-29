@@ -1,3 +1,4 @@
+//useful type casting functions
 #pragma once
 
 #include "StringPiece.h"

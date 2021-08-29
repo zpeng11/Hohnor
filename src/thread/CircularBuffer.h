@@ -1,3 +1,12 @@
+/**
+ * Circular buffer (or ring buffer) that works for buffering items, 
+ * it has simular properties as queue, but since it uses fixed size memory
+ * and never call new space when running, it works faster than queue.
+ * 
+ * The drawback is that we can set buffer size to be less than 2 
+ * (Normally this is not a big issue right? 
+ * If you only use 1 unit size space then there is no reason you choose ring buffer)
+ */
 #pragma once
 #include <memory>
 #include "Types.h"

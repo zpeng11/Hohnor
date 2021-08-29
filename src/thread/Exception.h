@@ -1,3 +1,6 @@
+/**
+ * Exeptions that can print stack trace information
+ */
 #pragma once
 
 #include "CurrentThread.h"

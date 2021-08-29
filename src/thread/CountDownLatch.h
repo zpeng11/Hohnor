@@ -1,3 +1,7 @@
+/**
+ * A latch structure that is simular to singal-slot mechanism, 
+ *  consumer(s) wait on the latch for the producer to notify
+ */
 #pragma once 
 
 #include "Condition.h"

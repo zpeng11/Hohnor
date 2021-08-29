@@ -1,5 +1,7 @@
+/**
+ * 
+ */
 #pragma once
-
 namespace Hohnor
 {
 /// A tag class emphasises the objects are copyable.

@@ -1,3 +1,6 @@
+/**
+ * Date and Julian day calculation
+ */
 #pragma once
 #include "Types.h"
 

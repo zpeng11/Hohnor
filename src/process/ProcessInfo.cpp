@@ -1,6 +1,7 @@
 #include "ProcessInfo.h"
 #include <sys/dirent.h>
 #include <sys/resource.h>
+#include <algorithm>
 #include "CurrentThread.h"
 
 namespace Hohnor

@@ -1,3 +1,7 @@
+/**
+ * Lower level stream object that saves text information
+ */
+//TODO use implementation on ostream
 #pragma once
 #include "Types.h"
 #include "NonCopyable.h"

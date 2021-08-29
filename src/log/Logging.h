@@ -1,3 +1,6 @@
+/**
+ * logging interface to log information and dynamic check
+ */
 #pragma once
 
 #include "LogStream.h"

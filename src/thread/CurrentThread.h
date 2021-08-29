@@ -1,3 +1,6 @@
+/**
+ * Thread_local scope information that records thread-id and thread name
+ */
 #pragma once
 
 #include "Types.h"

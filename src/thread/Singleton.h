@@ -1,3 +1,8 @@
+/**
+ * Thread singleton that has only one instance in the whole process.
+ * Reminder the template type should have default constructor.
+ */
+
 #pragma once
 
 #include "NonCopyable.h"

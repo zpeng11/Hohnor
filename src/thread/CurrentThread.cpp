@@ -1,3 +1,6 @@
+/**
+ * Thread_local scope information that records thread-id and thread name
+ */
 #include "CurrentThread.h"
 
 #include <cxxabi.h>
@@ -99,7 +102,7 @@ namespace Hohnor
 			}
 			return stack;
 		}
-#else
+#else //linux only
 		string stackTrace(bool b)
 		{
 			return "";

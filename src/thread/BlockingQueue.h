@@ -1,3 +1,8 @@
+/**
+ * Blocking queue that works as normal queue but it is thread safe.
+ * It also has infinit head-tail distance that you can put as many item as wish
+ * But carrying data type should be copyable and has its default constructor
+ */
 #pragma once
 
 #include "Mutex.h"

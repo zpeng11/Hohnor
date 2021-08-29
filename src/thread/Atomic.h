@@ -1,3 +1,6 @@
+/**
+ * Implementation of atomic numbers using c interface
+ */
 #include "NonCopyable.h"
 #include <stdint.h>
 namespace Hohnor

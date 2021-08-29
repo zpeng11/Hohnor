@@ -1,3 +1,6 @@
+/**
+ * wrapper of conditional variable in pthread
+ */
 #pragma once
 
 #include "Mutex.h"

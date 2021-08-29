@@ -16,7 +16,9 @@ namespace Hohnor
         string username();
         inline uid_t euid() { return geteuid(); }
         Timestamp startTime();
+        //Hardware parameter of cpu running speed
         int clockTicksPerSecond();
+        //Linux paging size
         int pageSize();
         bool isDebugBuild(); 
         string hostname();

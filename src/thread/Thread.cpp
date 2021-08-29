@@ -1,3 +1,6 @@
+/**
+ * Wrapper for pthread 
+ */
 #include "Thread.h"
 #include <unistd.h>
 #include <exception>
@@ -35,7 +38,6 @@ namespace Hohnor
 		::prctl(PR_SET_NAME, CurrentThread::t_threadName);
 #endif
 		
-
 		try
 		{
 			data->func_();
