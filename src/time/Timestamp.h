@@ -13,6 +13,10 @@ namespace Hohnor
 	class Timestamp
 	{
 	public:
+		enum TimeStandard{
+			UTC,
+			GMT
+		};
 		///
 		/// Constucts an invalid Timestamp.
 		///
@@ -38,7 +42,7 @@ namespace Hohnor
 		// default copy/assignment/dtor are Okay
 
 		string toString() const;
-		string toFormattedString(bool showMicroseconds = true) const;
+		string toFormattedString(bool showMicroseconds = true, TimeStandard stdandard = UTC) const;
 
 		bool valid() const { return microSecondsSinceEpoch_ > 0; }
 
