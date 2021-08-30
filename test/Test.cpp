@@ -42,9 +42,8 @@ int main()
 	// tp.start(4);
 	// for(int i = 0 ;i<20;i++)
 	// tp.run(func);
-	Hohnor::LogFile lf("append.txt");
+	Hohnor::LogFile lf("append");
 	char str[] = "Helloworld";
-	string str;
 	lf.append(str, strlen(str));
 	sleep(1);
 }

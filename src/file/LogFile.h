@@ -40,7 +40,7 @@ namespace Hohnor
 
     private:
         //use a base name comibined with time infor to create new log file name
-        static std::pair<time_t, string> getLogFileName(const string &basename, Timestamp::TimeStandard standrad = Timestamp::UTC);
+        static std::pair<time_t, string> getLogFileName(const string &basename,const string& directory = "./", Timestamp::TimeStandard standrad = Timestamp::UTC);
         //Store basename passed from the contructor
         const string basename_;
         //Store director
