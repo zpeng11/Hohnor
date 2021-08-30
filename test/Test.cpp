@@ -10,6 +10,7 @@
 #include <memory>
 #include "LogFile.h"
 #include "LogFile.h"
+#include "AsyncLogging.h"
 using namespace std;
 
 
@@ -41,5 +42,7 @@ int main()
 	char str[] = "Helloworld";
 	for(int i = 0 ; i < 70000; i++)
 		lf.append(str, strlen(str));
+
+	Hohnor::AsyncLog al("Helloworld");
 	sleep(1);
 }

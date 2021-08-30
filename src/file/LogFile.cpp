@@ -5,20 +5,20 @@
 using namespace Hohnor;
 LogFile::LogFile(const string &basename,
                  const string &directory,
-                 off_t rollSize,
-                 int flushInterval,
                  int checkEveryN,
+                 int flushInterval,
+                 off_t rollSize,
                  int rollInterval,
                  Timestamp::TimeStandard standrad)
     : basename_(basename),
       directory_(directory),
-      rollSize_(rollSize),
-      flushInterval_(flushInterval),
       checkEveryN_(checkEveryN),
+      flushInterval_(flushInterval),
+      rollSize_(rollSize),
+      rollInterval_(rollInterval),
       count_(0),
       lastRoll_(time(NULL)),
       lastFlush_(time(NULL)),
-      rollInterval_(rollInterval),
       standrad_(standrad)
 {
     assert(basename.find('/') == string::npos);

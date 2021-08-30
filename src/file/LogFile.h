@@ -25,10 +25,12 @@ namespace Hohnor
     {
     public:
         //Initilize with file base name and directory
-        explicit LogFile(const string &basename, const string &directory = "./" ,off_t rollSize = 65535,
-                         int flushInterval = 3,
+        explicit LogFile(const string &basename,
+                         const string &directory = "./",
                          int checkEveryN = 1024,
-                         int rollInterval = 60 * 60 * 24, 
+                         int flushInterval = 3,
+                         off_t rollSize = 65535,
+                         int rollInterval = 60 * 60 * 24,
                          Timestamp::TimeStandard standrad = Timestamp::UTC);
         ~LogFile();
 
@@ -40,7 +42,7 @@ namespace Hohnor
 
     private:
         //use a base name comibined with time infor to create new log file name
-        static std::pair<time_t, string> getLogFileName(const string &basename,const string& directory = "./", Timestamp::TimeStandard standrad = Timestamp::UTC);
+        static std::pair<time_t, string> getLogFileName(const string &basename, const string &directory = "./", Timestamp::TimeStandard standrad = Timestamp::UTC);
         //Store basename passed from the contructor
         const string basename_;
         //Store director
@@ -55,7 +57,7 @@ namespace Hohnor
         const int rollInterval_;
         //Time standard, could be UTC or GMT
         const Timestamp::TimeStandard standrad_;
-        
+
         //Counting number of writes
         int count_;
 
