@@ -8,7 +8,8 @@ LogFile::LogFile(const string &basename,
                  off_t rollSize,
                  int flushInterval,
                  int checkEveryN,
-                 int rollInterval)
+                 int rollInterval,
+                 Timestamp::TimeStandard standrad)
     : basename_(basename),
       directory_(directory),
       rollSize_(rollSize),
@@ -17,7 +18,8 @@ LogFile::LogFile(const string &basename,
       count_(0),
       lastRoll_(time(NULL)),
       lastFlush_(time(NULL)),
-      rollInterval_(rollInterval)
+      rollInterval_(rollInterval),
+      standrad_(standrad)
 {
     assert(basename.find('/') == string::npos);
     rollFile();
@@ -51,30 +53,35 @@ void LogFile::append(const char *logline, int len)
     }
 }
 
-bool LogFile::rollFile()
+void LogFile::rollFile()
 {
-    auto pair = this->getLogFileName(basename_, directory_);
-    return true;
+    auto pair = this->getLogFileName(basename_, directory_, standrad_);
+    lastRoll_ = pair.first;
+    lastFlush_ = pair.first;
+    file_.reset(new FileUtils::AppendFile(pair.second));
 }
-#include <iostream>
+
+void LogFile::flush()
+{
+    lastFlush_ = time(NULL);
+    file_->flush();
+}
+
 std::pair<time_t, string> LogFile::getLogFileName(const string &basename, const string &dir, Timestamp::TimeStandard standard)
 {
     string res = dir;
-    if (res[res.length()-1] != '/')
+    if (res[res.length() - 1] != '/')
         res += '/';
     res += basename;
     char timebuf[32];
     struct tm tm;
     time_t now = time(NULL);
-    if(standard == Timestamp::GMT)
-        gmtime_r(&now, &tm); // FIXME: localtime_r ?
+    if (standard == Timestamp::GMT)
+        gmtime_r(&now, &tm);
     else
         localtime_r(&now, &tm);
     strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S.", &tm);
     res += timebuf;
     res += "log";
-    std::cout<<dir<<std::endl;
-    std::cout<<basename<<std::endl;
-    std::cout<<res<<std::endl;
     return {now, res};
 }

@@ -18,16 +18,11 @@ Hohnor::Mutex m;
 
 using namespace std;
 
-shared_ptr<int> ptrfunc()
-{
-	return std::move(shared_ptr<int>(new int(200)));
-}
+
 
 
 int main()
 {
-	auto ptr = ptrfunc();
-	cout<<*ptr<<endl;
 	Hohnor::g_logLevel = Hohnor::Logger::TRACE;
 	auto func = [&]()
 	{
@@ -42,8 +37,9 @@ int main()
 	// tp.start(4);
 	// for(int i = 0 ;i<20;i++)
 	// tp.run(func);
-	Hohnor::LogFile lf("append");
+	Hohnor::LogFile lf("Hello");
 	char str[] = "Helloworld";
-	lf.append(str, strlen(str));
+	for(int i = 0 ; i < 70000; i++)
+		lf.append(str, strlen(str));
 	sleep(1);
 }

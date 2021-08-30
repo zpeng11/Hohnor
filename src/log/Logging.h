@@ -13,9 +13,10 @@ namespace Hohnor
 	/**
 	 * This class manages a few global variables like log level, log output function, and log flush function. These variables are used for all threads in a application.
 	 * 
-	 * It also helps to manage thread-local variables like erro number string representation, time string representation, and time object. These variables only work for current thread.
+	 * Logger class is servered for LOG and CHECK macros to conviently record run time information, Users most likely do not use this class directly but using macros.
 	 * 
-	 * Logger class is servered for LOG and CHECK macros to conviently record run time information, Users most likely do not use this class directly.
+	 * The defalt output of logging is stdout, if you want to use logging macros in multi-threading environment,
+	 * you should define you own output function that is thread-safe, for here, that is AsyncLogging
 	 */
 	class Logger
 	{
@@ -89,8 +90,6 @@ namespace Hohnor
 #define LOG_FATAL Hohnor::Logger(__FILE__, __LINE__, Hohnor::Logger::FATAL).stream()
 #define LOG_SYSERR Hohnor::Logger(__FILE__, __LINE__, false).stream()
 #define LOG_SYSFATAL Hohnor::Logger(__FILE__, __LINE__, true).stream()
-
-	const char *strerror_tl(int savedErrno);
 
 	//Reference to glog CHECK() macro
 

@@ -16,10 +16,11 @@ namespace Hohnor
 		extern thread_local std::string t_threadName;
 
 		int tid();
-		const std::string& name();
+		const std::string &name();
 		bool isMainThread();
 
 		void sleepUsec(int64_t usec);
 		string stackTrace(bool demangle);
 	}
+	string strerror_tl(int savedErrno);
 }

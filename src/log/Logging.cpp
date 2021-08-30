@@ -51,9 +51,8 @@ namespace Hohnor
 		auto msg = buffer->data();
 		auto len = buffer->length();
 		size_t n = fwrite(msg, 1, len, stdout);
-		assert(n == len);
+		assert(n == len && "Write to stdout error");
 	}
-
 	void defaultFlush()
 	{
 		MutexGuard guard(m);
@@ -76,20 +75,8 @@ namespace Hohnor
 	Logger::LogLevel g_logLevel = initGlobalLogLevel();
 	// TimeZone g_logTimeZone;
 
-	thread_local char t_errnobuf[512];
 	thread_local char t_time[64];
 	thread_local time_t t_lastSecond;
-
-	//Use thread safe strerror call to safe erro number information in thread-local variable
-	const char *strerror_tl(int savedErrno)
-	{
-		#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
-		strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
-		return t_errnobuf;
-		#else
-		return strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
-		#endif
-	}
 }
 
 using namespace Hohnor;

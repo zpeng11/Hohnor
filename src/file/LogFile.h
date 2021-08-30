@@ -13,7 +13,6 @@
  */
 
 #pragma once
-#include "Mutex.h"
 #include "NonCopyable.h"
 #include "Timestamp.h"
 #include "FileUtils.h"
@@ -29,14 +28,15 @@ namespace Hohnor
         explicit LogFile(const string &basename, const string &directory = "./" ,off_t rollSize = 65535,
                          int flushInterval = 3,
                          int checkEveryN = 1024,
-                         int rollInterval = 60 * 60 * 24);
+                         int rollInterval = 60 * 60 * 24, 
+                         Timestamp::TimeStandard standrad = Timestamp::UTC);
         ~LogFile();
 
         void append(const char *logline, int len);
         //Manually flush into hard drive
-        void flush() { file_->flush(); }
+        void flush();
         //Manually roll a new file
-        bool rollFile();
+        void rollFile();
 
     private:
         //use a base name comibined with time infor to create new log file name
@@ -45,15 +45,17 @@ namespace Hohnor
         const string basename_;
         //Store director
         const string directory_;
+        //Every N writes, the class will go to check if should run roll and flush function
+        const int checkEveryN_;
         //Maximum size that the class will roll a new file, passed in the contructor
         const off_t rollSize_;
         //interval of time between flushing file message in memory into hard drive
         const int flushInterval_;
-        //Every N writes, the class will go to check roll and flush function
-        const int checkEveryN_;
         //seconds to roll
-        const int rollInterval_ = 60 * 60 * 24;
-
+        const int rollInterval_;
+        //Time standard, could be UTC or GMT
+        const Timestamp::TimeStandard standrad_;
+        
         //Counting number of writes
         int count_;
 
