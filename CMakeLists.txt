@@ -16,12 +16,14 @@ add_subdirectory(src/time)
 add_subdirectory(src/log)
 add_subdirectory(src/file)
 add_subdirectory(src/process)
+add_subdirectory(src/socket)
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)
 list(APPEND libs LOG)
 list(APPEND libs FILE)
 list(APPEND libs PROCESS)
+list(APPEND libs SOCKET)
 
 
 add_executable(Test test/Test.cpp)
