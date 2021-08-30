@@ -110,10 +110,10 @@ void LogStream::staticCheck()
 template <typename T>
 void LogStream::formatInteger(T v)
 {
-	if (buffer_.avail() >= kMaxNumericSize)
+	if (buffer_->avail() >= kMaxNumericSize)
 	{
-		size_t len = StringConverter::convert(buffer_.current(), v);
-		buffer_.add(len);
+		size_t len = StringConverter::convert(buffer_->current(), v);
+		buffer_->add(len);
 	}
 }
 
@@ -168,13 +168,13 @@ LogStream &LogStream::operator<<(unsigned long long v)
 LogStream &LogStream::operator<<(const void *p)
 {
 	uintptr_t v = reinterpret_cast<uintptr_t>(p);
-	if (buffer_.avail() >= kMaxNumericSize)
+	if (buffer_->avail() >= kMaxNumericSize)
 	{
-		char *buf = buffer_.current();
+		char *buf = buffer_->current();
 		buf[0] = '0';
 		buf[1] = 'x';
 		size_t len = StringConverter::convertHex(buf + 2, v);
-		buffer_.add(len + 2);
+		buffer_->add(len + 2);
 	}
 	return *this;
 }

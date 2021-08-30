@@ -7,6 +7,7 @@
 #include "NonCopyable.h"
 #include "StringPiece.h"
 #include <string.h>
+#include <memory>
 
 namespace Hohnor
 {
@@ -85,18 +86,19 @@ namespace Hohnor
 	public:
 		typedef LogBuffer::FixedBuffer<LogBuffer::kSmallBuffer> Buffer;
 
+		LogStream() : buffer_(new LogStream::Buffer()) {}
 		self &operator<<(bool v)
 		{
 			if (v)
 			{
-				buffer_.append("true", 4);
+				buffer_->append("true", 4);
 			}
 			else
 			{
-				buffer_.append("false", 5);
+				buffer_->append("false", 5);
 			}
 			return *this;
-		}		
+		}
 
 		self &operator<<(float v)
 		{
@@ -106,17 +108,17 @@ namespace Hohnor
 
 		self &operator<<(double v)
 		{
-			if (buffer_.avail() >= kMaxNumericSize)
+			if (buffer_->avail() >= kMaxNumericSize)
 			{
-				int len = snprintf(buffer_.current(), kMaxNumericSize, "%.12g", v);
-				buffer_.add(len);
+				int len = snprintf(buffer_->current(), kMaxNumericSize, "%.12g", v);
+				buffer_->add(len);
 			}
 			return *this;
 		};
 
 		self &operator<<(char v)
 		{
-			buffer_.append(&v, 1);
+			buffer_->append(&v, 1);
 			return *this;
 		}
 
@@ -127,11 +129,11 @@ namespace Hohnor
 		{
 			if (str)
 			{
-				buffer_.append(str, strlen(str));
+				buffer_->append(str, strlen(str));
 			}
 			else
 			{
-				buffer_.append("(null)", 6);
+				buffer_->append("(null)", 6);
 			}
 			return *this;
 		}
@@ -143,13 +145,13 @@ namespace Hohnor
 
 		self &operator<<(const string &v)
 		{
-			buffer_.append(v.c_str(), v.size());
+			buffer_->append(v.c_str(), v.size());
 			return *this;
 		}
 
 		self &operator<<(const StringPiece &v)
 		{
-			buffer_.append(v.data(), v.size());
+			buffer_->append(v.data(), v.size());
 			return *this;
 		}
 
@@ -158,7 +160,6 @@ namespace Hohnor
 			*this << v.toStringPiece();
 			return *this;
 		}
-
 
 		self &operator<<(short);
 		self &operator<<(unsigned short);
@@ -171,9 +172,10 @@ namespace Hohnor
 
 		self &operator<<(const void *);
 
-		void append(const char *data, int len) { buffer_.append(data, len); }
-		const Buffer &buffer() const { return buffer_; }
-		void resetBuffer() { buffer_.reset(); }
+		void append(const char *data, int len) { buffer_->append(data, len); }
+		const Buffer &buffer() const { return *buffer_; }
+		void resetBuffer() { buffer_->reset(); }
+		std::shared_ptr<Buffer> moveBuffer() { return std::move(buffer_); }
 
 	private:
 		void staticCheck();
@@ -181,7 +183,7 @@ namespace Hohnor
 		template <typename T>
 		void formatInteger(T);
 
-		Buffer buffer_;
+		std::shared_ptr<LogStream::Buffer> buffer_;
 
 		static const int kMaxNumericSize = 48;
 	};

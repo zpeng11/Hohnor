@@ -1,5 +1,6 @@
 #include "Logging.h"
 #include "CurrentThread.h"
+#include "Mutex.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,14 +44,19 @@ namespace Hohnor
 			"FATAL ",
 	};
 
-	void defaultOutput(const char *msg, int len)
+	Mutex m;	
+	void defaultOutput(std::shared_ptr<LogStream::Buffer> buffer)
 	{
+		MutexGuard guard(m);
+		auto msg = buffer->data();
+		auto len = buffer->length();
 		size_t n = fwrite(msg, 1, len, stdout);
 		assert(n == len);
 	}
 
 	void defaultFlush()
 	{
+		MutexGuard guard(m);
 		fflush(stdout);
 	}
 
@@ -149,8 +155,7 @@ Logger::Logger(StringPiece file, int line, bool toAbort)
 Logger::~Logger()
 {
 	stream_ << " - " << fileBaseName_ << ':' << line_ << '\n';
-	const LogStream::Buffer &buf(stream().buffer());
-	g_output(buf.data(), buf.length());
+	g_output(stream_.moveBuffer());
 	if (level_ == FATAL)
 	{
 		g_flush();

@@ -12,7 +12,8 @@ using namespace Hohnor::FileUtils;
 
 AppendFile::AppendFile(StringPiece filename)
 {
-	fp_ = CHECK_NOTNULL(fopen(filename.data(), "ae+")); //e for  O_CLOEXEC (since Linux 2.6.23)
+	fp_ = fopen(filename.data(), "ae+"); //e for  O_CLOEXEC (since Linux 2.6.23)
+	assert(fp_ != NULL);
 	writtenBytes_ = 0;
 	setbuffer(fp_, buffer_, sizeof buffer_);
 }

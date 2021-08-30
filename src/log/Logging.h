@@ -4,8 +4,8 @@
 //TODO enable message with defferent level to have differnt way of write and flush
 #pragma once
 
+#include <memory>
 #include "LogStream.h"
-// #include "TimeZone.h"
 #include "Timestamp.h"
 
 namespace Hohnor
@@ -44,8 +44,8 @@ namespace Hohnor
 		//Set global log level
 		static void setGlobalLogLevel(LogLevel level);
 
-		//Define callback output function type that can be changed for different output target
-		typedef void (*OutputFunc)(const char *msg, int len);
+		//Define callback output function type that deal with moved buffer ptr
+		typedef void (*OutputFunc)(std::shared_ptr<LogStream::Buffer> buffer);
 		//Define callback flush function type that works with output function
 		typedef void (*FlushFunc)();
 
