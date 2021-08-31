@@ -22,5 +22,16 @@ namespace Hohnor
 		void sleepUsec(int64_t usec);
 		string stackTrace(bool demangle);
 	}
-	string strerror_tl(int savedErrno);
+
+	//Use thread safe strerror call to safe erro number information 
+	inline string strerror_tl(int savedErrno)
+    {
+		char t_errnobuf[512];
+		#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
+		strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
+		return t_errnobuf;
+		#else
+		return strerror_r(savedErrno, t_errnobuf, sizeof t_errnobuf);
+		#endif
+	}
 }

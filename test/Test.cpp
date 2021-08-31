@@ -11,6 +11,7 @@
 #include "LogFile.h"
 #include "LogFile.h"
 #include "AsyncLogging.h"
+#include "SocketWrap.h"
 using namespace std;
 
 Hohnor::ThreadPool tp;
@@ -32,5 +33,12 @@ int main()
     {
         tp.run(func);
     }
+    string str = "Hello world";
+    str.reserve(50);
+    auto ptr = const_cast<char *>(str.c_str());
+    strcpy(ptr,"hello world eleven");
+    str.resize(strlen(ptr));
+    cout<<str<<endl;
+    cout<<str.length()<<endl;
     sleep(1);
 }

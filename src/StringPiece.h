@@ -41,7 +41,6 @@
 #include <cstring>
 #include <string>
 #include <iosfwd> // for ostream forward-declaration
-#include <pcre.h>
 
 using std::memcmp;
 using std::string;
@@ -68,7 +67,7 @@ namespace Hohnor
 		const char *str_;
 	};
 
-	class PCRECPP_EXP_DEFN StringPiece
+	class StringPiece
 	{
 	private:
 		const char *ptr_;
