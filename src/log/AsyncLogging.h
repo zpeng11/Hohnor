@@ -16,7 +16,7 @@ namespace Hohnor
                           const string &directory = "./",
                           int checkEveryN = 1024,
                           int flushInterval = 3,
-                          off_t rollSize = 65535,
+                          off_t rollSize = 65536 * 256, //This is 4 MBytes space by default
                           int rollInterval = 60 * 60 * 24,
                           Timestamp::TimeStandard standrad = Timestamp::UTC);
         ~AsyncLog();

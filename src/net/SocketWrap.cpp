@@ -129,7 +129,7 @@ string SocketFuncs::toIp(const struct sockaddr *addr)
     int size = 256;
     str.reserve(size);
     auto buf = const_cast<char *>(str.c_str());
-    memset(buf, 0, size);
+    memZero(buf, size);
     if (addr->sa_family == AF_INET)
     {
         CHECK(size >= INET_ADDRSTRLEN);
