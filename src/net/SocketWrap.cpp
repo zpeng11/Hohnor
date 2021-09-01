@@ -124,11 +124,8 @@ string SocketFuncs::toIpPort(const struct sockaddr *addr)
 
 string SocketFuncs::toIp(const struct sockaddr *addr)
 {
-    //Unsafely using std::string
-    string str;
     int size = 256;
-    str.reserve(size);
-    auto buf = const_cast<char *>(str.c_str());
+    char buf[256];
     memZero(buf, size);
     if (addr->sa_family == AF_INET)
     {
@@ -142,8 +139,7 @@ string SocketFuncs::toIp(const struct sockaddr *addr)
         const struct sockaddr_in6 *addr6 = sockaddr_in6_cast(addr);
         ::inet_ntop(AF_INET6, &addr6->sin6_addr, buf, static_cast<socklen_t>(size));
     }
-    str.resize(strlen(buf));
-    return std::move(str);
+    return buf;
 }
 
 void SocketFuncs::fromIpPort(StringPiece ip, uint16_t port,

@@ -9,6 +9,7 @@
 #include "StringPiece.h"
 #include "SocketWrap.h"
 #include <netinet/in.h>
+#include <vector>
 
 namespace Hohnor
 {
@@ -58,7 +59,7 @@ namespace Hohnor
         // return true on success.
         // thread safe
         // Uses getaddrinfo(3)
-        static bool resolve(StringPiece hostname, InetAddress *result);
+        static std::vector<InetAddress> resolve(StringPiece hostname, StringPiece serviceName = "");
         // static std::vector<InetAddress> resolveAll(const char* hostname, uint16_t port = 0);
 
         // set IPv6 ScopeID

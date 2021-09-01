@@ -103,59 +103,33 @@ uint32_t InetAddress::ipv4NetEndian() const
 
 using namespace std;
 #include "LogStream.h"
-bool InetAddress::resolve(StringPiece hostname, InetAddress *out)
+std::vector<InetAddress> InetAddress::resolve(StringPiece hostName, StringPiece serviceName)
 {
-    CHECK_NOTNULL(out);
     struct addrinfo hints; //provice hints for getaddrinfo(3)
     memZero(&hints, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     struct addrinfo *result;
-    int ret = getaddrinfo(hostname.data(), "http", &hints, &result);
+    int ret = getaddrinfo(hostName.data(), "http", &hints, &result);
     if (ret != 0)
     {
         LOG_SYSERR << "InetAddress::resolve DNS service error, " << gai_strerror(ret);
-        return false;
+        return {};
     }
-
-    //Until now we get a struct addrinfo linked list head object pointed by @result on heap
-    printf("%p\n", result);
-    cout << result->ai_addrlen << endl;
-    cout << result->ai_canonname << endl;
-    cout << result->ai_family << endl;
-    cout << "Debug" << endl;
-    int sfd;
-    struct addrinfo *rp;
-    for (rp = result; rp != NULL; rp = rp->ai_next) //iterate the linked list addrinfo struct
+    vector<InetAddress> v;
+    for(struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next)
     {
-        cout << SocketFuncs::toIp(rp->ai_addr) << endl;
-        sfd = SocketFuncs::socket(rp->ai_family, rp->ai_socktype,
-                                  rp->ai_protocol);
-        if (sfd == -1)
+        if(rp->ai_family == AF_INET)
         {
-            LOG_WARN << "InetAddress::resolve try for a result failed";
+            InetAddress ia4(*reinterpret_cast<sockaddr_in *>(rp->ai_addr)) ;
+            v.push_back(ia4);            
         }
         else
         {
-            if (::connect(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
-                break; /* Success */
-
-            SocketFuncs::close(sfd);
+            InetAddress ai6(*reinterpret_cast<sockaddr_in6 *>(rp->ai_addr));
+            v.push_back(ai6);   
         }
     }
-    if (rp == NULL) //There is not one of the found address we can connect to
-    {               /* No address succeeded */
-        LOG_SYSERR << "InetAddress::resolve could not connect to any address found";
-        freeaddrinfo(result); //clear the linked list in heap
-        return false;
-    }
-    else //we found one address that can be connected to
-    {
-        SocketFuncs::close(sfd); //close the successful connection
-        memZero(out, sizeof(sockaddr_in6));
-        memcpy(out, rp->ai_addr, rp->ai_addrlen); //write result output
-        freeaddrinfo(result);                     //clear the linked list in heap
-        return true;
-    }
+    return v;
 }

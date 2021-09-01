@@ -13,13 +13,27 @@
 #include "AsyncLogging.h"
 #include "SocketWrap.h"
 #include "InetAddress.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+
 using namespace std;
 
 using namespace Hohnor;
 
 int main(int argc, char *argv[])
 {
-    sockaddr_in6 addr;
-    InetAddress id(addr);
-    cout<<InetAddress::resolve("google.com", &id)<<endl;
+    CHECK(argc>1);
+    struct sockaddr_in6 sai6;
+    auto res = InetAddress::resolve(argv[1]);
+    for(auto ina :res)
+    {
+        LOG_INFO<<ina.toIpPort();
+    }
 }
