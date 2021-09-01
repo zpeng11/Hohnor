@@ -6,6 +6,7 @@
 #include "Types.h"
 #include "NonCopyable.h"
 #include "StringPiece.h"
+#include <iostream>
 #include <string.h>
 #include <memory>
 
@@ -198,7 +199,7 @@ namespace Hohnor
 		int length() const { return length_; }
 
 	private:
-		char buf_[32];
+		char buf_[32] = {0};
 		int length_;
 	};
 
@@ -207,6 +208,19 @@ namespace Hohnor
 		s.append(fmt.data(), fmt.length());
 		return s;
 	}
+
+    inline std::ostream &operator<<(std::ostream &s, const Fmt &fmt)
+	{
+        
+		s.write(fmt.data(), fmt.length());
+		return s;
+	}
+
+    inline string& operator+=(std::string &s, const Fmt &fmt)
+    {
+        s.append(fmt.data(), fmt.length());
+        return s;
+    }
 
 	// Format quantity n in SI units (k, M, G, T, P, E).
 	// The returned string is atmost 5 characters long.

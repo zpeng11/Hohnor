@@ -1,5 +1,6 @@
 #include "Logging.h"
 #include "CurrentThread.h"
+#include "Exception.h"
 #include "Mutex.h"
 #include <errno.h>
 #include <stdio.h>

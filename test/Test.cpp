@@ -36,4 +36,5 @@ int main(int argc, char *argv[])
     {
         LOG_INFO<<ina.toIpPort();
     }
+    CHECK(false);
 }

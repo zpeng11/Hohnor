@@ -118,18 +118,26 @@ std::vector<InetAddress> InetAddress::resolve(StringPiece hostName, StringPiece 
         return {};
     }
     vector<InetAddress> v;
-    for(struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next)
+    for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next)
     {
-        if(rp->ai_family == AF_INET)
+        if (rp->ai_family == AF_INET)
         {
-            InetAddress ia4(*reinterpret_cast<sockaddr_in *>(rp->ai_addr)) ;
-            v.push_back(ia4);            
+            InetAddress ia4(*reinterpret_cast<sockaddr_in *>(rp->ai_addr));
+            v.push_back(ia4);
         }
         else
         {
             InetAddress ai6(*reinterpret_cast<sockaddr_in6 *>(rp->ai_addr));
-            v.push_back(ai6);   
+            v.push_back(ai6);
         }
     }
     return v;
+}
+
+void InetAddress::setScopeId(uint32_t scope_id)
+{
+    if (family() == AF_INET6)
+    {
+        addr6_.sin6_scope_id = scope_id;
+    }
 }
