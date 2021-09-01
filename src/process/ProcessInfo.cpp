@@ -3,6 +3,7 @@
 #include <sys/resource.h>
 #include <algorithm>
 #include "CurrentThread.h"
+#include "FileUtils.h"
 
 namespace Hohnor
 {

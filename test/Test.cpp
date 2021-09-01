@@ -12,33 +12,14 @@
 #include "LogFile.h"
 #include "AsyncLogging.h"
 #include "SocketWrap.h"
+#include "InetAddress.h"
 using namespace std;
-
-Hohnor::ThreadPool tp;
-Hohnor::Mutex m;
-Hohnor::AsyncLog al("asyncLog");
 
 using namespace Hohnor;
 
-int main()
+int main(int argc, char *argv[])
 {
-    Hohnor::g_logLevel = Hohnor::Logger::TRACE;
-    Hohnor::Logger::setAsyncLog(&al);
-    auto func = [&]()
-    {
-        LOG_DEBUG << "Enter thread";
-    };
-    tp.start(5);
-    for (int i = 0; i < 20000; i++)
-    {
-        tp.run(func);
-    }
-    string str = "Hello world";
-    str.reserve(50);
-    auto ptr = const_cast<char *>(str.c_str());
-    strcpy(ptr,"hello world eleven");
-    str.resize(strlen(ptr));
-    cout<<str<<endl;
-    cout<<str.length()<<endl;
-    sleep(1);
+    sockaddr_in6 addr;
+    InetAddress id(addr);
+    cout<<InetAddress::resolve("google.com", &id)<<endl;
 }

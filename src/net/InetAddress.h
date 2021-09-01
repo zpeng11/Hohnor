@@ -26,7 +26,7 @@ namespace Hohnor
 
         /// Constructs an endpoint with given ip and port.
         /// @c ip should be "1.2.3.4"
-        InetAddress(StringArg ip, uint16_t port, bool ipv6 = false);
+        InetAddress(StringPiece ip, uint16_t port, bool ipv6 = false);
 
         /// Constructs an endpoint with given struct @c sockaddr_in
         /// Mostly used when accepting new connections
@@ -41,6 +41,7 @@ namespace Hohnor
         }
 
         sa_family_t family() const { return addr_.sin_family; }
+
         string toIp() const;
         string toIpPort() const;
         uint16_t port() const;
@@ -53,10 +54,11 @@ namespace Hohnor
         uint32_t ipv4NetEndian() const;
         uint16_t portNetEndian() const { return addr_.sin_port; }
 
-        // resolve hostname to IP address, not changing port or sin_family
+        // DNS service that resolve hostname to IP address, not changing port or sin_family
         // return true on success.
         // thread safe
-        static bool resolve(StringArg hostname, InetAddress *result);
+        // Uses getaddrinfo(3)
+        static bool resolve(StringPiece hostname, InetAddress *result);
         // static std::vector<InetAddress> resolveAll(const char* hostname, uint16_t port = 0);
 
         // set IPv6 ScopeID
