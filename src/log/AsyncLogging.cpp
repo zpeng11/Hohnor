@@ -1,4 +1,5 @@
 #include "AsyncLogging.h"
+#include <functional>
 #include "Types.h"
 
 using namespace Hohnor;
@@ -11,7 +12,7 @@ AsyncLog::AsyncLog(const string &basename,
                    int rollInterval,
                    Timestamp::TimeStandard standrad)
     : logFile_(basename, directory, checkEveryN, flushInterval, rollSize, rollInterval, standrad),
-      logThread_(std::bind(AsyncLog::logThreadFunc, this), "AsyncLogThread"),
+      logThread_(std::bind(&Hohnor::AsyncLog::logThreadFunc, this), "AsyncLogThread"),
       bufferQueue_(),
       stop_(false)
 {

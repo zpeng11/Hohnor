@@ -172,6 +172,6 @@ void Logger::setFlush(FlushFunc flush)
 
 void Logger::setAsyncLog(Hohnor::AsyncLog *al)
 {
-    Hohnor::Logger::setOutput(std::bind(Hohnor::AsyncLog::addLog, al, std::placeholders::_1));
-    Hohnor::Logger::setFlush(std::bind(Hohnor::AsyncLog::flush, al));
+    Hohnor::Logger::setOutput(std::bind(&Hohnor::AsyncLog::addLog, al, std::placeholders::_1));
+    Hohnor::Logger::setFlush(std::bind(&Hohnor::AsyncLog::flush, al));
 }

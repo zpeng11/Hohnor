@@ -1,5 +1,7 @@
 #include "ProcessInfo.h"
-#include <sys/dirent.h>
+//#include <sys/dirent.h>
+#include <dirent.h>
+#include <pwd.h>
 #include <sys/resource.h>
 #include <algorithm>
 #include "CurrentThread.h"
@@ -165,7 +167,7 @@ string ProcessInfo::procStatus()
 {
     string result;
 #ifndef __CYGWIN__
-    FileUtil::readFile("/proc/self/status", 65536, &result);
+    FileUtils::readFile("/proc/self/status", 65536, &result);
 #endif //linux only
     return result;
 }
@@ -175,7 +177,7 @@ string ProcessInfo::procStat()
 {
     string result;
 #ifndef __CYGWIN__
-    FileUtil::readFile("/proc/self/stat", 65536, &result);
+    FileUtils::readFile("/proc/self/stat", 65536, &result);
 #endif //linux only
     return result;
 }
@@ -186,7 +188,8 @@ string ProcessInfo::threadStat()
     snprintf(buf, sizeof buf, "/proc/self/task/%d/stat", CurrentThread::tid());
     string result;
 #ifndef __CYGWIN__
-    FileUtil::readFile(buf, 65536, &result);
+    
+    FileUtils::readFile(buf, 65536, &result);
 #endif //linux only
     return result;
 }
