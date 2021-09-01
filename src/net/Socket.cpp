@@ -5,6 +5,12 @@
 using namespace std;
 using namespace Hohnor;
 
+void Socket::bindAddress(uint16_t port, bool loopbackOnly, bool ipv6)
+{
+    InetAddress ina(port, loopbackOnly, ipv6);
+    SocketFuncs::bind(socketFd_, ina.getSockAddr());
+}
+
 std::shared_ptr<struct tcp_info> Socket::getTCPInfo() const
 {
     struct tcp_info *tcpi = new struct tcp_info();
@@ -14,6 +20,7 @@ std::shared_ptr<struct tcp_info> Socket::getTCPInfo() const
     if (ret != 0)
     {
         LOG_SYSERR << "Socket::getTCPInfo error ";
+        delete tcpi;
         return nullptr;
     }
     else
@@ -51,7 +58,68 @@ std::shared_ptr<std::string> Socket::getTCPInfoStr() const
 
 std::shared_ptr<std::pair<Socket::SocketFd, InetAddress>> Socket::accept()
 {
-    auto p =new std::pair<Socket::SocketFd, InetAddress>();
-    std::get<0>(*p) = SocketFuncs::accept(socketFd_, reinterpret_cast<sockaddr_in6 *>(&std::get<1>(*p)));
-    return std::shared_ptr<std::pair<Socket::SocketFd, InetAddress>>(p);
+    auto p = new std::pair<Socket::SocketFd, InetAddress>();
+    int ret = SocketFuncs::accept(socketFd_, reinterpret_cast<sockaddr_in6 *>(&std::get<1>(*p)));
+    if (ret < 0)
+    {
+        delete p;
+        LOG_SYSERR << "Socket::accept error ";
+        return nullptr;
+    }
+    else
+    {
+        std::get<0>(*p) = ret;
+        return std::shared_ptr<std::pair<Socket::SocketFd, InetAddress>>(p);
+    }
+}
+
+void Socket::setTCPNoDelay(bool on)
+{
+    int optval = on ? 1 : 0;
+    int ret = ::setsockopt(socketFd_, IPPROTO_TCP, TCP_NODELAY,
+                           &optval, static_cast<socklen_t>(sizeof optval));
+    if (ret != 0)
+    {
+        LOG_SYSERR << "Socket::setTcpNoDelay error";
+    }
+}
+
+void Socket::setReuseAddr(bool on)
+{
+    int optval = on ? 1 : 0;
+    int ret = ::setsockopt(socketFd_, SOL_SOCKET, SO_REUSEADDR,
+                           &optval, static_cast<socklen_t>(sizeof optval));
+    if (ret != 0)
+    {
+        LOG_SYSERR << "Socket::setReuseAddr error";
+    }
+}
+
+void Socket::setReusePort(bool on)
+{
+#ifdef SO_REUSEPORT //Linux support this function since linux3.9
+    int optval = on ? 1 : 0;
+    int ret = ::setsockopt(socketFd_, SOL_SOCKET, SO_REUSEPORT,
+                           &optval, static_cast<socklen_t>(sizeof optval));
+    if (ret < 0 && on)
+    {
+        LOG_SYSERR << "SO_REUSEPORT failed.";
+    }
+#else
+    if (on)
+    {
+        LOG_ERROR << "SO_REUSEPORT is not supported.";
+    }
+#endif
+}
+
+void Socket::setKeepAlive(bool on)
+{
+    int optval = on ? 1 : 0;
+    int ret = ::setsockopt(socketFd_, SOL_SOCKET, SO_KEEPALIVE,
+                           &optval, static_cast<socklen_t>(sizeof optval));
+    if (ret != 0)
+    {
+        LOG_SYSERR << "Socket::setKeepAlive error";
+    }
 }
