@@ -56,20 +56,19 @@ std::shared_ptr<std::string> Socket::getTCPInfoStr() const
     }
 }
 
-std::shared_ptr<std::pair<Socket::SocketFd, InetAddress>> Socket::accept()
+std::shared_ptr<SocketAddrPair> Socket::accept()
 {
-    auto p = new std::pair<Socket::SocketFd, InetAddress>();
-    int ret = SocketFuncs::accept(socketFd_, reinterpret_cast<sockaddr_in6 *>(&std::get<1>(*p)));
+    InetAddress ina;
+    int ret = SocketFuncs::accept(socketFd_, reinterpret_cast<sockaddr_in6 *>(&ina));
     if (ret < 0)
     {
-        delete p;
         LOG_SYSERR << "Socket::accept error ";
         return nullptr;
     }
     else
     {
-        std::get<0>(*p) = ret;
-        return std::shared_ptr<std::pair<Socket::SocketFd, InetAddress>>(p);
+        SocketAddrPair * p = new SocketAddrPair(ret,ina);
+        return std::shared_ptr<SocketAddrPair>(p);
     }
 }
 

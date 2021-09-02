@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
     s.bindAddress(8888);
     s.listen();
     auto ptr = s.accept();
-    cout<<ptr->second.toIpPort()<<endl;
+    cout<<ptr->addr().toIpPort()<<endl;
     string str = "Helloworld";
-    write(ptr->first, str.c_str(), str.length()+1);
+    write(ptr->socket().fd(), str.c_str(), str.length()+1);
+    cout<<ptr->socket().getTCPInfoStr()<<endl;
 }

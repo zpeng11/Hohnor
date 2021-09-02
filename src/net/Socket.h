@@ -12,8 +12,11 @@
 
 namespace Hohnor
 {
+    class SocketAddrPair;
+
     class Socket : NonCopyable
     {
+    public:
         typedef int SocketFd;
 
     private:
@@ -45,7 +48,7 @@ namespace Hohnor
 
         //Accept a connection, gets a shared ptr to pair of connected socket and connected address
         //In case connection error, !nullptr will be returned
-        std::shared_ptr<std::pair<SocketFd, InetAddress>> accept();
+        std::shared_ptr<SocketAddrPair> accept();
 
         //Shutdown writing of the socket
         void shutdownWrite() { SocketFuncs::shutdownWrite(socketFd_); }
@@ -66,5 +69,16 @@ namespace Hohnor
         void connect(const InetAddress &addr) { SocketFuncs::connect(socketFd_, addr.getSockAddr()); }
 
         ~Socket() { SocketFuncs::close(socketFd_); }
+    };
+
+    class SocketAddrPair : NonCopyable
+    {
+    private:
+        std::pair<Socket, InetAddress> pair_;
+
+    public:
+        explicit SocketAddrPair(Socket::SocketFd socketfd, const InetAddress &ina) : pair_(socketfd, ina) {}
+        Socket &socket() { return std::get<0>(pair_); }
+        InetAddress &addr() { return std::get<1>(pair_); }
     };
 } // namespace Hohnor
