@@ -62,6 +62,9 @@ namespace Hohnor
         // Enable/disable SO_KEEPALIVE
         void setKeepAlive(bool on);
 
+        //For clent connect
+        void connect(const InetAddress &addr) { SocketFuncs::connect(socketFd_, addr.getSockAddr()); }
+
         ~Socket() { SocketFuncs::close(socketFd_); }
     };
 } // namespace Hohnor

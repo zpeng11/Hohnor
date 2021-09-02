@@ -13,28 +13,20 @@
 #include "AsyncLogging.h"
 #include "SocketWrap.h"
 #include "InetAddress.h"
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
+#include "Socket.h"
 
 using namespace std;
 
 using namespace Hohnor;
 
+
 int main(int argc, char *argv[])
 {
-    CHECK(argc>1);
-    struct sockaddr_in6 sai6;
-    auto res = InetAddress::resolve(argv[1]);
-    for(auto ina :res)
-    {
-        LOG_INFO<<ina.toIpPort();
-    }
-    CHECK(false);
+    Socket s(AF_INET,SOCK_STREAM,0);
+    s.bindAddress(8888);
+    s.listen();
+    auto ptr = s.accept();
+    cout<<ptr->second.toIpPort()<<endl;
+    string str = "Helloworld";
+    write(ptr->first, str.c_str(), str.length()+1);
 }

@@ -27,4 +27,6 @@ list(APPEND libs NET)
 
 
 add_executable(Test test/Test.cpp)
+add_executable(TestClient test/TestClient.cpp)
 target_link_libraries(Test PUBLIC ${libs})
+target_link_libraries(TestClient PUBLIC ${libs})

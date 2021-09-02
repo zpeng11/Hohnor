@@ -31,7 +31,7 @@ void SocketFuncs::bind(SocketFd socketfd, const struct sockaddr *addr)
     int ret = ::bind(socketfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
     if (ret < 0)
     {
-        LOG_SYSFATAL << "SocketFuncs::bind " << socketfd << " error" << strerror_tl(errno);
+        LOG_SYSFATAL << "SocketFuncs::bind " << " error " << strerror_tl(errno);
     }
 }
 

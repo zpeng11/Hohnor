@@ -307,6 +307,7 @@ Fmt::Fmt(const char *fmt, T val)
 // Explicit instantiations
 
 template Fmt::Fmt(const char *fmt, char);
+template Fmt::Fmt(const char *fmt,unsigned char);
 
 template Fmt::Fmt(const char *fmt, short);
 template Fmt::Fmt(const char *fmt, unsigned short);
