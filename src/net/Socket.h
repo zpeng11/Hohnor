@@ -34,8 +34,8 @@ namespace Hohnor
 
         //Get Tcp infomation. In case failed return !nullptr
         std::shared_ptr<struct tcp_info> getTCPInfo() const;
-        //Get Tcp information string. In case failed return !nullptr
-        std::shared_ptr<std::string> getTCPInfoStr() const;
+        //Get Tcp information string. In case failed return empty string
+        std::string getTCPInfoStr() const;
 
         //Bind the address. In case failed, !!!abort the program
         void bindAddress(const InetAddress &localaddr) { SocketFuncs::bind(socketFd_, localaddr.getSockAddr()); }

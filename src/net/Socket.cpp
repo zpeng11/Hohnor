@@ -29,15 +29,14 @@ std::shared_ptr<struct tcp_info> Socket::getTCPInfo() const
     }
 }
 
-std::shared_ptr<std::string> Socket::getTCPInfoStr() const
+std::string Socket::getTCPInfoStr() const
 {
     auto ti = getTCPInfo();
     if (ti == nullptr)
-        return nullptr;
+        return "";
     else
     {
-        string *strPtr = new string();
-        string &str = *strPtr;
+        string str;
         const char *percentU = "%u";
         str.append("unrecovered=").append(Fmt(percentU, ti->tcpi_retransmits).data()); // Number of unrecovered [RTO] timeouts
         str.append(" rto=").append(Fmt(percentU, ti->tcpi_rto).data());                // Retransmit timeout in usec
@@ -52,7 +51,7 @@ std::shared_ptr<std::string> Socket::getTCPInfoStr() const
         str.append(" cwnd=").append(Fmt(percentU, ti->tcpi_snd_cwnd).data());
         str.append(" total_retrans=").append(Fmt(percentU, ti->tcpi_total_retrans).data()); // Total retransmits for entire connection
 
-        return std::shared_ptr<std::string>(strPtr);
+        return std::move(str);
     }
 }
 
