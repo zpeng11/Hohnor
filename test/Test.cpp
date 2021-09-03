@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
     s.listen();
     auto ptr = s.accept();
     cout<<ptr->addr().toIpPort()<<endl;
-    string str = "Helloworld";
-    write(ptr->socket().fd(), str.c_str(), str.length()+1);
+    SocketFuncs::write(ptr->socket().fd(), "Hellow world");
     cout<<ptr->socket().getTCPInfoStr()<<endl;
 }

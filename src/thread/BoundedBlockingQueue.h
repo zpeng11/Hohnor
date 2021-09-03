@@ -108,17 +108,6 @@ namespace Hohnor
 			notFull_.notifyAll();
 		}
 
-		// queue_type drain()
-		// {
-		// 	std::deque<T> queue;
-		// 	{
-		// 		MutexGuard lock(mutex_);
-		// 		queue = std::move(queue_);
-		// 		assert(queue_.empty());
-		// 	}
-		// 	return queue;
-		// }
-
 	private:
 		mutable Mutex mutex_;
 		Condition notEmpty_ ;

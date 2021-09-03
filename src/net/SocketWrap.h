@@ -6,9 +6,11 @@
 #include "Types.h"
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/uio.h> // readv
 #include <netinet/in.h>
 #include <endian.h>
+#include <sys/sendfile.h>
 
 namespace Hohnor
 {
@@ -56,16 +58,37 @@ namespace Hohnor
         struct sockaddr_in6 getLocalAddr(int sockfd);
         //Wrapper for getpeername(2)
         struct sockaddr_in6 getPeerAddr(int sockfd);
+        //compare if local and peer address are the same
         bool isSelfConnect(int sockfd);
+
+        /**
+         * IO functions are not wrapped at this level
+        */
 
         //Direct use for read(2)
         constexpr auto read = ::read;
         //Direct use for write(2)
         constexpr auto write = ::write;
+
         //Direct use for readv(2)
         constexpr auto readv = ::readv;
         //Direct use for writev(2)
         constexpr auto writev = ::writev;
+
+        //Direct use for recv(2)
+        constexpr auto recv = ::recv;
+        //Direct use for send(2)
+        constexpr auto send = ::send;
+
+        /**
+         * Zero copy IOs
+         */
+        //Direct use for sendfile(2)
+        constexpr auto sendfile = ::sendfile;
+        //Direct use for splice(2)
+        constexpr auto splice = ::splice;
+        //Direct use for tee(2), simular to sendfile(2) but does not consume data from src
+        constexpr auto tee = ::tee;
 
         //Static cast to struct sockaddr
         inline const struct sockaddr *sockaddr_cast(const struct sockaddr_in6 *addr)

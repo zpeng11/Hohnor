@@ -71,6 +71,9 @@ namespace Hohnor
         ~Socket() { SocketFuncs::close(socketFd_); }
     };
 
+    /**
+     * The (socketfd<-->address) pair that a server would get after accepting a TCP connection from client
+     */
     class SocketAddrPair : NonCopyable
     {
     private:
