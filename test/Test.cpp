@@ -14,6 +14,7 @@
 #include "SocketWrap.h"
 #include "InetAddress.h"
 #include "Socket.h"
+#include "ProcessInfo.h"
 
 using namespace std;
 
@@ -27,6 +28,8 @@ int main(int argc, char *argv[])
     s.listen();
     auto ptr = s.accept();
     cout<<ptr->addr().toIpPort()<<endl;
-    SocketFuncs::write(ptr->socket().fd(), "Hellow world");
+    char str[] = "Hellow world";
+    SocketFuncs::write(ptr->socket().fd(), str, strlen(str));
     cout<<ptr->socket().getTCPInfoStr()<<endl;
+    cout<<ProcessInfo::exePath()<<endl;
 }

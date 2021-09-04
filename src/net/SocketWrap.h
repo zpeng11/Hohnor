@@ -80,15 +80,7 @@ namespace Hohnor
         //Direct use for send(2)
         constexpr auto send = ::send;
 
-        /**
-         * Zero copy IOs
-         */
-        //Direct use for sendfile(2)
-        constexpr auto sendfile = ::sendfile;
-        //Direct use for splice(2)
-        constexpr auto splice = ::splice;
-        //Direct use for tee(2), simular to sendfile(2) but does not consume data from src
-        constexpr auto tee = ::tee;
+        
 
         //Static cast to struct sockaddr
         inline const struct sockaddr *sockaddr_cast(const struct sockaddr_in6 *addr)

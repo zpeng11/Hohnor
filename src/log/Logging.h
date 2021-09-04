@@ -57,7 +57,7 @@ namespace Hohnor
         //Set the global flush callback function
         static void setFlush(FlushFunc);
         //Set asyncLog
-        static void setAsyncLog(Hohnor::AsyncLog *al);
+        static void setAsyncLog(Hohnor::AsyncLog &al);
 
     private:
         LogStream stream_;

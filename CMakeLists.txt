@@ -17,6 +17,8 @@ add_subdirectory(src/log)
 add_subdirectory(src/file)
 add_subdirectory(src/process)
 add_subdirectory(src/net)
+add_subdirectory(src/io)
+add_subdirectory(example)
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)
@@ -24,6 +26,7 @@ list(APPEND libs LOG)
 list(APPEND libs FILE)
 list(APPEND libs PROCESS)
 list(APPEND libs NET)
+list(APPEND libs IO)
 
 
 add_executable(Test test/Test.cpp)
