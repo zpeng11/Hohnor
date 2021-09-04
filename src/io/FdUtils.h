@@ -10,9 +10,19 @@ namespace Hohnor
 {
     namespace FdUtils
     {
+
+        //Wrapped close(3) api
+        void close(int socketfd);
+
+        //Set the nonblocking flag for fd
+        int setNonBlocking(int fd, bool nonBlocking = true);
+        //Set close on exec function, so that children process can not share this fd with parent
+        int setCloseOnExec(int fd, bool closeOnExec = true);
+
         /**
          * class that guards the file descriptor, use RAII to release resource.
-         * Please Allows use this with std::shared_ptr.
+         * Whenever you get a file descriptor, 
+         * you can use this class to ensure it closes when run out of current scope
          */
         class FdGuard : NonCopyable
         {
@@ -20,21 +30,11 @@ namespace Hohnor
             int fd_;
 
         public:
-            FdGuard(int fd) : fd_(fd) {}
+            FdGuard(int &fd) : fd_(fd) {}
             int fd() { return fd_; }
-            ~FdGuard() { close(fd_); }
+            ~FdGuard() { FdUtils::close(fd_); }
         };
 
     } // namespace FdUtils
 
 } // namespace Hohnor
-
-// /**
-//          * Zero copy IOs
-//          */
-//         //Direct use for sendfile(2)
-//         constexpr auto sendfile = ::sendfile;
-//         //Direct use for splice(2)
-//         constexpr auto splice = ::splice;
-//         //Direct use for tee(2), simular to sendfile(2) but does not consume data from src
-//         constexpr auto tee = ::tee;
