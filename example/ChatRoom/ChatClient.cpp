@@ -15,9 +15,12 @@ int main(int argc, char *argv[])
     //Resolve input server address
     auto addres = InetAddress::resolve(server, std::to_string(SERVER_PORT));
     CHECK_NE(addres.size(), 0);
+    LOG_INFO << addres[0].toIpPort();
     //Connect to the server if found
     Socket socket(AF_INET, SOCK_STREAM, 0);
     socket.connect(addres[0]);
+    char helloMSG[] = "Hello world";
+    write(socket.fd(), helloMSG, strlen(helloMSG));
     //Epoll
     Hohnor::Epoll epoll;
 
@@ -28,8 +31,8 @@ int main(int argc, char *argv[])
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
     CHECK_NE(pipe(pipefd), -1);
-    FdGuard pipe0(pipefd[0]);
-    FdGuard pipe1(pipefd[1]);
+
+    char buf[BUFSIZ] = {0};
 
     while (1)
     {
@@ -39,9 +42,22 @@ int main(int argc, char *argv[])
             auto &event = res.next();
             if (event.data.fd == socket.fd() && event.events & EPOLLIN) //recieved from the server
             {
-                char buffer[BUFSIZ] = {0};
-                read(socket.fd(), buffer, BUFSIZ);
-                cout << buffer << endl;
+                LOG_INFO << "Received from the server";
+                memZero(buf, BUFSIZ);
+                int ret = read(socket.fd(), buf, BUFSIZ);
+                if (ret < 0 && errno != EAGAIN)
+                {
+                    LOG_SYSERR << "Read from client error";
+                }
+                else if (ret == 0 && errno != EINTR)
+                {
+                    LOG_INFO << "Server unexpected disconnect";
+                    FdUtils::close(event.data.fd);
+                    epoll.remove(event.data.fd);
+                    LOG_INFO << "Server logout" ;
+                    break;
+                }
+                cout << buf;
             }
             else if (event.data.fd == socket.fd() && event.events & EPOLLHUP)
             {
@@ -50,13 +66,17 @@ int main(int argc, char *argv[])
             }
             else if (event.data.fd == STDIN_FILENO) //key board input
             {
-                CHECK_NE(splice(STDIN_FILENO, NULL, pipefd[0], NULL, 32768, SPLICE_F_MORE | SPLICE_F_MORE), -1);
-                CHECK_NE(splice(pipefd[1], NULL, socket.fd(), NULL, 32768, SPLICE_F_MORE | SPLICE_F_MORE), -1);
+                int ret = splice(STDIN_FILENO, NULL, pipefd[1], NULL, BUFSIZ, SPLICE_F_MORE | SPLICE_F_MORE);
+                if (ret < 0)
+                    LOG_SYSERR << "Splice error";
+                splice(pipefd[0], NULL, socket.fd(), NULL, BUFSIZ, SPLICE_F_MORE | SPLICE_F_MORE);
+                if (ret < 0)
+                    LOG_SYSERR << "Splice error";
             }
             else
             {
                 LOG_INFO << "Unexpected epoll result";
             }
         }
-    }//While loop
+    } //While loop
 }

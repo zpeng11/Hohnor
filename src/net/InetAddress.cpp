@@ -111,7 +111,7 @@ std::vector<InetAddress> InetAddress::resolve(StringPiece hostName, StringPiece 
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     struct addrinfo *result;
-    int ret = getaddrinfo(hostName.data(), "http", &hints, &result);
+    int ret = getaddrinfo(hostName.data(), serviceName.data(), &hints, &result);
     if (ret != 0)
     {
         LOG_SYSERR << "InetAddress::resolve DNS service error, " << gai_strerror(ret);
@@ -131,7 +131,7 @@ std::vector<InetAddress> InetAddress::resolve(StringPiece hostName, StringPiece 
             v.push_back(ai6);
         }
     }
-    return v;
+    return std::move(v);
 }
 
 void InetAddress::setScopeId(uint32_t scope_id)

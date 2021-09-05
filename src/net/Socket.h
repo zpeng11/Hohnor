@@ -27,20 +27,13 @@ namespace Hohnor
         void connect(const InetAddress &addr) { SocketFuncs::connect(fd(), addr.getSockAddr()); }
 
         //Socket error
-        int getSockError();
+        int getSockError() { return SocketFuncs::getSocketError(fd()); }
         //Get socket error string
-        string getSockErrorStr();
+        string getSockErrorStr() { return strerror_tl(getSockError()); }
 
-        InetAddress getLocalAddr();
-        InetAddress getPeerAddr();
-        bool isSelfConnect();
-
-        ssize_t read(void * buf, size_t len, int flag = 0);
-        ssize_t write(const void * buff, size_t len, int flags = 0);
-        ssize_t readv(const iovec *iovec, int count);
-        ssize_t writev(const iovec *iovec, int count);
-        ssize_t sendto(const void *buf, size_t len, const InetAddress & addr,int flags = 0);
-        ssize_t recvfrom(void *buf, size_t len, const InetAddress & addr,int flags = 0);
+        InetAddress getLocalAddr() { return InetAddress(SocketFuncs::getLocalAddr(fd())) ; }
+        InetAddress getPeerAddr() { return InetAddress(SocketFuncs::getPeerAddr(fd())) ; }
+        bool isSelfConnect() { return SocketFuncs::isSelfConnect(fd()); }
 
         ~Socket() = default;
     };
@@ -57,12 +50,6 @@ namespace Hohnor
         InetAddress getLocalAddr();
         InetAddress getPeerAddr();
         bool isSelfConnect();
-        ssize_t read(void * buf, size_t len, int flag = 0);
-        ssize_t write(const void * buff, size_t len, int flags = 0);
-        ssize_t readv(const iovec *iovec, int count);
-        ssize_t writev(const iovec *iovec, int count);
-        ssize_t sendto(const void *buf, size_t len, const InetAddress & addr,int flags = 0);
-        ssize_t recvfrom(void *buf, size_t len, const InetAddress & addr,int flags = 0);
 
     public:
         explicit ListenSocket(Socket::SocketFd fd) : Socket(fd) {}

@@ -39,13 +39,13 @@ namespace Hohnor
     class SocketAddrPair : Copyable
     {
     private:
-        std::pair<Socket::SocketFd, std::shared_ptr<InetAddress>> pair_;
+        std::pair<Socket::SocketFd, InetAddress> pair_;
 
     public:
         friend class TCPListenSocket;
-        SocketAddrPair() : pair_(-1, new InetAddress) {}
+        SocketAddrPair() : pair_(-1,InetAddress()) {}
         Socket::SocketFd &fd() { return std::get<0>(pair_); }
-        InetAddress &addr() { return *std::get<1>(pair_); }
-        std::shared_ptr<InetAddress> addrPtr() { return pair_.second; }
+        InetAddress &addr() { return std::get<1>(pair_); }
+        InetAddress* addrPtr() { return &pair_.second; }
     };
 } // namespace Hohnor

@@ -29,8 +29,9 @@ namespace Hohnor
 
         public:
             Iter(Epoll *ptr) : ptr_(ptr), position_(0) {}
-            bool hasNext() { return position_ >= ptr_->readyEvents_; }
-            epoll_event& next()
+            bool hasNext() { return position_ < ptr_->readyEvents_; }
+            ssize_t size() { return ptr_->readyEvents_; }
+            epoll_event &next()
             {
                 CHECK(position_ < ptr_->readyEvents_) << " Hohnor::Epoll::Iter::next() error";
                 return ptr_->events_[position_++];

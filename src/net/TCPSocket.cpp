@@ -50,10 +50,10 @@ SocketAddrPair TCPListenSocket::accept()
 {
     SocketAddrPair pair;
     pair.fd() = SocketFuncs::accept(fd(),
-                                    reinterpret_cast<sockaddr_in6 *>(pair.pair_.second.get()));
+                                    reinterpret_cast<sockaddr_in6 *>(&pair.pair_.second));
     if (pair.fd() < 0)
     {
-        std::get<1>(pair.pair_) = nullptr;
+        pair.addr() = InetAddress();
         return pair;
     }
     return pair;
