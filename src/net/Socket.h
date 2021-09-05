@@ -6,6 +6,8 @@
 #include "SocketWrap.h"
 #include "InetAddress.h"
 #include "NonCopyable.h"
+#include "Copyable.h"
+#include "FdUtils.h"
 #include <netinet/tcp.h>
 #include <memory>
 #include <map>
@@ -14,23 +16,14 @@ namespace Hohnor
 {
     class SocketAddrPair;
 
-    class Socket : NonCopyable
+    class Socket : public FdGuard
     {
     public:
         typedef int SocketFd;
-
-    private:
-        /* data */
-        SocketFd socketFd_;
-
-    public:
-        //Initilize from other fd
-        Socket(SocketFd socketFd) : socketFd_(socketFd) {}
+        //Initilize from existing fd
+        Socket(SocketFd socketFd) : FdGuard(socketFd) {}
         //Initilize with paramters, in case failed, !!!abort the program
-        Socket(int family, int type, int protocol) : socketFd_(SocketFuncs::socket(family, type, protocol)) {}
-
-        //get fd inside
-        int fd() { return socketFd_; }
+        Socket(int family, int type, int protocol) : FdGuard(SocketFuncs::socket(family, type, protocol)) {}
 
         //Get Tcp infomation. In case failed return !nullptr
         std::shared_ptr<struct tcp_info> getTCPInfo() const;
@@ -38,20 +31,20 @@ namespace Hohnor
         std::string getTCPInfoStr() const;
 
         //Bind the address. In case failed, !!!abort the program
-        void bindAddress(const InetAddress &localaddr) { SocketFuncs::bind(socketFd_, localaddr.getSockAddr()); }
+        void bindAddress(const InetAddress &localaddr) { SocketFuncs::bind(fd(), localaddr.getSockAddr()); }
 
         //Bind the address. In case failed, !!!abort the program
         void bindAddress(uint16_t port, bool loopbackOnly = false, bool ipv6 = false);
 
         //listen to the current socket. In case failed, !!!abort the program
-        void listen() { SocketFuncs::listen(socketFd_); }
+        void listen() { SocketFuncs::listen(fd()); }
 
         //Accept a connection, gets a shared ptr to pair of connected socket and connected address
         //In case connection error, !nullptr will be returned
-        std::shared_ptr<SocketAddrPair> accept();
+        SocketAddrPair accept();
 
         //Shutdown writing of the socket
-        void shutdownWrite() { SocketFuncs::shutdownWrite(socketFd_); }
+        void shutdownWrite() { SocketFuncs::shutdownWrite(fd()); }
 
         // Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
         void setTCPNoDelay(bool on);
@@ -66,22 +59,24 @@ namespace Hohnor
         void setKeepAlive(bool on);
 
         //For clent connect
-        void connect(const InetAddress &addr) { SocketFuncs::connect(socketFd_, addr.getSockAddr()); }
+        void connect(const InetAddress &addr) { SocketFuncs::connect(fd(), addr.getSockAddr()); }
 
-        ~Socket() { SocketFuncs::close(socketFd_); }
+        ~Socket() = default;
     };
 
     /**
      * The (socketfd<-->address) pair that a server would get after accepting a TCP connection from client
      */
-    class SocketAddrPair : NonCopyable
+    class SocketAddrPair : Copyable
     {
     private:
-        std::pair<Socket, InetAddress> pair_;
+        std::pair<Socket::SocketFd, std::shared_ptr<InetAddress>> pair_;
 
     public:
-        explicit SocketAddrPair(Socket::SocketFd socketfd, const InetAddress &ina) : pair_(socketfd, ina) {}
-        Socket &socket() { return std::get<0>(pair_); }
-        InetAddress &addr() { return std::get<1>(pair_); }
+        friend class Socket;
+        SocketAddrPair() : pair_(-1, new InetAddress) {}
+        Socket::SocketFd &fd() { return std::get<0>(pair_); }
+        InetAddress &addr() { return *std::get<1>(pair_); }
+        std::shared_ptr<InetAddress> addrPtr() { return pair_.second; }
     };
 } // namespace Hohnor

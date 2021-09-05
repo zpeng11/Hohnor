@@ -5,19 +5,18 @@
 using namespace Hohnor;
 
 Epoll::Epoll(size_t maxEventsSize, bool closeOnExec)
-    : events_(std::move(std::unique_ptr<Event[]>(new Event[maxEventsSize]))), maxEventsSize_(maxEventsSize), readyEvents_(0)
+    : events_(std::move(std::unique_ptr<epoll_event[]>(new epoll_event[maxEventsSize]))), maxEventsSize_(maxEventsSize), readyEvents_(0)
 {
-    fd_ = epoll_create1(closeOnExec ? EPOLL_CLOEXEC : 0);
+    int ret = epoll_create1(closeOnExec ? EPOLL_CLOEXEC : 0);
+    if (ret == -1)
+        LOG_SYSERR << "Hohnor::Epoll::Epoll() error";
+    setFd(ret);
 }
 
-Epoll::~Epoll()
-{
-    FdUtils::close(fd_);
-}
 
-int Epoll::ctl(int cmd, int fd, Event *event)
+int Epoll::ctl(int cmd, int fd, epoll_event *event)
 {
-    int ret = epoll_ctl(fd_, cmd, fd, event);
+    int ret = epoll_ctl(this->fd(), cmd, fd, event);
     if (ret < 0)
     {
         LOG_SYSERR << "Hohor::Epoll:ctl() error";
@@ -27,7 +26,7 @@ int Epoll::ctl(int cmd, int fd, Event *event)
 
 int Epoll::add(int fd, int trackEvents, void *ptr)
 {
-    Event e;
+    epoll_event e;
     e.events = trackEvents;
     if (ptr != NULL)
         e.data.ptr = ptr;
@@ -38,7 +37,7 @@ int Epoll::add(int fd, int trackEvents, void *ptr)
 
 int Epoll::modify(int fd, int trackEvents, void *ptr)
 {
-    Event e;
+    epoll_event e;
     e.events = trackEvents;
     if (ptr != NULL)
         e.data.ptr = ptr;
@@ -52,15 +51,15 @@ int Epoll::remove(int fd)
     return this->ctl(EPOLL_CTL_DEL, fd, NULL);
 }
 
-int Epoll::wait(int timeout, const sigset_t *sigmask)
+Epoll::Iter Epoll::wait(int timeout, const sigset_t *sigmask)
 {
     int ret;
     if (sigmask == NULL)
-        ret = epoll_wait(fd_, events_.get(), maxEventsSize_, timeout);
+        ret = epoll_wait(fd(), events_.get(), maxEventsSize_, timeout);
     else
-        ret = epoll_pwait(fd_, events_.get(), maxEventsSize_, timeout, sigmask);
+        ret = epoll_pwait(fd(), events_.get(), maxEventsSize_, timeout, sigmask);
     if (ret == -1)
         LOG_SYSERR << "Hohnor::Epoll::wait() ";
     readyEvents_ = ret;
-    return ret;
+    return Iter(this);
 }

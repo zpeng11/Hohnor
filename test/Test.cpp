@@ -27,9 +27,7 @@ int main(int argc, char *argv[])
     s.bindAddress(8888);
     s.listen();
     auto ptr = s.accept();
-    cout<<ptr->addr().toIpPort()<<endl;
+    cout<<ptr.addr().toIpPort()<<endl;
     char str[] = "Hellow world";
-    SocketFuncs::write(ptr->socket().fd(), str, strlen(str));
-    cout<<ptr->socket().getTCPInfoStr()<<endl;
-    cout<<ProcessInfo::exePath()<<endl;
+    SocketFuncs::write(ptr.fd(), str, strlen(str));
 }
