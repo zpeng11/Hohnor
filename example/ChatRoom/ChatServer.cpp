@@ -5,12 +5,13 @@
 #include "StringPiece.h"
 #include "FdUtils.h"
 #include "SocketWrap.h"
+#include "TCPSocket.h"
 #define SERVER_PORT 9342
 
 using namespace Hohnor;
 int main()
 {
-    Socket listenSocket(AF_INET, SOCK_STREAM, 0);
+    TCPListenSocket listenSocket;
     listenSocket.bindAddress(SERVER_PORT);
     listenSocket.listen();
     Epoll epoll;

@@ -15,6 +15,7 @@
 #include "InetAddress.h"
 #include "Socket.h"
 #include "ProcessInfo.h"
+#include "TCPSocket.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ using namespace Hohnor;
 
 int main(int argc, char *argv[])
 {
-    Socket s(AF_INET,SOCK_STREAM,0);
+    TCPListenSocket s;
     s.bindAddress(8888);
     s.listen();
     auto ptr = s.accept();
