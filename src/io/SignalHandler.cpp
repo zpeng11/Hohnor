@@ -9,7 +9,10 @@ SignalHandler::SignalHandler()
     int ret = socketpair(AF_UNIX, SOCK_STREAM, 0, pipefd_);
     if (ret < 0)
         LOG_SYSERR << "SignalHandler::SignalHandler() socketpair creation error";
+    FdUtils::setNonBlocking(pipefd_[0]);
     FdUtils::setNonBlocking(pipefd_[1]);
+    FdUtils::setCloseOnExec(pipefd_[0]);
+    FdUtils::setCloseOnExec(pipefd_[1]);
     memZero(signals_,512);
 }
 
