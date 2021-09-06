@@ -28,15 +28,12 @@ int main()
     while (1)
     {
         auto res = epoll.wait();
-        LOG_INFO << "epoll wait return, size:" << res.size();
         while (res.hasNext())
         {
             auto &event = res.next();
             if (event.data.fd == listenSocket.fd() && (event.events & EPOLLIN)) //Client request to connect
             {
-                LOG_INFO << "Listen accept";
                 auto sockAddrPair = listenSocket.accept();
-                LOG_INFO << "Accept connection";
                 FdUtils::setNonBlocking(sockAddrPair.fd());
                 epoll.add(sockAddrPair.fd(), EPOLLIN | EPOLLRDHUP | EPOLLERR);
                 users.insert(std::pair<int, ClientData>(sockAddrPair.fd(), std::move(ClientData())));
@@ -44,13 +41,11 @@ int main()
             }
             else if (event.events & EPOLLERR)
             {
-                LOG_INFO << "Log error";
                 int error = SocketFuncs::getSocketError(event.data.fd);
                 LOG_ERROR << Hohnor::strerror_tl(error);
             }
             else if (event.events & EPOLLRDHUP)
             {
-                LOG_INFO << "User disconnect";
                 FdUtils::close(event.data.fd);
                 epoll.remove(event.data.fd);
                 users.erase(event.data.fd);
@@ -58,7 +53,6 @@ int main()
             }
             else if (event.events & EPOLLIN)
             {
-                LOG_INFO << "In put stage";
                 memZero(users[event.data.fd].buf, BUFSIZ);
                 int ret = read(event.data.fd, users[event.data.fd].buf, BUFSIZ);
                 if (ret < 0 && errno != EAGAIN)
@@ -89,7 +83,6 @@ int main()
             }
             else if (event.events & EPOLLOUT)
             {
-                LOG_INFO << "Output stage";
                 int connfd = event.data.fd;
                 if (!users[connfd].toWrite)
                 {

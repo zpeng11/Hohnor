@@ -4,6 +4,7 @@
 #include <sys/epoll.h>
 #include "Epoll.h"
 #include "FdUtils.h"
+#include "SignalHandler.h"
 #define SERVER_PORT 9342
 
 using namespace std;
@@ -19,15 +20,18 @@ int main(int argc, char *argv[])
     //Connect to the server if found
     Socket socket(AF_INET, SOCK_STREAM, 0);
     socket.connect(addres[0]);
-    char helloMSG[] = "Hello world";
-    write(socket.fd(), helloMSG, strlen(helloMSG));
     //Epoll
     Hohnor::Epoll epoll;
+
+    auto& signalHandler = SignalHandler::getInst();
 
     //add socket to epoll
     epoll.add(socket.fd(), EPOLLIN | EPOLLHUP);
     //Add stdin to epoll
     epoll.add(STDIN_FILENO, EPOLLIN);
+    //Add signalHandler to epoll
+    epoll.add(STDIN_FILENO, EPOLLIN);
+
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
     CHECK_NE(pipe(pipefd), -1);
@@ -42,7 +46,6 @@ int main(int argc, char *argv[])
             auto &event = res.next();
             if (event.data.fd == socket.fd() && event.events & EPOLLIN) //recieved from the server
             {
-                LOG_INFO << "Received from the server";
                 memZero(buf, BUFSIZ);
                 int ret = read(socket.fd(), buf, BUFSIZ);
                 if (ret < 0 && errno != EAGAIN)
@@ -52,7 +55,6 @@ int main(int argc, char *argv[])
                 else if (ret == 0 && errno != EINTR)
                 {
                     LOG_INFO << "Server unexpected disconnect";
-                    FdUtils::close(event.data.fd);
                     epoll.remove(event.data.fd);
                     LOG_INFO << "Server logout" ;
                     break;
