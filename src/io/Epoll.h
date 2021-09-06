@@ -25,11 +25,11 @@ namespace Hohnor
         {
         private:
             Epoll *ptr_;
-            size_t position_;
+            ssize_t position_;
 
         public:
             Iter(Epoll *ptr) : ptr_(ptr), position_(0) {}
-            bool hasNext() { return position_ < ptr_->readyEvents_; }
+            bool hasNext() { return position_ < size(); }
             ssize_t size() { return ptr_->readyEvents_; }
             epoll_event &next()
             {

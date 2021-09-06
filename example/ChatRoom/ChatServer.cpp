@@ -46,8 +46,8 @@ int main()
             }
             else if (event.events & EPOLLRDHUP)
             {
-                FdUtils::close(event.data.fd);
                 epoll.remove(event.data.fd);
+                FdUtils::close(event.data.fd);
                 users.erase(event.data.fd);
                 LOG_INFO << "User logout, rest users:" << users.size();
             }

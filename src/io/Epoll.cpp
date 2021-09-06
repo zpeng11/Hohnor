@@ -32,6 +32,7 @@ int Epoll::add(int fd, int trackEvents, void *ptr)
         e.data.ptr = ptr;
     else
         e.data.fd = fd;
+    FdUtils::setNonBlocking(fd);
     return this->ctl(EPOLL_CTL_ADD, fd, &e);
 }
 

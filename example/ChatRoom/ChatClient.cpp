@@ -23,14 +23,16 @@ int main(int argc, char *argv[])
     //Epoll
     Hohnor::Epoll epoll;
 
-    auto& signalHandler = SignalHandler::getInst();
+    auto &signalHandler = SignalHandler::getInst();
+    signalHandler.addSig(SIGINT);
+    signalHandler.addSig(SIGTERM);
 
     //add socket to epoll
     epoll.add(socket.fd(), EPOLLIN | EPOLLHUP);
     //Add stdin to epoll
     epoll.add(STDIN_FILENO, EPOLLIN);
     //Add signalHandler to epoll
-    epoll.add(STDIN_FILENO, EPOLLIN);
+    epoll.add(signalHandler.fd(), EPOLLIN);
 
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
@@ -56,7 +58,7 @@ int main(int argc, char *argv[])
                 {
                     LOG_INFO << "Server unexpected disconnect";
                     epoll.remove(event.data.fd);
-                    LOG_INFO << "Server logout" ;
+                    LOG_INFO << "Server logout";
                     break;
                 }
                 cout << buf;
@@ -66,15 +68,25 @@ int main(int argc, char *argv[])
                 LOG_WARN << "Server ends";
                 break;
             }
+            else if (event.data.fd == signalHandler.fd() && event.events == EPOLLIN)
+            {
+                auto iter = signalHandler.receive();
+                while (iter.hasNext())
+                {
+                    int sig = iter.next();
+                    LOG_INFO << "signal handle success , signal:"<<sig;
+                }
+            }
             else if (event.data.fd == STDIN_FILENO) //key board input
             {
                 int ret = splice(STDIN_FILENO, NULL, pipefd[1], NULL, BUFSIZ, SPLICE_F_MORE | SPLICE_F_MORE);
                 if (ret < 0)
                     LOG_SYSERR << "Splice error";
-                splice(pipefd[0], NULL, socket.fd(), NULL, BUFSIZ, SPLICE_F_MORE | SPLICE_F_MORE);
+                ret = splice(pipefd[0], NULL, socket.fd(), NULL, BUFSIZ, SPLICE_F_MORE | SPLICE_F_MORE);
                 if (ret < 0)
                     LOG_SYSERR << "Splice error";
             }
+
             else
             {
                 LOG_INFO << "Unexpected epoll result";
