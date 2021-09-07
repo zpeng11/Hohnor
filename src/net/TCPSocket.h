@@ -21,7 +21,7 @@ namespace Hohnor
 
         //Accept a connection, gets a shared ptr to pair of connected socket and connected address
         //In case connection error, !nullptr will be returned
-        SocketAddrPair accept();
+        DEPRECATED(SocketAddrPair accept());
         //accept a connection, return the connected fd, and fill InetAddress * returnAddr,
         //This is faster than returning SocketAddrPair by avoiding copying
         //returnAddr can be NULL if you do not care about peer address
