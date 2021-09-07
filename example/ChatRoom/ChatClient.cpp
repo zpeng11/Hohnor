@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
     CHECK_NE(pipe(pipefd), -1);
 
     char buf[BUFSIZ] = {0};
-
-    while (1)
+    bool stopServer = false;
+    while (!stopServer)
     {
         auto res = epoll.wait();
         while (res.hasNext())
@@ -56,17 +56,15 @@ int main(int argc, char *argv[])
                 }
                 else if (ret == 0 && errno != EINTR)
                 {
-                    LOG_INFO << "Server unexpected disconnect";
                     epoll.remove(event.data.fd);
                     LOG_INFO << "Server logout";
-                    break;
+                    stopServer = true;
                 }
-                cout << buf;
             }
             else if (event.data.fd == socket.fd() && event.events & EPOLLHUP)
             {
                 LOG_WARN << "Server ends";
-                break;
+                stopServer = true;
             }
             else if (event.data.fd == signalHandler.fd() && event.events == EPOLLIN)
             {
@@ -74,6 +72,7 @@ int main(int argc, char *argv[])
                 while (iter.hasNext())
                 {
                     int sig = iter.next();
+                    //TODO switch cases for signals;
                     LOG_INFO << "signal handle success , signal:"<<sig;
                 }
             }

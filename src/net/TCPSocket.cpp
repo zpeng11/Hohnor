@@ -50,13 +50,18 @@ SocketAddrPair TCPListenSocket::accept()
 {
     SocketAddrPair pair;
     pair.fd() = SocketFuncs::accept(fd(),
-                                    reinterpret_cast<sockaddr_in6 *>(&pair.pair_.second));
+                                    reinterpret_cast<sockaddr_in6 *>(pair.addrPtr()));
     if (pair.fd() < 0)
     {
         pair.addr() = InetAddress();
         return pair;
     }
     return pair;
+}
+
+int TCPListenSocket::accept(InetAddress *retAddr)
+{
+    return SocketFuncs::accept(fd(), reinterpret_cast<sockaddr_in6 *>(retAddr));
 }
 
 void TCPListenSocket::setTCPNoDelay(bool on)

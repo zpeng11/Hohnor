@@ -46,9 +46,9 @@ void SocketFuncs::listen(SocketFd socketfd)
 
 SocketFd SocketFuncs::accept(int socketfd, struct sockaddr_in6 *addr)
 {
-    socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);
+    socklen_t addrlen = static_cast<socklen_t>(sizeof (sockaddr_in6));
     int connfd = ::accept4(socketfd, sockaddr_cast(addr),
-                           &addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                           addr? &addrlen : 0, SOCK_NONBLOCK | SOCK_CLOEXEC);//allow null ptr
     if (connfd < 0)
     {
         int savedErrno = errno;

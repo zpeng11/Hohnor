@@ -7,7 +7,6 @@
 #include "SocketWrap.h"
 #include "TCPSocket.h"
 #include <map>
-#include <algorithm>
 #define SERVER_PORT 9342
 
 struct ClientData
@@ -34,7 +33,6 @@ int main()
             if (event.data.fd == listenSocket.fd() && (event.events & EPOLLIN)) //Client request to connect
             {
                 auto sockAddrPair = listenSocket.accept();
-                FdUtils::setNonBlocking(sockAddrPair.fd());
                 epoll.add(sockAddrPair.fd(), EPOLLIN | EPOLLRDHUP | EPOLLERR);
                 users.insert(std::pair<int, ClientData>(sockAddrPair.fd(), std::move(ClientData())));
                 LOG_INFO << "Get a client connected, user size:" << users.size();
@@ -61,7 +59,6 @@ int main()
                 }
                 else if (ret == 0 && errno != EINTR)
                 {
-                    LOG_INFO << "User unexpected disconnect";
                     epoll.remove(event.data.fd);
                     FdUtils::close(event.data.fd);
                     users.erase(event.data.fd);

@@ -59,7 +59,7 @@ Epoll::Iter Epoll::wait(int timeout, const sigset_t *sigmask)
         ret = epoll_wait(fd(), events_.get(), maxEventsSize_, timeout);
     else
         ret = epoll_pwait(fd(), events_.get(), maxEventsSize_, timeout, sigmask);
-    if (ret == -1)
+    if (ret == -1 && errno != EINTR)
         LOG_SYSERR << "Hohnor::Epoll::wait() ";
     readyEvents_ = ret;
     return Iter(this);

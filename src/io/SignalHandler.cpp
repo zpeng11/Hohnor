@@ -6,7 +6,6 @@ namespace Hohnor
 {
     void sysSigHandle(int sig)
     {
-        LOG_WARN<<"Enter handler";
         int save_errno = errno;
         int msg = sig;
         int ret = send(SignalHandler::getInst().pipefd_[1], (char *)&msg, 1, 0);
@@ -58,11 +57,11 @@ SignalHandler::Iter SignalHandler::receive()
     return Iter(this);
 }
 
-void SignalHandler::addSig(int signal)
+void SignalHandler::addSig(int signal, bool ignore)
 {
     struct sigaction sa;
     memZero(&sa, sizeof sa);
-    sa.sa_handler = sysSigHandle;
+    sa.sa_handler = ignore ? SIG_IGN : sysSigHandle;
     sa.sa_flags |= SA_RESTART;
     sigfillset(&sa.sa_mask);
     int ret = sigaction(signal, &sa, NULL);

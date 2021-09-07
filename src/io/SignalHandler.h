@@ -45,7 +45,7 @@ namespace Hohnor
     public:
         static SignalHandler &getInst();
         //Handle a signal with callback function, if leave that with null, ignore the signal
-        void addSig(int signal);
+        void addSig(int signal, bool ignore = false);
         Iter receive();
         int fd() const { return pipefd_[0]; }
     };

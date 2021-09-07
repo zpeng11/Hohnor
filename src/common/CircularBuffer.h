@@ -9,6 +9,7 @@
  */
 #pragma once
 #include <memory>
+#include <type_traits>
 #include "Types.h"
 #include "NonCopyable.h"
 
@@ -30,6 +31,9 @@ namespace Hohnor
 
 	public:
 		explicit CircularBuffer(std::size_t maxSize) : buffer(), max_size(maxSize){
+            //Check if the template type is capable with the buffer
+            static_assert(std::is_default_constructible<T>::value, "Template type does not have default constructor as required");
+            static_assert(std::is_copy_assignable<T>::value, "Template type does not have assignment operator as required");
 			buffer = std::move(std::unique_ptr<T[]>(new T[max_size]));
 			assert(maxSize>=2);
 		}

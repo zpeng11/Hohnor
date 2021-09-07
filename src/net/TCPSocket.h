@@ -22,6 +22,10 @@ namespace Hohnor
         //Accept a connection, gets a shared ptr to pair of connected socket and connected address
         //In case connection error, !nullptr will be returned
         SocketAddrPair accept();
+        //accept a connection, return the connected fd, and fill InetAddress * returnAddr,
+        //This is faster than returning SocketAddrPair by avoiding copying
+        //returnAddr can be NULL if you do not care about peer address
+        int accept(InetAddress * returnAddr);
 
         //Shutdown writing of the socket
         void shutdownWrite() { SocketFuncs::shutdownWrite(fd()); }
@@ -36,14 +40,14 @@ namespace Hohnor
     /**
      * The (socketfd<-->address) pair that a server would get after accepting a TCP connection from client
      */
-    class SocketAddrPair : Copyable
+    class SocketAddrPair : public Copyable
     {
     private:
         std::pair<Socket::SocketFd, InetAddress> pair_;
 
     public:
         friend class TCPListenSocket;
-        SocketAddrPair() : pair_(-1,InetAddress()) {}
+        SocketAddrPair() : pair_() {}
         Socket::SocketFd &fd() { return std::get<0>(pair_); }
         InetAddress &addr() { return std::get<1>(pair_); }
         InetAddress* addrPtr() { return &pair_.second; }
