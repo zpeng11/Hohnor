@@ -31,7 +31,7 @@ namespace Hohnor
             ssize_t position_;
 
         public:
-            Iter(SignalHandler *ptr) : ptr_(ptr), position_(0) {}
+            explicit Iter(SignalHandler *ptr) : ptr_(ptr), position_(0) {}
             bool hasNext() { return position_ < size(); }
             ssize_t size() { return ptr_->readySignals_; }
             char next()

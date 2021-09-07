@@ -19,9 +19,9 @@ namespace Hohnor
     public:
         typedef int SocketFd;
         //Initilize from existing fd
-        explicit Socket(SocketFd socketFd) : FdGuard(socketFd) {}
+        Socket(SocketFd socketFd) : FdGuard(socketFd) {}
         //Initilize with paramters, in case failed, !!!abort the program
-        explicit Socket(int family, int type, int protocol = 0) : FdGuard(SocketFuncs::socket(family, type, protocol)) {}
+        Socket(int family, int type, int protocol = 0) : FdGuard(SocketFuncs::socket(family, type, protocol)) {}
 
         //For clent connect
         void connect(const InetAddress &addr) { SocketFuncs::connect(fd(), addr.getSockAddr()); }
@@ -52,8 +52,8 @@ namespace Hohnor
         bool isSelfConnect();
 
     public:
-        explicit ListenSocket(Socket::SocketFd fd) : Socket(fd) {}
-        explicit ListenSocket(int family, int type, int protocol = 0)
+        ListenSocket(Socket::SocketFd fd) : Socket(fd) {}
+        ListenSocket(int family, int type, int protocol = 0)
             : Socket(family, type, protocol) {}
 
         //Bind the address. In case failed, !!!abort the program
