@@ -1,70 +1,90 @@
 #include "SignalHandler.h"
 #include "Logging.h"
+#include "Timestamp.h"
 #include <sys/socket.h>
+#include <set>
 
 namespace Hohnor
 {
-    void sysSigHandle(int sig)
+    namespace Handler
     {
-        int save_errno = errno;
-        int msg = sig;
-        int ret = send(SignalHandler::getInst().pipefd_[1], (char *)&msg, 1, 0);
-        if (ret <= 0)
-            LOG_SYSERR << "Handling signal and putting message into pipe error";
-        errno = save_errno;
-    }
+
+        int g_pipefd[2];
+
+        const static int retSize = 512;
+        char g_retSignals[retSize];
+
+        void sigHandle(int sig)
+        {
+            int save_errno = errno;
+            char msg = static_cast<char>(sig);
+            if (send(g_pipefd[1], (char *)&msg, 1, 0) <= 0)
+                LOG_SYSERR << "Handling signal and putting message into pipe error";
+            errno = save_errno;
+        }
+        void afterFork()
+        {
+            if (socketpair(AF_UNIX, SOCK_STREAM, 0, g_pipefd) < 0)
+                LOG_SYSERR << "At fork socketpair creation error";
+
+            //Nonblocking write so that writing to pipe would not be blocked(signal handle should return fast!)
+            FdUtils::setNonBlocking(g_pipefd[1]);
+            //close on exec so that different process doesnot share same pipe(processes should have own SignalHandler)
+            FdUtils::setCloseOnExec(g_pipefd[0]);
+            FdUtils::setCloseOnExec(g_pipefd[1]);
+            memZero(g_retSignals, 512);
+        }
+        class SignalHandlerInitilizer
+        {
+        public:
+            SignalHandlerInitilizer()
+            {
+                afterFork();
+                pthread_atfork(NULL, NULL, afterFork);
+            }
+            ~SignalHandlerInitilizer()
+            {
+                FdUtils::close(g_pipefd[0]);
+                FdUtils::close(g_pipefd[1]);
+            }
+        };
+        SignalHandlerInitilizer init;
+    } // namespace handle
+
 } // namespace Hohnor
 
 using namespace Hohnor;
-
-SignalHandler::SignalHandler()
-{
-    int ret = socketpair(AF_UNIX, SOCK_STREAM, 0, pipefd_);
-    if (ret < 0)
-        LOG_SYSERR << "SignalHandler::SignalHandler() socketpair creation error";
-    //Nonblocking write so that writing to pipe would not be blocked(signal handle should return fast!)
-    FdUtils::setNonBlocking(pipefd_[1]);
-    //close on exec so that different process doesnot share same pipe(processes should have own SignalHandler)
-    FdUtils::setCloseOnExec(pipefd_[0]);
-    FdUtils::setCloseOnExec(pipefd_[1]);
-    memZero(signals_, 512);
-}
-
-SignalHandler &SignalHandler::getInst()
-{
-    //For c++11, this is a thread-safe operation on linux
-    static SignalHandler instance;
-    return instance;
-}
-
-SignalHandler::~SignalHandler()
-{
-    FdUtils::close(pipefd_[0]);
-    FdUtils::close(pipefd_[1]);
-}
+using namespace Hohnor::Handler;
 
 SignalHandler::Iter SignalHandler::receive()
 {
-    readySignals_ = ::recv(pipefd_[0], signals_, 512, 0);
-    if (readySignals_ == -1)
+    int ret = ::recv(g_pipefd[0], g_retSignals, retSize, 0);
+    if (ret == -1)
     {
         LOG_SYSERR << "SignalHandler::receive() Handler recieve error";
     }
-    else if (readySignals_ == 0 && errno != EINTR)
+    else if (ret == 0 && errno != EINTR)
     {
         LOG_ERROR << "SignalHandler::receive() Handler recieve error, writing end may be closed";
     }
-    return Iter(this);
+    return Iter(g_retSignals, ret);
 }
 
-void SignalHandler::addSig(int signal, bool ignore)
+void SignalHandler::handleSignal(int signal)
 {
+    if (signal <= 0 || signal >= 65)
+        LOG_FATAL << "Invalid signal value";
     struct sigaction sa;
     memZero(&sa, sizeof sa);
-    sa.sa_handler = ignore ? SIG_IGN : sysSigHandle;
+    sa.sa_handler = sigHandle;
     sa.sa_flags |= SA_RESTART;
     sigfillset(&sa.sa_mask);
-    int ret = sigaction(signal, &sa, NULL);
-    if (ret < 0)
+    //::sigaction(3) is signal safe, so we do not need to surround it with blocking guard
+    if (::sigaction(signal, &sa, NULL) < 0)
         LOG_SYSERR << "Signal action settle failed";
+}
+
+int SignalHandler::readEndFd()
+{
+    return g_pipefd[0];
 }

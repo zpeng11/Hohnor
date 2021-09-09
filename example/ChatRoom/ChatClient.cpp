@@ -2,6 +2,7 @@
 #include <Socket.h>
 #include <Logging.h>
 #include <sys/epoll.h>
+#include <sys/wait.h>
 #include "Epoll.h"
 #include "FdUtils.h"
 #include "SignalHandler.h"
@@ -11,6 +12,7 @@ using namespace std;
 using namespace Hohnor;
 int main(int argc, char *argv[])
 {
+
     StringPiece user = argc < 3 ? "Guess" : argv[2];
     StringPiece server = argc < 2 ? "localhost" : argv[1];
     //Resolve input server address
@@ -23,23 +25,21 @@ int main(int argc, char *argv[])
     //Epoll
     Hohnor::Epoll epoll;
 
-    auto &signalHandler = SignalHandler::getInst();
-    signalHandler.addSig(SIGINT);
-    signalHandler.addSig(SIGTERM);
+    bool stopServer = false;
+    SignalHandler::handleSignal(SIGINT);
 
     //add socket to epoll
     epoll.add(socket.fd(), EPOLLIN | EPOLLHUP);
     //Add stdin to epoll
     epoll.add(STDIN_FILENO, EPOLLIN);
     //Add signalHandler to epoll
-    epoll.add(signalHandler.fd(), EPOLLIN);
+    epoll.add(SignalHandler::readEndFd(), EPOLLIN);
 
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
     CHECK_NE(pipe(pipefd), -1);
 
     char buf[BUFSIZ] = {0};
-    bool stopServer = false;
     while (!stopServer)
     {
         auto res = epoll.wait();
@@ -66,14 +66,13 @@ int main(int argc, char *argv[])
                 LOG_WARN << "Server ends";
                 stopServer = true;
             }
-            else if (event.data.fd == signalHandler.fd() && event.events == EPOLLIN)
+            else if (event.data.fd == SignalHandler::readEndFd() && event.events == EPOLLIN)
             {
-                auto iter = signalHandler.receive();
+                auto iter = SignalHandler::receive();
                 while (iter.hasNext())
                 {
-                    int sig = iter.next();
-                    //TODO switch cases for signals;
-                    LOG_INFO << "signal handle success , signal:"<<sig;
+                    char sig = iter.next();
+                    LOG_INFO<<"Got signal:"<<(int)sig;
                 }
             }
             else if (event.data.fd == STDIN_FILENO) //key board input

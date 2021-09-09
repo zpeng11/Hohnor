@@ -10,6 +10,7 @@
 #include "Mutex.h"
 #include "Condition.h"
 #include "CircularBuffer.h"
+#include <atomic>
 
 namespace Hohnor
 {
@@ -21,7 +22,8 @@ namespace Hohnor
 			: mutex_(),
 			  notEmpty_(mutex_),
 			  notFull_(mutex_),
-			  queue_(maxSize)
+			  queue_(maxSize),
+              end_(false)
 		{
 		}
 
@@ -71,7 +73,7 @@ namespace Hohnor
 			assert(!queue_.empty());
 			T front(std::move(queue_.dequeue()));
 			notFull_.notify();
-			return front;
+			return std::move(front);
 		}
 
 		bool empty() const
@@ -113,6 +115,6 @@ namespace Hohnor
 		Condition notEmpty_ ;
 		Condition notFull_ ;
 		CircularBuffer<T> queue_;
-		bool end_ = false;
+		std::atomic<bool> end_ ;
 	};
 }

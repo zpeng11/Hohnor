@@ -18,6 +18,7 @@ add_subdirectory(src/file)
 add_subdirectory(src/process)
 add_subdirectory(src/net)
 add_subdirectory(src/io)
+add_subdirectory(src/core)
 add_subdirectory(example)
 
 list(APPEND libs THREAD)
@@ -27,6 +28,7 @@ list(APPEND libs FILE)
 list(APPEND libs PROCESS)
 list(APPEND libs NET)
 list(APPEND libs IO)
+list(APPEND libs CORE)
 
 
 add_executable(Test test/Test.cpp)

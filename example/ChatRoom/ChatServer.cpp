@@ -95,8 +95,4 @@ int main()
             }
         }
     }
-    for (auto &pair : users)
-    {
-        FdUtils::close(pair.first);
-    }
 }

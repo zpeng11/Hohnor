@@ -1,53 +1,57 @@
 /**
  * Handling signal to prevent interupt, send them to a socket pipe and allow epoll to handle
  */
-
+//TODO: Enable onFork()
 #pragma once
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
 #include <functional>
-#include <map>
+#include <vector>
 #include "FdUtils.h"
 #include "Logging.h"
 
 namespace Hohnor
 {
-    class SignalHandler : NonCopyable
+    namespace SignalHandler
     {
-    private:
-        friend void sysSigHandle(int sig);
-        int pipefd_[2];
-        //buffer for reading pipe
-        char signals_[512];
-        //return value of reading pipe
-        ssize_t readySignals_;
-        explicit SignalHandler();
-        ~SignalHandler();
-        class Iter
+
+        /**
+         * Iterate recieving signal results.
+         */
+        class Iter : Copyable
         {
         private:
-            SignalHandler *ptr_;
+            const char *sig_;
             ssize_t position_;
+            ssize_t size_;
 
         public:
-            explicit Iter(SignalHandler *ptr) : ptr_(ptr), position_(0) {}
-            bool hasNext() { return position_ < size(); }
-            ssize_t size() { return ptr_->readySignals_; }
-            char next()
+            explicit Iter(const char *signals, ssize_t size) : sig_(signals), position_(0), size_(size) {}
+            ~Iter() = default;
+            inline bool hasNext() { return position_ < size_; }
+            inline ssize_t size() { return size_; }
+            //Return signal number 
+            inline char next()
             {
-                CHECK(position_ < ptr_->readySignals_) << " Hohnor::SignalHandler::Iter::next() error";
-                return ptr_->signals_[position_++];
+                return sig_[position_++];
             }
-            ~Iter() { ptr_->readySignals_ = 0; }
         };
 
-    public:
-        static SignalHandler &getInst();
-        //Handle a signal with callback function, if leave that with null, ignore the signal
-        void addSig(int signal, bool ignore = false);
+        enum SigAction
+        {
+            Ignore,
+            Default,
+            SafeEnd,
+            Callback
+        };
+        //Handle a signal with callback function, thread safe
+        void handleSignal(int signal);
+
+        //Receive signals and use a iterator to acess them
         Iter receive();
-        int fd() const { return pipefd_[0]; }
-    };
+
+        int readEndFd();
+    }
 
 } // namespace Hohnor
