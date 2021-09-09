@@ -11,6 +11,10 @@
 
 namespace Hohnor
 {
+    /**
+     * Wrapper for ::epoll(2) in linux, 
+     * kindly reminder that ctl Ops are safe while another thread is waiting.
+     */
     class Epoll : public FdGuard
     {
     private:

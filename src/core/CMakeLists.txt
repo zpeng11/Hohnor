@@ -3,7 +3,7 @@ AUX_SOURCE_DIRECTORY(./ DIR_SRCS)
 add_library(CORE STATIC ${DIR_SRCS})
 
 target_link_libraries(CORE PUBLIC TIME)
-target_link_libraries(CORE PUBLIC LOG)
+target_link_libraries(CORE PUBLIC IO)
 target_link_libraries(CORE PUBLIC LOG)
 
 #add current directory *.h for upper level to include

@@ -10,12 +10,13 @@
 #include "Mutex.h"
 #include "Condition.h"
 #include "CircularBuffer.h"
+#include "SyncQueue.h"
 #include <atomic>
 
 namespace Hohnor
 {
 	template <typename T>
-	class BoundedBlockingQueue : NonCopyable
+	class BoundedBlockingQueue : public SyncQueue<T>
 	{
 	public:
 		explicit BoundedBlockingQueue(int maxSize)

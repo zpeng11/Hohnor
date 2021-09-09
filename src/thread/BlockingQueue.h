@@ -7,13 +7,14 @@
 
 #include "Mutex.h"
 #include "Condition.h"
+#include "SyncQueue.h"
 #include <deque>
 #include <atomic>
 
 namespace Hohnor
 {
     template <typename T>
-    class BlockingQueue : NonCopyable
+    class BlockingQueue : public SyncQueue<T>
     {
     public:
         BlockingQueue()
