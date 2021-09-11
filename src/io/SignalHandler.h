@@ -40,13 +40,12 @@ namespace Hohnor
 
         enum SigAction
         {
-            Ignore,
+            Ignored,
             Default,
-            SafeEnd,
-            Callback
+            Piped //put signal into pipe for epoll to receive
         };
         //Handle a signal with callback function, thread safe
-        void handleSignal(int signal);
+        void handleSignal(int signal, SigAction action = Piped);
 
         //Receive signals and use a iterator to acess them
         Iter receive();

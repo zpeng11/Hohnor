@@ -70,16 +70,21 @@ SignalHandler::Iter SignalHandler::receive()
     return Iter(g_retSignals, ret);
 }
 
-void SignalHandler::handleSignal(int signal)
+void SignalHandler::handleSignal(int signal, SigAction action)
 {
     if (signal <= 0 || signal >= 65)
         LOG_FATAL << "Invalid signal value";
     struct sigaction sa;
     memZero(&sa, sizeof sa);
-    sa.sa_handler = sigHandle;
+    if (action == Piped)
+        sa.sa_handler = sigHandle;
+    else if (action == Ignored)
+        sa.sa_handler = SIG_IGN;
+    else
+        sa.sa_handler = SIG_DFL;
     sa.sa_flags |= SA_RESTART;
     sigfillset(&sa.sa_mask);
-    //::sigaction(3) is signal safe, so we do not need to surround it with blocking guard
+    //::sigaction(3) is signal safe, so we do not need to surround it with signal blocking guard
     if (::sigaction(signal, &sa, NULL) < 0)
         LOG_SYSERR << "Signal action settle failed";
 }
