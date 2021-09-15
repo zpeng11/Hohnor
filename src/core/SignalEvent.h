@@ -6,7 +6,7 @@
 
 namespace Hohnor
 {
-    class SignalEvent : private Event
+    class SignalEvent : public Event
     {
     private:
         int signal_;
