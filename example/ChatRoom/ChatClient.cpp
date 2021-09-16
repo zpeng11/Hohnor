@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include "Epoll.h"
 #include "FdUtils.h"
-#include "SignalHandler.h"
+#include "SignalUtils.h"
 #define SERVER_PORT 9342
 
 using namespace std;
@@ -26,14 +26,14 @@ int main(int argc, char *argv[])
     Hohnor::Epoll epoll;
 
     bool stopServer = false;
-    SignalHandler::handleSignal(SIGINT);
+    SignalUtils::handleSignal(SIGINT);
 
     //add socket to epoll
     epoll.add(socket.fd(), EPOLLIN | EPOLLHUP);
     //Add stdin to epoll
     epoll.add(STDIN_FILENO, EPOLLIN);
     //Add signalHandler to epoll
-    epoll.add(SignalHandler::readEndFd(), EPOLLIN);
+    epoll.add(SignalUtils::readEndFd(), EPOLLIN);
 
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
                 LOG_WARN << "Server ends";
                 stopServer = true;
             }
-            else if (event.data.fd == SignalHandler::readEndFd() && event.events == EPOLLIN)
+            else if (event.data.fd == SignalUtils::readEndFd() && event.events == EPOLLIN)
             {
-                auto iter = SignalHandler::receive();
+                auto iter = SignalUtils::receive();
                 while (iter.hasNext())
                 {
                     char sig = iter.next();

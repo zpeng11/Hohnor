@@ -13,7 +13,7 @@
 
 namespace Hohnor
 {
-    namespace SignalHandler
+    namespace SignalUtils
     {
 
         /**

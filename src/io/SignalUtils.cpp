@@ -1,4 +1,4 @@
-#include "SignalHandler.h"
+#include "SignalUtils.h"
 #include "Logging.h"
 #include "Timestamp.h"
 #include <sys/socket.h>
@@ -56,21 +56,21 @@ namespace Hohnor
 using namespace Hohnor;
 using namespace Hohnor::Handler;
 
-SignalHandler::Iter SignalHandler::receive()
+SignalUtils::Iter SignalUtils::receive()
 {
     int ret = ::recv(g_pipefd[0], g_retSignals, retSize, 0);
     if (ret == -1)
     {
-        LOG_SYSERR << "SignalHandler::receive() Handler recieve error";
+        LOG_SYSERR << "SignalUtils::receive() Handler recieve error";
     }
     else if (ret == 0 && errno != EINTR)
     {
-        LOG_ERROR << "SignalHandler::receive() Handler recieve error, writing end may be closed";
+        LOG_ERROR << "SignalUtils::receive() Handler recieve error, writing end may be closed";
     }
     return Iter(g_retSignals, ret);
 }
 
-void SignalHandler::handleSignal(int signal, SigAction action)
+void SignalUtils::handleSignal(int signal, SigAction action)
 {
     if (signal <= 0 || signal >= 65)
         LOG_FATAL << "Invalid signal value";
@@ -86,10 +86,10 @@ void SignalHandler::handleSignal(int signal, SigAction action)
     sigfillset(&sa.sa_mask);
     //::sigaction(3) is signal safe, so we do not need to surround it with signal blocking guard
     if (::sigaction(signal, &sa, NULL) < 0)
-        LOG_SYSERR << "Signal action settle failed";
+        LOG_SYSERR << "SignalUtils action settle failed";
 }
 
-int SignalHandler::readEndFd()
+int SignalUtils::readEndFd()
 {
     return g_pipefd[0];
 }

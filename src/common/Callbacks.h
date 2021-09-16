@@ -14,5 +14,6 @@ namespace Hohnor
     typedef std::function<void()> CloseCallback;
     typedef std::function<void()> ErrorCallback;
     typedef std::function<void()> SignalCallback;
+    typedef std::function<void()> TimerCallback;
 
 } // namespace Hohnor
