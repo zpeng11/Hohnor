@@ -98,11 +98,9 @@ namespace Hohnor
         std::set<IOHandler *> IOHandlers_;
 
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
-        std::unique_ptr<IOHandler> wakeUpPipeEvent_;
+        std::unique_ptr<IOHandler> wakeUpHandler_;
         //manage fd life cycle
-        std::unique_ptr<FdGuard> wakeUpPipeReadEnd_;
-        //manage fd life cycle
-        std::unique_ptr<FdGuard> wakeUpPipeWriteEnd_;
+        std::unique_ptr<FdGuard> wakeUpFd_;
 
         std::unique_ptr<TimerQueue> timers_;
 
@@ -115,5 +113,8 @@ namespace Hohnor
         Mutex pendingFunctorsLock_;
         //priorty map to functor
         std::vector<Functor> pendingFunctors_;
+
+        //To bind for wake up event
+        void handleWakeUp();
     };
 } // namespace Hohnor
