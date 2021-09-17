@@ -9,6 +9,7 @@
 
 namespace Hohnor
 {
+    class SignalHandlerId;
     class SignalHandler : NonCopyable
     {
     private:
@@ -23,26 +24,24 @@ namespace Hohnor
         void run() { callback_(); }
         int64_t sequence() const { return sequence_; }
         static int64_t numCreated() { return s_numCreated_; }
+        SignalHandlerId id();
         ~SignalHandler() = default;
     };
-    class SignalEventId : public Copyable
+    class SignalHandlerId : public Copyable
     {
     public:
-        SignalEventId()
+        SignalHandlerId()
             : signalEvent_(NULL),
               sequence_(0)
         {
         }
 
-        SignalEventId(SignalHandler *signalEvent, int64_t seq)
+        SignalHandlerId(SignalHandler *signalEvent, int64_t seq)
             : signalEvent_(signalEvent),
               sequence_(seq)
         {
         }
-
-        // default copy-ctor, dtor and assignment are okay
-
-        friend class TimerQueue;
+        friend class SignalHandlerSet;
 
     private:
         SignalHandler *signalEvent_;

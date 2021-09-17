@@ -15,3 +15,8 @@ void Timer::restart(Timestamp now)
         expiration_ = Timestamp::invalid();
     }
 }
+
+TimerId Timer::id()
+{
+    return TimerId(this, sequence_);
+}

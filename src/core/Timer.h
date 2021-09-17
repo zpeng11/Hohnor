@@ -11,6 +11,7 @@
 
 namespace Hohnor
 {
+    class TimerId;
     class Timer : NonCopyable
     {
     private:
@@ -30,6 +31,7 @@ namespace Hohnor
         int64_t sequence() const { return sequence_; }
         void restart(Timestamp now);
         static int64_t numCreated() { return s_numCreated_; }
+        TimerId id();
         ~Timer();
     };
 
