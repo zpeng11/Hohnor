@@ -30,6 +30,9 @@ namespace Hohnor
     public:
         EventLoop();
         ~EventLoop();
+
+        static EventLoop * loopOfCurrentThread();
+
         void loop();
         void setThreadPools(size_t size);
         //Put callbacks in the pendingFunctors

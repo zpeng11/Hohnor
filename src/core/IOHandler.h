@@ -13,6 +13,7 @@ namespace Hohnor
     {
     private:
         //do not manage life cycle of this fd
+        EventLoop * loop_;
         const int fd_;
         int events_;
         int revents_;
@@ -20,16 +21,17 @@ namespace Hohnor
         WriteCallback writeCallback_;
         CloseCallback closeCallback_;
         ErrorCallback errorCallback_;
+        //update EPOLL flags in the loop
+        void update();
 
     public:
         IOHandler(EventLoop *loop, int fd);
+        ~IOHandler();
         int getEvents() { return events_; }
         void retEvents(int revents) { revents_ = revents; }
         void run();
-        //update EPOLL flags in the loop
-        void update();
-        //remove itself from epoll and reactor container, should not be called from other threads
-        void remove();
+        void disable();
+        void enable();
         void setReadCallback(ReadCallback cb)
         {
             if (cb == nullptr)

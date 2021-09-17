@@ -17,6 +17,11 @@ namespace Hohnor
 
 using namespace Hohnor;
 
+EventLoop *EventLoop::loopOfCurrentThread()
+{
+    return Loop::t_loopInThisThread;
+}
+
 EventLoop::EventLoop()
     : poller_(), quit_(false),
       threadId_(CurrentThread::tid()),
@@ -27,6 +32,7 @@ EventLoop::EventLoop()
       timers_(new TimerQueue(this)), signalHandlers_(new SignalHandlerSet(this)),
       pendingFunctorsLock_(), pendingFunctors_()
 {
+    //verify there is single loop in a thread
     if (Loop::t_loopInThisThread)
     {
         LOG_FATAL << "Another EventLoop " << Loop::t_loopInThisThread
@@ -36,14 +42,26 @@ EventLoop::EventLoop()
     {
         Loop::t_loopInThisThread = this;
     }
+
     //create eventfd for wake up
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    if(evtfd <0)
-        LOG_SYSFATAL<<"Fail to create eventfd for wake up";
+    if (evtfd < 0)
+        LOG_SYSFATAL << "Fail to create eventfd for wake up";
     wakeUpFd_.reset(new FdGuard(evtfd));
     wakeUpHandler_.reset(new IOHandler(this, evtfd));
-    wakeUpHandler_->setReadCallback(std::bind(EventLoop::handleWakeUp,this));
+    wakeUpHandler_->setReadCallback(std::bind(EventLoop::handleWakeUp, this));
+
     LOG_DEBUG << "EventLoop created " << this << " in thread " << threadId_;
+}
+
+EventLoop::~EventLoop()
+{
+    wakeUpHandler_->setReadCallback(nullptr);
+    wakeUpHandler_.reset();
+    wakeUpFd_.reset();
+    Loop::t_loopInThisThread = NULL;
+    LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_
+              << " destructs in thread " << CurrentThread::tid();
 }
 
 void EventLoop::loop()
