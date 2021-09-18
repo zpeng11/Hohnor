@@ -38,3 +38,20 @@ void SignalHandlerSet::handleRead()
         }
     }
 }
+
+SignalHandlerId SignalHandlerSet::add(char signal, SignalCallback cb)
+{
+    SignalHandler *handler = new SignalHandler(signal, std::move(cb));
+    loop_->runInLoop(std::bind(&SignalHandlerSet::addInLoop, this, handler));
+    return SignalHandlerId(handler, handler->sequence());
+}
+
+void SignalHandlerSet::remove(SignalHandlerId id)
+{
+    loop_->runInLoop(std::bind(&SignalHandlerSet::removeInLoop, this, id));
+}
+
+void SignalHandlerSet::addInLoop(SignalHandler *handler)
+{
+    sets_[handler->signal()-1].insert(handler);
+}
