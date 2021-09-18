@@ -24,10 +24,12 @@ int Epoll::ctl(int cmd, int fd, epoll_event *event)
     return ret;
 }
 
-int Epoll::add(int fd, int trackEvents, void *ptr)
+int Epoll::add(int fd, int trackEvents, void *ptr, bool edgeTrigger)
 {
     epoll_event e;
     e.events = trackEvents;
+    if(edgeTrigger)
+    e.events |= EPOLLET;
     if (ptr != NULL)
         e.data.ptr = ptr;
     else

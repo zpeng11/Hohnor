@@ -13,10 +13,11 @@ namespace Hohnor
     {
     private:
         //do not manage life cycle of this fd
-        EventLoop * loop_;
+        EventLoop *loop_;
         const int fd_;
         int events_;
         int revents_;
+        bool enable_;
         ReadCallback readCallback_;
         WriteCallback writeCallback_;
         CloseCallback closeCallback_;
@@ -27,64 +28,25 @@ namespace Hohnor
     public:
         IOHandler(EventLoop *loop, int fd);
         ~IOHandler();
+
+        int fd() { return fd_; }
+        //Get current event setting
         int getEvents() { return events_; }
+        //Used by event loop to put epoll result back to handler
         void retEvents(int revents) { revents_ = revents; }
+        //Run the events according to revents
         void run();
+        //if events are enabled
+        bool enabled() { return enable_; }
+        //Diable all events on this handler from the eventloop
         void disable();
+        //Enable all events on this handler from the eventloop
         void enable();
-        void setReadCallback(ReadCallback cb)
-        {
-            if (cb == nullptr)
-            {
-                events_ &= ~EPOLLIN;
-            }
-            else
-            {
-                events_ |= EPOLLIN;
-                readCallback_ = std::move(cb);
-            }
-            update();
-        }
-        void setWriteCallback(WriteCallback cb)
-        {
-            if (cb == nullptr)
-            {
-                events_ &= ~EPOLLOUT;
-            }
-            else
-            {
-                events_ |= EPOLLOUT;
-                writeCallback_ = std::move(cb);
-            }
-            update();
-        }
-        void setCloseCallback(CloseCallback cb)
-        {
-            if (cb == nullptr)
-            {
-                events_ &= ~EPOLLRDHUP;
-            }
-            else
-            {
-                events_ |= EPOLLRDHUP;
-                closeCallback_ = std::move(cb);
-            }
-            update();
-        }
-        void setErrorCallback(ErrorCallback cb)
-        {
-            if (cb == nullptr)
-            {
-                events_ &= ~EPOLLERR;
-            }
-            else
-            {
-                events_ |= EPOLLERR;
-                errorCallback_ = std::move(cb);
-            }
-            update();
-        }
-        ~IOHandler();
+
+        void setReadCallback(ReadCallback cb);
+        void setWriteCallback(WriteCallback cb);
+        void setCloseCallback(CloseCallback cb);
+        void setErrorCallback(ErrorCallback cb);
     };
 
 } // namespace Hohnor

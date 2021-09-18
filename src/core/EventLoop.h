@@ -31,14 +31,18 @@ namespace Hohnor
         EventLoop();
         ~EventLoop();
 
-        static EventLoop * loopOfCurrentThread();
+        static EventLoop *loopOfCurrentThread();
 
-        void loop();
         void setThreadPools(size_t size);
-        //Put callbacks in the pendingFunctors
+        void loop();
+
+        //If in the loop thread run immediatly, if not queue the callback in pending, thread safe
         void runInLoop(Functor callback);
-        //Put the callback into threadpool to run
+        //Put callbacks in the pendingFunctors, thread safe
+        void queueInLoop(Functor callback);
+        //Put the callback into threadpool to run, thread safe
         void runInPool(Functor callback);
+
         //Ask the loop to wake up from epoll immediately to deal with pending functors
         void wakeUp();
         //End the loop
@@ -53,11 +57,11 @@ namespace Hohnor
         void assertInLoopThread();
 
         //Add a IO event to the epoll
-        void addIOHandler(IOHandler *event);
+        void addIOHandler(IOHandler *handler);
         //modify existing IO event in the epoll
-        void updateIOHandler(IOHandler *event);
+        void updateIOHandler(IOHandler *handler);
         //Remove a IO event from the epoll
-        void removeIOHandler(IOHandler *event);
+        void removeIOHandler(IOHandler *handler);
         //if has the event
         bool hasIOHandler(IOHandler *event);
 
@@ -119,5 +123,7 @@ namespace Hohnor
 
         //To bind for wake up event
         void handleWakeUp();
+
+        bool isLoopThread() { return CurrentThread::tid() == threadId_; }
     };
 } // namespace Hohnor

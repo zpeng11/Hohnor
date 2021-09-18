@@ -48,7 +48,7 @@ namespace Hohnor
         //epoll_ctl(2) interface
         int ctl(int cmd, int fd, epoll_event *event);
         //add fd to the RB tree, by default specify data as fd itself, if ptr is specified, then use the ptr
-        int add(int fd, int trackEvents, void *ptr = NULL);
+        int add(int fd, int trackEvents, void *ptr = NULL, bool edgeTrigger = false);
         //same as add interface but only modify existing fd in the RB tree
         int modify(int fd, int trackEvents, void *ptr = NULL);
         //remove a fd from RB tree

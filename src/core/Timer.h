@@ -32,7 +32,7 @@ namespace Hohnor
         void restart(Timestamp now);
         static int64_t numCreated() { return s_numCreated_; }
         TimerId id();
-        ~Timer();
+        ~Timer() = default;
     };
 
     class TimerId : public Copyable

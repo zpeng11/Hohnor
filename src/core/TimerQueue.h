@@ -39,8 +39,9 @@ namespace Hohnor
         void cancelInLoop(TimerId timerId);
         // called when timerfd alarms
         void handleRead();
-        IOHandler timerfdIOHandle_;
+        IOHandler timerFdIOHandle_;
         EventLoop *loop_;
+        FdGuard timerFd_;
         BinaryHeap<Timer *> heap_;
     };
 
