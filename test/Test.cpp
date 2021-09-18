@@ -23,10 +23,53 @@ using namespace std;
 
 using namespace Hohnor;
 
+void onConnectionClose(EventLoop *loop, IOHandler *handler);
+void onConnectionRead(EventLoop *loop, IOHandler *handler, int fd)
+{
+    EventLoop* possible = EventLoop::loopOfCurrentThread();
+    LOG_INFO << "Read from the client";
+    char str[BUFSIZ];
+    int ret = ::read(fd, str, BUFSIZ);
+    LOG_INFO << "Read return val:" << ret;
+    if (ret < 0)
+        LOG_SYSERR << "Read error";
+    if (ret == 0)
+    {
+        onConnectionClose(loop, handler);
+    }
+    if (ret > 0)
+        LOG_INFO << str;
+}
+
+void onConnectionClose(EventLoop *loop, IOHandler *handler)
+{
+    LOG_INFO << "Client closed";
+    loop->queueInLoop([handler]()
+                      { delete handler; });
+}
+
+void onAccept(EventLoop *loop, TCPListenSocket *socket)
+{
+    auto pair = socket->accept();
+    int fd = pair.fd();
+    IOHandler *connectionHandler = new IOHandler(loop, pair.fd());
+    connectionHandler->setReadCallback([loop, connectionHandler, fd]()
+                                       { onConnectionRead(loop, connectionHandler, fd); });
+    connectionHandler->setCloseCallback([loop, connectionHandler]()
+                                        { onConnectionClose(loop, connectionHandler); });
+    connectionHandler->enable();
+}
+
 int main(int argc, char *argv[])
 {
     Logger::setGlobalLogLevel(Logger::LogLevel::TRACE);
     EventLoop loop;
-    loop.wakeUp();
+    TCPListenSocket socket;
+    socket.bindAddress(9911);
+    socket.listen();
+    IOHandler serverHandler(&loop, socket.fd());
+    serverHandler.setReadCallback([&loop, &socket]()
+                                  { onAccept(&loop, &socket); });
+    serverHandler.enable();
     loop.loop();
 }

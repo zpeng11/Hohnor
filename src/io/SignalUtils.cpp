@@ -41,6 +41,8 @@ namespace Hohnor
             {
                 afterFork();
                 pthread_atfork(NULL, NULL, afterFork);
+                //by default ignore SIGPIPE 
+                SignalUtils::handleSignal(SIGPIPE, SignalUtils::Ignored);
             }
             ~SignalHandlerInitilizer()
             {

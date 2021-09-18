@@ -11,7 +11,6 @@ SignalHandlerSet::SignalHandlerSet(EventLoop *loop) : loop_(loop), signalPipeHan
 
 SignalHandlerSet::~SignalHandlerSet()
 {
-    signalPipeHandler_.disable();
     for (int i = 0; i < 64; i++)
     {
         auto &set = sets_[i];

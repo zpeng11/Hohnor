@@ -23,7 +23,7 @@ namespace Hohnor
         CloseCallback closeCallback_;
         ErrorCallback errorCallback_;
         //update EPOLL flags in the loop
-        void update();
+        void update(bool addNew = false);
 
     public:
         IOHandler(EventLoop *loop, int fd);

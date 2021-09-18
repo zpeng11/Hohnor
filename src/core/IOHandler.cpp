@@ -33,12 +33,13 @@ IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), fd_(fd), events_(0)
 
 IOHandler::~IOHandler()
 {
+    disable();
     loop_->removeIOHandler(this);
 }
 
-void IOHandler::update()
+void IOHandler::update(bool addNew)
 {
-    loop_->updateIOHandler(this);
+    loop_->updateIOHandler(this, addNew);
 }
 
 void IOHandler::run()
@@ -85,7 +86,7 @@ void IOHandler::disable()
     if (enable_)
     {
         enable_ = false;
-        update();
+        update(false);
     }
     else
     {
@@ -98,7 +99,7 @@ void IOHandler::enable()
     if (!enable_)
     {
         enable_ = true;
-        update();
+        update(true);
     }
     else
     {
@@ -118,7 +119,7 @@ void IOHandler::setReadCallback(ReadCallback cb)
         readCallback_ = std::move(cb);
     }
     if (enable_)
-        update();
+        update(false);
 }
 
 void IOHandler::setWriteCallback(WriteCallback cb)
@@ -133,7 +134,7 @@ void IOHandler::setWriteCallback(WriteCallback cb)
         writeCallback_ = std::move(cb);
     }
     if (enable_)
-        update();
+        update(false);
 }
 
 void IOHandler::setCloseCallback(CloseCallback cb)
@@ -148,7 +149,7 @@ void IOHandler::setCloseCallback(CloseCallback cb)
         closeCallback_ = std::move(cb);
     }
     if (enable_)
-        update();
+        update(false);
 }
 void IOHandler::setErrorCallback(ErrorCallback cb)
 {
@@ -162,5 +163,5 @@ void IOHandler::setErrorCallback(ErrorCallback cb)
         errorCallback_ = std::move(cb);
     }
     if (enable_)
-        update();
+        update(false);
 }

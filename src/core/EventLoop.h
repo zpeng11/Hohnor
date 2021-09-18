@@ -59,7 +59,7 @@ namespace Hohnor
         //Add a IO event to the epoll
         void addIOHandler(IOHandler *handler);
         //modify existing IO event in the epoll
-        void updateIOHandler(IOHandler *handler);
+        void updateIOHandler(IOHandler *handler, bool addNew = false);
         //Remove a IO event from the epoll
         void removeIOHandler(IOHandler *handler);
         //if has the event

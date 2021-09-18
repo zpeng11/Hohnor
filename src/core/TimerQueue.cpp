@@ -52,8 +52,7 @@ TimerQueue::TimerQueue(EventLoop *loop) : timerFd_(createTimerfd()), loop_(loop)
 
 TimerQueue::~TimerQueue()
 {
-    timerFdIOHandle_.disable();
-    while(heap_.size())
+    while (heap_.size())
     {
         delete heap_.popTop();
     }
@@ -61,5 +60,4 @@ TimerQueue::~TimerQueue()
 
 void TimerQueue::handleRead()
 {
-
 }
