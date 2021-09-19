@@ -53,5 +53,20 @@ void SignalHandlerSet::remove(SignalHandlerId id)
 
 void SignalHandlerSet::addInLoop(SignalHandler *handler)
 {
-    sets_[handler->signal()-1].insert(handler);
+    loop_->assertInLoopThread();
+    sets_[handler->signal() - 1].insert(handler);
+}
+
+void SignalHandlerSet::removeInLoop(SignalHandlerId id)
+{
+    loop_->assertInLoopThread();
+    CHECK_NOTNULL(id.signalEvent_);
+    auto it = sets_[id.signalEvent_->signal()-1].find(id.signalEvent_);
+    if(it != sets_[id.signalEvent_->signal()-1].end())
+    {
+        sets_[id.signalEvent_->signal()-1].erase(it);
+    }
+    else{
+        LOG_WARN<<"There is not this signal handler";
+    }
 }
