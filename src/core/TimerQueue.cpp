@@ -60,4 +60,19 @@ TimerQueue::~TimerQueue()
 
 void TimerQueue::handleRead()
 {
+    loop_->assertInLoopThread();
+    Timestamp now(Timestamp::now());
+    uint64_t howmany;
+    ssize_t n = ::read(this->timerFd_.fd(), &howmany, sizeof howmany);
+    LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at " << now.toString();
+    if (n != sizeof howmany)
+    {
+        LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
+    }
+
+    while(heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
+    {
+        auto ptr = heap_.popTop();
+        ptr->run();
+    }
 }
