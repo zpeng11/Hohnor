@@ -18,16 +18,18 @@ namespace Hohnor
         const TimerCallback callback_;
         Timestamp expiration_;
         //if greater than 0 means it is a repeated event
-        const double interval_;
+        double interval_;
         const int64_t sequence_;
+        bool disabled_;
 
         static std::atomic<uint64_t> s_numCreated_;
 
     public:
         Timer(TimerCallback callback, Timestamp when, double interval);
         void run();
+        void disable();
         Timestamp expiration() const { return expiration_; }
-        bool repeat() const { return interval_ > 0.0; }
+        inline bool repeat() const { return interval_ > 0.0; }
         int64_t sequence() const { return sequence_; }
         void restart(Timestamp now);
         static int64_t numCreated() { return s_numCreated_; }

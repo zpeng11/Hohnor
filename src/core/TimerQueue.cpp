@@ -39,6 +39,21 @@ namespace Hohnor
         else
             return lhs->sequence() < rhs->sequence();
     }
+
+    void resetTimerfd(int timerfd, Timestamp expiration)
+    {
+        // wake up loop by timerfd_settime()
+        struct itimerspec newValue;
+        struct itimerspec oldValue;
+        memZero(&newValue, sizeof newValue);
+        memZero(&oldValue, sizeof oldValue);
+        newValue.it_value = howMuchTimeFromNow(expiration);
+        int ret = ::timerfd_settime(timerfd, 0, &newValue, &oldValue);
+        if (ret)
+        {
+            LOG_SYSERR << "timerfd_settime()";
+        }
+    }
 } // namespace Hohnor
 
 using namespace Hohnor;
@@ -70,9 +85,54 @@ void TimerQueue::handleRead()
         LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
     }
 
-    while(heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
+    while (heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
     {
         auto ptr = heap_.popTop();
         ptr->run();
+        if (ptr->repeat())
+        {
+            ptr->restart(now);
+            loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, ptr));
+        }
+        else
+        {
+            delete ptr;
+        }
     }
+    if (heap_.size())
+    {
+        resetTimerfd(timerFd_.fd(), heap_.top()->expiration());
+    }
+}
+
+TimerId TimerQueue::addTimer(TimerCallback cb,
+                             Timestamp when,
+                             double interval)
+{
+    auto ptr = new Timer(std::move(cb), when, interval);
+    loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, ptr));
+    return ptr->id();
+}
+
+void TimerQueue::addTimerInLoop(Timer *timer)
+{
+    loop_->assertInLoopThread();
+    CHECK_NOTNULL(timer);
+    heap_.insert(timer);
+    if(heap_.top() == timer)
+    {
+        resetTimerfd(timerFd_.fd(), timer->expiration());
+    }
+}
+
+void TimerQueue::cancel(TimerId timerId)
+{
+    loop_->queueInLoop(std::bind(&TimerQueue::cancelInLoop, this, timerId));
+}
+
+void TimerQueue::cancelInLoop(TimerId timerId)
+{
+    loop_->assertInLoopThread();
+    CHECK_NOTNULL(timerId.timer_);
+    timerId.timer_->disable();
 }
