@@ -5,6 +5,7 @@
 #include "NonCopyable.h"
 #include "Callbacks.h"
 #include "Copyable.h"
+#include <signal.h>
 #include <atomic>
 
 namespace Hohnor

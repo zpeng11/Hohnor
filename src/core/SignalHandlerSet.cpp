@@ -32,7 +32,8 @@ void SignalHandlerSet::handleRead()
     while (it.hasNext())
     {
         char sig = it.next();
-        for (auto ptr : sets_[sig - 1])
+        auto v = sets_[sig - 1];
+        for (auto ptr : v)
         {
             ptr->run();
         }
@@ -55,6 +56,7 @@ void SignalHandlerSet::addInLoop(SignalHandler *handler)
 {
     loop_->assertInLoopThread();
     sets_[handler->signal() - 1].insert(handler);
+    SignalUtils::handleSignal(handler->signal(), SignalUtils::Piped);
 }
 
 void SignalHandlerSet::removeInLoop(SignalHandlerId id)
@@ -68,5 +70,10 @@ void SignalHandlerSet::removeInLoop(SignalHandlerId id)
     }
     else{
         LOG_WARN<<"There is not this signal handler";
+    }
+    if(!sets_[id.signalEvent_->signal()-1].size())
+    {
+        SignalUtils::handleSignal(id.signalEvent_->signal(), SignalUtils::Default);
+    LOG_INFO<<"Debug";
     }
 }

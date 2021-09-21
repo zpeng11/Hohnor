@@ -2,6 +2,7 @@
 #include "Timestamp.h"
 #include "IOHandler.h"
 #include "TimerQueue.h"
+#include "Timer.h"
 #include "SignalHandlerSet.h"
 #include <sys/eventfd.h>
 
@@ -119,7 +120,7 @@ void EventLoop::queueInLoop(Functor cb)
         MutexGuard guard(pendingFunctorsLock_);
         pendingFunctors_.push_back(std::move(cb));
     }
-    if (!isLoopThread() || state_ == PendingHandling)
+    if (!isLoopThread() || state_ == PendingHandling || state_ == Ready)
     {
         wakeUp();
     }
@@ -202,4 +203,23 @@ bool EventLoop::hasIOHandler(IOHandler *handler)
 {
     auto it = IOHandlers_.find(handler);
     return it != IOHandlers_.end();
+}
+TimerId EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
+{
+    return timers_->addTimer(std::move(cb), when, interval);
+}
+
+void EventLoop::removeTimer(TimerId id)
+{
+    timers_->cancel(id);
+}
+
+SignalHandlerId EventLoop::addSignalHandler(char signal, SignalCallback cb)
+{
+    return signalHandlers_->add(signal, std::move(cb));
+}
+
+void EventLoop::removeSignalHandler(SignalHandlerId id)
+{
+    signalHandlers_->remove(id);
 }

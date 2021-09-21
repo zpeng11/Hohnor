@@ -9,6 +9,8 @@
 #include "BlockingQueue.h"
 #include "Epoll.h"
 #include "BinaryHeap.h"
+#include "Timer.h"
+#include "SignalHandler.h"
 #include <atomic>
 #include <vector>
 #include <set>

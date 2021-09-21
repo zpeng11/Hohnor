@@ -19,6 +19,9 @@
 #include "BinaryHeap.h"
 #include "EventLoop.h"
 #include "IOHandler.h"
+#include "SignalHandlerSet.h"
+#include <signal.h>
+#include <sys/timerfd.h>
 using namespace std;
 
 using namespace Hohnor;
@@ -26,7 +29,7 @@ using namespace Hohnor;
 void onConnectionClose(EventLoop *loop, IOHandler *handler);
 void onConnectionRead(EventLoop *loop, IOHandler *handler, int fd)
 {
-    EventLoop* possible = EventLoop::loopOfCurrentThread();
+    EventLoop *possible = EventLoop::loopOfCurrentThread();
     LOG_INFO << "Read from the client";
     char str[BUFSIZ];
     int ret = ::read(fd, str, BUFSIZ);
@@ -71,5 +74,31 @@ int main(int argc, char *argv[])
     serverHandler.setReadCallback([&loop, &socket]()
                                   { onAccept(&loop, &socket); });
     serverHandler.enable();
+    loop.addTimer([]()
+                  { LOG_INFO << "Timer up"; },
+                  addTime(Timestamp::now(), 1), 1);
+    int i = 0;
+    SignalHandlerId id;
+    auto func = [&i, &id, &loop]()
+    {
+        LOG_INFO << "SIGINT "<<i<<"th time";
+            loop.removeSignalHandler(id);
+    };
+    id = loop.addSignalHandler(SIGINT, func);
     loop.loop();
+
+    // int fd = ::timerfd_create(CLOCK_MONOTONIC,
+    //                           TFD_NONBLOCK | TFD_CLOEXEC);
+    // struct itimerspec new_value;
+    // memZero(&new_value, sizeof(struct itimerspec));
+    // new_value.it_value.tv_sec = 2; //100ms
+    // LOG_INFO << "Start";
+    // int ret = ::timerfd_settime(fd, 0, &new_value, NULL);
+    // if (ret < 0)
+    //     LOG_SYSFATAL;
+    // uint64_t exp;
+    // while (read(fd, &exp, sizeof(uint64_t)) != sizeof(uint64_t))
+    // {
+    // }
+    // LOG_INFO << Timestamp::now().toFormattedString();
 }

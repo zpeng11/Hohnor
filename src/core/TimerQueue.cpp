@@ -44,11 +44,9 @@ namespace Hohnor
     {
         // wake up loop by timerfd_settime()
         struct itimerspec newValue;
-        struct itimerspec oldValue;
         memZero(&newValue, sizeof newValue);
-        memZero(&oldValue, sizeof oldValue);
         newValue.it_value = howMuchTimeFromNow(expiration);
-        int ret = ::timerfd_settime(timerfd, 0, &newValue, &oldValue);
+        int ret = ::timerfd_settime(timerfd, 0, &newValue, NULL);
         if (ret)
         {
             LOG_SYSERR << "timerfd_settime()";
