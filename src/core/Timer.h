@@ -26,7 +26,7 @@ namespace Hohnor
 
     public:
         Timer(TimerCallback callback, Timestamp when, double interval);
-        void run();
+        void run(Timestamp);
         void disable();
         Timestamp expiration() const { return expiration_; }
         inline bool repeat() const { return interval_ > 0.0; }

@@ -24,6 +24,10 @@ namespace Hohnor
         ErrorCallback errorCallback_;
         //update EPOLL flags in the loop
         void update(bool addNew = false);
+        void runGuarded();
+
+        std::weak_ptr<void> tie_;
+        bool tied_;
 
     public:
         IOHandler(EventLoop *loop, int fd);
@@ -42,6 +46,8 @@ namespace Hohnor
         void disable();
         //Enable all events on this handler from the eventloop
         void enable();
+
+        void tie(const std::shared_ptr<void>& obj);
 
         void setReadCallback(ReadCallback cb);
         void setWriteCallback(WriteCallback cb);

@@ -22,7 +22,7 @@ namespace Hohnor
     public:
         SignalHandler(int signal, SignalCallback callback) : signal_(signal), callback_(std::move(callback)), sequence_(s_numCreated_++) {}
         int signal() { return signal_; }
-        void run() { callback_(); }
+        void run() { callback_(signal_); }
         int64_t sequence() const { return sequence_; }
         static int64_t numCreated() { return s_numCreated_; }
         SignalHandlerId id();

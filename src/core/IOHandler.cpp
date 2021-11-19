@@ -26,7 +26,7 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), fd_(fd), events_(0), revents_(0), enable_(false)
+IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), fd_(fd), events_(0), revents_(0), enable_(false), tied_(false)
 {
     loop_->addIOHandler(this);
 }
@@ -43,6 +43,23 @@ void IOHandler::update(bool addNew)
 }
 
 void IOHandler::run()
+{
+  std::shared_ptr<void> guard;
+  if (tied_)
+  {
+    guard = tie_.lock();
+    if (guard)
+    {
+      this->runGuarded();
+    }
+  }
+  else
+  {
+    this->runGuarded();
+  }
+}
+
+void IOHandler::runGuarded()
 {
     LOG_DEBUG << "Handling event for " << eventsToString(fd_, revents_);
     if (enable_ != true)
@@ -164,4 +181,10 @@ void IOHandler::setErrorCallback(ErrorCallback cb)
     }
     if (enable_)
         update(false);
+}
+
+void IOHandler::tie(const std::shared_ptr<void>& obj)
+{
+  tie_ = obj;
+  tied_ = true;
 }

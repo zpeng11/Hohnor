@@ -65,7 +65,7 @@ void onAccept(EventLoop *loop, TCPListenSocket *socket)
 
 int main(int argc, char *argv[])
 {
-    Logger::setGlobalLogLevel(Logger::LogLevel::TRACE);
+    Logger::setGlobalLogLevel(Logger::LogLevel::INFO);
     EventLoop loop;
     TCPListenSocket socket;
     socket.bindAddress(9911);
@@ -74,17 +74,25 @@ int main(int argc, char *argv[])
     serverHandler.setReadCallback([&loop, &socket]()
                                   { onAccept(&loop, &socket); });
     serverHandler.enable();
-    loop.addTimer([]()
-                  { LOG_INFO << "Timer up"; },
+    int j = 0;
+    TimerId timerid;
+    timerid = loop.addTimer([&j, &timerid, &loop](Timestamp now)
+                  { LOG_INFO << "Timer up:"<<now.toFormattedString();
+                  j = j+1;
+                  if(j>3)
+                  {
+                      LOG_INFO << "Timer finished:";
+                      loop.removeTimer(timerid);
+                  } },
                   addTime(Timestamp::now(), 1), 1);
     int i = 0;
-    SignalHandlerId id;
-    auto func = [&i, &id, &loop]()
+    SignalHandlerId sigId;
+    auto func = [&i, &sigId, &loop](int signal)
     {
         LOG_INFO << "SIGINT "<<i<<"th time";
-            loop.removeSignalHandler(id);
+            loop.removeSignalHandler(sigId);
     };
-    id = loop.addSignalHandler(SIGINT, func);
+    sigId = loop.addSignalHandler(SIGINT, func);
     loop.loop();
 
     // int fd = ::timerfd_create(CLOCK_MONOTONIC,

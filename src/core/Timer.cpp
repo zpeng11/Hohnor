@@ -12,11 +12,11 @@ Timer::Timer(TimerCallback callback, Timestamp when, double interval) : callback
 {
 }
 
-void Timer::run()
+void Timer::run(Timestamp now)
 {
     if (!disabled_)
     {
-        callback_();
+        callback_(now);
     }
 }
 

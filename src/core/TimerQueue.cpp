@@ -86,7 +86,7 @@ void TimerQueue::handleRead()
     while (heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
     {
         auto ptr = heap_.popTop();
-        ptr->run();
+        ptr->run(now);
         if (ptr->repeat())
         {
             ptr->restart(now);
