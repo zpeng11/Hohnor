@@ -75,16 +75,15 @@ int main(int argc, char *argv[])
                                   { onAccept(&loop, &socket); });
     serverHandler.enable();
     int j = 0;
-    TimerId timerid;
-    timerid = loop.addTimer([&j, &timerid, &loop](Timestamp now)
+    loop.addTimer([&j](Timestamp now, TimerHandle handle)
                   { LOG_INFO << "Timer up:"<<now.toFormattedString();
                   j = j+1;
                   if(j>3)
                   {
                       LOG_INFO << "Timer finished:";
-                      loop.removeTimer(timerid);
-                  } },
-                  addTime(Timestamp::now(), 1), 1);
+                      handle.cancel();
+                  } }
+                  ,addTime(Timestamp::now(), 1), 1);
     int i = 0;
     SignalHandlerId sigId;
     auto func = [&i, &sigId, &loop](int signal)

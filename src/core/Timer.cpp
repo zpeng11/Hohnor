@@ -1,5 +1,5 @@
 #include "Timer.h"
-
+#include "EventLoop.h"
 using namespace Hohnor;
 
 std::atomic<uint64_t> Timer::s_numCreated_;
@@ -12,11 +12,11 @@ Timer::Timer(TimerCallback callback, Timestamp when, double interval) : callback
 {
 }
 
-void Timer::run(Timestamp now)
+void Timer::run(Timestamp now, TimerHandle handle)
 {
     if (!disabled_)
     {
-        callback_(now);
+        callback_(now, handle);
     }
 }
 
@@ -38,7 +38,8 @@ void Timer::restart(Timestamp now)
     }
 }
 
-TimerId Timer::id()
+
+void TimerHandle::cancel()
 {
-    return TimerId(this, sequence_);
+    loop_->removeTimer(*this);
 }

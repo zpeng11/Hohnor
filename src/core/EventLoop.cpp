@@ -204,14 +204,14 @@ bool EventLoop::hasIOHandler(IOHandler *handler)
     auto it = IOHandlers_.find(handler);
     return it != IOHandlers_.end();
 }
-TimerId EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
+void EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
 {
-    return timers_->addTimer(std::move(cb), when, interval);
+    timers_->addTimer(std::move(cb), when, interval);
 }
 
-void EventLoop::removeTimer(TimerId id)
+void EventLoop::removeTimer(TimerHandle id)
 {
-    timers_->cancel(id);
+    timers_->cancel(id.ptr());
 }
 
 SignalHandlerId EventLoop::addSignalHandler(char signal, SignalCallback cb)

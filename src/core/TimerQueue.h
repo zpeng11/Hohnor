@@ -15,7 +15,7 @@ namespace Hohnor
 {
     class EventLoop;
     class Timer;
-    class TimerId;
+    class TimerHandle;
     class TimerQueue
     {
     public:
@@ -27,16 +27,16 @@ namespace Hohnor
         /// repeats if @c interval > 0.0.
         ///
         /// Must be thread safe. Usually be called from other threads.
-        TimerId addTimer(TimerCallback cb,
+        void addTimer(TimerCallback cb,
                          Timestamp when,
                          double interval);
 
         //For cancellation we do not directly discard the timer object in the heap, but set the running Functor of the specific timer to nullptr
-        void cancel(TimerId timerId);
+        void cancel(Timer *timer);
 
     private:
         void addTimerInLoop(Timer *timer);
-        void cancelInLoop(TimerId timerId);
+        void cancelInLoop(Timer *timer);
         // called when timerfd alarms
         void handleRead();
         FdGuard timerFd_;

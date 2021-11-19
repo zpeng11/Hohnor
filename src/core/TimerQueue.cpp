@@ -86,7 +86,7 @@ void TimerQueue::handleRead()
     while (heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
     {
         auto ptr = heap_.popTop();
-        ptr->run(now);
+        ptr->run(now, TimerHandle(ptr, loop_));
         if (ptr->repeat())
         {
             ptr->restart(now);
@@ -103,13 +103,12 @@ void TimerQueue::handleRead()
     }
 }
 
-TimerId TimerQueue::addTimer(TimerCallback cb,
+void TimerQueue::addTimer(TimerCallback cb,
                              Timestamp when,
                              double interval)
 {
     auto ptr = new Timer(std::move(cb), when, interval);
     loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, ptr));
-    return ptr->id();
 }
 
 void TimerQueue::addTimerInLoop(Timer *timer)
@@ -123,14 +122,13 @@ void TimerQueue::addTimerInLoop(Timer *timer)
     }
 }
 
-void TimerQueue::cancel(TimerId timerId)
+void TimerQueue::cancel(Timer * timer)
 {
-    loop_->queueInLoop(std::bind(&TimerQueue::cancelInLoop, this, timerId));
+    loop_->queueInLoop(std::bind(&TimerQueue::cancelInLoop, this, timer));
 }
 
-void TimerQueue::cancelInLoop(TimerId timerId)
+void TimerQueue::cancelInLoop(Timer * timer)
 {
     loop_->assertInLoopThread();
-    CHECK_NOTNULL(timerId.timer_);
-    timerId.timer_->disable();
+    timer->disable();
 }

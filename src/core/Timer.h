@@ -11,7 +11,7 @@
 
 namespace Hohnor
 {
-    class TimerId;
+    class TimerHandle;
     class Timer : NonCopyable
     {
     private:
@@ -26,31 +26,33 @@ namespace Hohnor
 
     public:
         Timer(TimerCallback callback, Timestamp when, double interval);
-        void run(Timestamp);
+        void run(Timestamp, TimerHandle);
         void disable();
         Timestamp expiration() const { return expiration_; }
         inline bool repeat() const { return interval_ > 0.0; }
         int64_t sequence() const { return sequence_; }
         void restart(Timestamp now);
         static int64_t numCreated() { return s_numCreated_; }
-        TimerId id();
         ~Timer() = default;
     };
 
-    class TimerId : public Copyable
+    class EventLoop;
+    class TimerHandle : public Copyable
     {
     public:
-        TimerId()
-            : timer_(NULL),
-              sequence_(0)
+        TimerHandle()
+            : timer_(NULL), loop_(NULL)
         {
         }
 
-        TimerId(Timer *timer, int64_t seq)
-            : timer_(timer),
-              sequence_(seq)
-        {
-        }
+        TimerHandle(Timer *timer, EventLoop *loop)
+            : timer_(timer), loop_(loop) {}
+
+        EventLoop *loop() { return loop_; }
+
+        Timer *ptr() { return timer_; }
+
+        void cancel();
 
         // default copy-ctor, dtor and assignment are okay
 
@@ -58,6 +60,6 @@ namespace Hohnor
 
     private:
         Timer *timer_;
-        int64_t sequence_;
+        EventLoop *loop_;
     };
 } // namespace Hohnor

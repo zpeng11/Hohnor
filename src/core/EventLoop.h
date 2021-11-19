@@ -23,7 +23,7 @@ namespace Hohnor
     class SignalHandlerId;
     class SignalHandlerSet;
     class TimerQueue;
-    class TimerId;
+    class TimerHandle;
     /**
      * 
      */
@@ -68,9 +68,9 @@ namespace Hohnor
         bool hasIOHandler(IOHandler *event);
 
         //Add timer event to the event set
-        TimerId addTimer(TimerCallback cb, Timestamp when, double interval);
+        void addTimer(TimerCallback cb, Timestamp when, double interval);
         //Delete a specific timer
-        void removeTimer(TimerId id);
+        void removeTimer(TimerHandle id);
 
         //Add a signal event to the reactor
         SignalHandlerId addSignalHandler(char signal, SignalCallback cb);
