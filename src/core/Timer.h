@@ -50,13 +50,11 @@ namespace Hohnor
 
         EventLoop *loop() { return loop_; }
 
-        Timer *ptr() { return timer_; }
-
         void cancel();
 
         // default copy-ctor, dtor and assignment are okay
 
-        friend class TimerQueue;
+        friend class EventLoop;
 
     private:
         Timer *timer_;

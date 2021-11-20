@@ -10,7 +10,7 @@
 #include "Epoll.h"
 #include "BinaryHeap.h"
 #include "Timer.h"
-#include "SignalHandler.h"
+#include "Signal.h"
 #include <atomic>
 #include <vector>
 #include <set>
@@ -19,8 +19,8 @@ namespace Hohnor
 
     class Event;
     class IOHandler;
-    class SignalHandler;
-    class SignalHandlerId;
+    class Signal;
+    class SignalHandle;
     class SignalHandlerSet;
     class TimerQueue;
     class TimerHandle;
@@ -73,9 +73,9 @@ namespace Hohnor
         void removeTimer(TimerHandle id);
 
         //Add a signal event to the reactor
-        SignalHandlerId addSignalHandler(char signal, SignalCallback cb);
+        void addSignal(char signal, SignalCallback cb);
         //remove a signal event from the reactor
-        void removeSignalHandler(SignalHandlerId id);
+        void removeSignal(SignalHandle id);
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
         //After ctor and Before calling loop(), it is Ready state,

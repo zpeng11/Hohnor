@@ -19,7 +19,7 @@
 #include "BinaryHeap.h"
 #include "EventLoop.h"
 #include "IOHandler.h"
-#include "SignalHandlerSet.h"
+#include "SignalSet.h"
 #include <signal.h>
 #include <sys/timerfd.h>
 using namespace std;
@@ -85,13 +85,12 @@ int main(int argc, char *argv[])
                   } }
                   ,addTime(Timestamp::now(), 1), 1);
     int i = 0;
-    SignalHandlerId sigId;
-    auto func = [&i, &sigId, &loop](int signal)
+    auto func = [&i](int signal, SignalHandle handle)
     {
         LOG_INFO << "SIGINT "<<i<<"th time";
-            loop.removeSignalHandler(sigId);
+        handle.cancel();
     };
-    sigId = loop.addSignalHandler(SIGINT, func);
+    loop.addSignal(SIGINT, func);
     loop.loop();
 
     // int fd = ::timerfd_create(CLOCK_MONOTONIC,

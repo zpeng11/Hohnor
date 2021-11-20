@@ -6,7 +6,7 @@
 
 #include "NonCopyable.h"
 #include "Callbacks.h"
-#include "SignalHandler.h"
+#include "Signal.h"
 #include "IOHandler.h"
 
 namespace Hohnor
@@ -18,16 +18,16 @@ namespace Hohnor
         ~SignalHandlerSet();
 
         //This is thread safe
-        SignalHandlerId add(char signal, SignalCallback cb);
+        void add(char signal, SignalCallback cb);
         //Thread safe
-        void remove(SignalHandlerId id);
+        void remove(Signal* signal);
 
     private:
-        void addInLoop(SignalHandler *handler);
-        void removeInLoop(SignalHandlerId id);
+        void addInLoop(Signal* signal);
+        void removeInLoop(Signal* signal);
         void handleRead();
         EventLoop *loop_;
         IOHandler signalPipeHandler_;
-        std::unique_ptr<std::set<SignalHandler *>[]> sets_;
+        std::unique_ptr<std::set<Signal *>[]> sets_;
     };
 } // namespace Hohnor

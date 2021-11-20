@@ -3,7 +3,7 @@
 #include "IOHandler.h"
 #include "TimerQueue.h"
 #include "Timer.h"
-#include "SignalHandlerSet.h"
+#include "SignalSet.h"
 #include <sys/eventfd.h>
 
 namespace Hohnor
@@ -211,15 +211,15 @@ void EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
 
 void EventLoop::removeTimer(TimerHandle id)
 {
-    timers_->cancel(id.ptr());
+    timers_->cancel(id.timer_);
 }
 
-SignalHandlerId EventLoop::addSignalHandler(char signal, SignalCallback cb)
+void EventLoop::addSignal(char signal, SignalCallback cb)
 {
-    return signalHandlers_->add(signal, std::move(cb));
+    signalHandlers_->add(signal, std::move(cb));
 }
 
-void EventLoop::removeSignalHandler(SignalHandlerId id)
+void EventLoop::removeSignal(SignalHandle handle)
 {
-    signalHandlers_->remove(id);
+    signalHandlers_->remove(handle.signalEvent_);
 }

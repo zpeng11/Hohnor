@@ -1,9 +1,9 @@
-#include "SignalHandlerSet.h"
+#include "SignalSet.h"
 #include "EventLoop.h"
 #include "SignalUtils.h"
 using namespace Hohnor;
 
-SignalHandlerSet::SignalHandlerSet(EventLoop *loop) : loop_(loop), signalPipeHandler_(loop, SignalUtils::readEndFd()), sets_(new std::set<SignalHandler *>[64])
+SignalHandlerSet::SignalHandlerSet(EventLoop *loop) : loop_(loop), signalPipeHandler_(loop, SignalUtils::readEndFd()), sets_(new std::set<Signal *>[64])
 {
     signalPipeHandler_.setReadCallback(std::bind(&SignalHandlerSet::handleRead, this));
     signalPipeHandler_.enable();
@@ -35,45 +35,42 @@ void SignalHandlerSet::handleRead()
         auto v = sets_[sig - 1];
         for (auto ptr : v)
         {
-            ptr->run();
+            ptr->run(loop_);
         }
     }
 }
 
-SignalHandlerId SignalHandlerSet::add(char signal, SignalCallback cb)
+void SignalHandlerSet::add(char signal, SignalCallback cb)
 {
-    SignalHandler *handler = new SignalHandler(signal, std::move(cb));
+    Signal *handler = new Signal(signal, std::move(cb));
     loop_->runInLoop(std::bind(&SignalHandlerSet::addInLoop, this, handler));
-    return SignalHandlerId(handler, handler->sequence());
 }
 
-void SignalHandlerSet::remove(SignalHandlerId id)
+void SignalHandlerSet::remove(Signal* signal)
 {
-    loop_->runInLoop(std::bind(&SignalHandlerSet::removeInLoop, this, id));
+    loop_->runInLoop(std::bind(&SignalHandlerSet::removeInLoop, this, signal));
 }
 
-void SignalHandlerSet::addInLoop(SignalHandler *handler)
+void SignalHandlerSet::addInLoop(Signal *handler)
 {
     loop_->assertInLoopThread();
     sets_[handler->signal() - 1].insert(handler);
     SignalUtils::handleSignal(handler->signal(), SignalUtils::Piped);
 }
 
-void SignalHandlerSet::removeInLoop(SignalHandlerId id)
+void SignalHandlerSet::removeInLoop(Signal* signal)
 {
     loop_->assertInLoopThread();
-    CHECK_NOTNULL(id.signalEvent_);
-    auto it = sets_[id.signalEvent_->signal()-1].find(id.signalEvent_);
-    if(it != sets_[id.signalEvent_->signal()-1].end())
+    auto it = sets_[signal->signal()-1].find(signal);
+    if(it != sets_[signal->signal()-1].end())
     {
-        sets_[id.signalEvent_->signal()-1].erase(it);
+        sets_[signal->signal()-1].erase(it);
     }
     else{
         LOG_WARN<<"There is not this signal handler";
     }
-    if(!sets_[id.signalEvent_->signal()-1].size())
+    if(!sets_[signal->signal()-1].size())
     {
-        SignalUtils::handleSignal(id.signalEvent_->signal(), SignalUtils::Default);
-    LOG_INFO<<"Debug";
+        SignalUtils::handleSignal(signal->signal(), SignalUtils::Default);
     }
 }
