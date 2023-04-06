@@ -1,5 +1,6 @@
 /**
  * Thread_local scope information that records thread-id and thread name
+ * This is useful for debug and logging
  */
 #pragma once
 
@@ -20,6 +21,9 @@ namespace Hohnor
 		bool isMainThread();
 
 		void sleepUsec(int64_t usec);
+		/*
+		* For tracing stack in the exception
+		*/
 		string stackTrace(bool demangle);
 	}
 }

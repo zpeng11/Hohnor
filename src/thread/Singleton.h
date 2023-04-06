@@ -1,5 +1,6 @@
 /**
  * Thread singleton that has only one instance in the whole process.
+ * Across threads, we should have it work.
  * Reminder the template type should have default constructor.
  */
 

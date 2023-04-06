@@ -10,7 +10,7 @@
 #include <iostream>
 
 #ifndef NDEBUG
-//Check return value of mutex lock
+//Check return value of mutex lock, for non-zero return take care of 
 #define MCHECK(ret) (                   \
 	{                                   \
 		__typeof__(ret) errnum = (ret); \
@@ -69,7 +69,7 @@ namespace Hohnor
 			return currentHolder == CurrentThread::tid();
 		}
 
-		void assertLocked() const
+		inline void assertLocked() const
 		{
 			assert(isLockedByThisThread());
 		}

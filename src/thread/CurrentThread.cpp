@@ -102,6 +102,7 @@ namespace Hohnor
 	*/
     namespace NewProcessAutoHandler
     {
+        //Provide afterFork() for convenient of demeon process like detach from session.
         void afterFork()
         {
             CurrentThread::t_tid = 0;
@@ -119,6 +120,9 @@ namespace Hohnor
                 pthread_atfork(NULL, NULL, &afterFork);
             }
         };
+        //The following local variable has a copy for each process, and the initialization would happend again due to after_fork
+        //In this way, we ensure the programming module is focusing on pthreads, a forked Hohnor program would consider itself 
+        //to having a main thread and multiple children threads 
         ThreadNameInitializer init;
     }
 }
