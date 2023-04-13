@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 
 project(Hohnor)
 
@@ -20,6 +20,7 @@ add_subdirectory(src/net)
 add_subdirectory(src/io)
 add_subdirectory(src/core)
 add_subdirectory(example)
+add_subdirectory(tests)
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)
@@ -30,8 +31,3 @@ list(APPEND libs NET)
 list(APPEND libs IO)
 list(APPEND libs CORE)
 
-
-add_executable(Test test/Test.cpp)
-add_executable(TestClient test/TestClient.cpp)
-target_link_libraries(Test PUBLIC ${libs})
-target_link_libraries(TestClient PUBLIC ${libs})
