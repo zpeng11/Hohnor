@@ -5,7 +5,7 @@
 
 #include <cxxabi.h>
 #include <sys/syscall.h>
-#include <execinfo.h>
+#include <execinfo.h> //For getting stack trace, which is not available for Cygwin T.T
 #include <stdlib.h>
 
 namespace Hohnor
@@ -60,6 +60,7 @@ namespace Hohnor
                         // bin/exception_test(_ZN3Bar4testEv+0x79) [0x401909]
                         char *left_par = nullptr;
                         char *plus = nullptr;
+                        //For loop to skip until the undemangled function name
                         for (char *p = strings[i]; *p; ++p)
                         {
                             if (*p == '(')
