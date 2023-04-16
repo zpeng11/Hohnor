@@ -9,4 +9,5 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+list(REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(Catch)
