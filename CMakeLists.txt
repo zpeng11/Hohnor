@@ -9,26 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #Add cmake dir 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-include_directories(${PROJECT_SOURCE_DIR}/src/common)
-
 #add directory, they will run the cmake file in the directory automatically 
-add_subdirectory(src/thread)
-add_subdirectory(src/time)
-add_subdirectory(src/log)
-add_subdirectory(src/file)
-add_subdirectory(src/process)
-add_subdirectory(src/net)
-add_subdirectory(src/io)
-add_subdirectory(src/core)
-add_subdirectory(example)
+add_subdirectory(src)
 add_subdirectory(tests)
 
-list(APPEND libs THREAD)
-list(APPEND libs TIME)
-list(APPEND libs LOG)
-list(APPEND libs FILE)
-list(APPEND libs PROCESS)
-list(APPEND libs NET)
-list(APPEND libs IO)
-list(APPEND libs CORE)
 
