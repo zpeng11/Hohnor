@@ -2,7 +2,6 @@
  * Thread_local scope information that records thread-id and thread name
  */
 #include "CurrentThread.h"
-
 #include <cxxabi.h>
 #include <sys/syscall.h>
 #include <execinfo.h> //For getting stack trace, which is not available for Cygwin T.T

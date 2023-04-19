@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "NonCopyable.h"
+#include "common/NonCopyable.h"
 #include <assert.h>
 #include <pthread.h>
 #include <stdlib.h> // atexit

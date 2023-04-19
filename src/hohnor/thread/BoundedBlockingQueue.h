@@ -9,8 +9,8 @@
 
 #include "Mutex.h"
 #include "Condition.h"
-#include "CircularBuffer.h"
-#include "SyncQueue.h"
+#include "common/CircularBuffer.h"
+#include "common/SyncQueue.h"
 #include <atomic>
 
 namespace Hohnor

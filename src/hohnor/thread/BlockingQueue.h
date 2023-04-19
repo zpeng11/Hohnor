@@ -7,7 +7,7 @@
 
 #include "Mutex.h"
 #include "Condition.h"
-#include "SyncQueue.h"
+#include "common/SyncQueue.h"
 #include <deque>
 #include <atomic>
 
