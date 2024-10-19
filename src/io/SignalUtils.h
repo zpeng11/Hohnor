@@ -1,7 +1,7 @@
 /**
  * Handling signal to prevent interupt, send them to a socket pipe and allow epoll to handle
  */
-//TODO: Enable onFork()
+//TODO: Use SignalFD as replace
 #pragma once
 #include <unistd.h>
 #include <signal.h>

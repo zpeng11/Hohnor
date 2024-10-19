@@ -6,3 +6,5 @@ target_link_libraries(IO PUBLIC LOG)
 
 #add current directory *.h for upper level to include
 target_include_directories(IO INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+#TODO create alternative for epoll on cygwin(poll)
