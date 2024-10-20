@@ -37,7 +37,7 @@ namespace Hohnor
             ssize_t size() { return ptr_->readyEvents_; }
             epoll_event &next()
             {
-                CHECK(position_ < ptr_->readyEvents_) << " Hohnor::Epoll::Iter::next() error";
+                HCHECK(position_ < ptr_->readyEvents_) << " Hohnor::Epoll::Iter::next() error";
                 return ptr_->events_[position_++];
             }
             ~Iter() { ptr_->readyEvents_ = 0; }
