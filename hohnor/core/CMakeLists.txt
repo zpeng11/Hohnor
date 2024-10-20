@@ -1,0 +1,9 @@
+# Create static library .o library for upper level to use
+AUX_SOURCE_DIRECTORY(./ DIR_SRCS)
+add_library(CORE STATIC ${DIR_SRCS})
+
+target_link_libraries(CORE PUBLIC TIME)
+target_link_libraries(CORE PUBLIC IO)
+target_link_libraries(CORE PUBLIC LOG)
+
+target_include_directories(CORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,8 +1,8 @@
 #include <vector>
-#include "Types.h"
+#include "common/Types.h"
 #include "Socket.h"
 #include "Epoll.h"
-#include "StringPiece.h"
+#include "common/StringPiece.h"
 #include "FdUtils.h"
 #include "SocketWrap.h"
 #include "TCPSocket.h"

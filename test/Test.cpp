@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include "Thread.h"
-#include "Timestamp.h"
+#include "time/Timestamp.h"
 #include "Date.h"
 #include "Logging.h"
 #include "FileUtils.h"
@@ -16,7 +16,7 @@
 #include "Socket.h"
 #include "ProcessInfo.h"
 #include "TCPSocket.h"
-#include "BinaryHeap.h"
+#include "common/BinaryHeap.h"
 #include "EventLoop.h"
 #include "IOHandler.h"
 #include "SignalSet.h"

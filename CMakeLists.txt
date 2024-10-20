@@ -8,17 +8,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 
-include_directories(${PROJECT_SOURCE_DIR}/src/common)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/hohnor)
 
 #add directory, they will run the cmake file in the directory automatically 
-add_subdirectory(src/thread)
-add_subdirectory(src/time)
-add_subdirectory(src/log)
-add_subdirectory(src/file)
-add_subdirectory(src/process)
-add_subdirectory(src/net)
-add_subdirectory(src/io)
-add_subdirectory(src/core)
+add_subdirectory(hohnor/thread)
+add_subdirectory(hohnor/time)
+add_subdirectory(hohnor/log)
+add_subdirectory(hohnor/file)
+add_subdirectory(hohnor/process)
+add_subdirectory(hohnor/net)
+add_subdirectory(hohnor/io)
+add_subdirectory(hohnor/core)
 add_subdirectory(example)
 
 list(APPEND libs THREAD)
