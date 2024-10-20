@@ -1,5 +1,6 @@
 #include "Timestamp.h"
 #include <sys/time.h>
+#include <time.h>
 #include <stdio.h>
 
 #ifndef __STDC_FORMAT_MACROS
@@ -22,24 +23,27 @@ string Timestamp::toString() const
 	return buf;
 }
 
-string Timestamp::toFormattedString(bool showMicroseconds) const
+string Timestamp::toFormattedString(bool showMicroseconds, TimeStandard standard) const
 {
 	char buf[64] = {0};
 	time_t seconds = static_cast<time_t>(microSecondsSinceEpoch_ / kMicroSecondsPerSecond);
 	struct tm tm_time;
-	gmtime_r(&seconds, &tm_time);
+	if(standard == GMT)
+		gmtime_r(&seconds, &tm_time);
+	else
+		localtime_r(&seconds, &tm_time);
 
 	if (showMicroseconds)
 	{
 		int microseconds = static_cast<int>(microSecondsSinceEpoch_ % kMicroSecondsPerSecond);
-		snprintf(buf, sizeof(buf), "%4d%02d%02d %02d:%02d:%02d.%06d",
+		snprintf(buf, sizeof(buf), "%4d-%02d-%02d %02d:%02d:%02d.%06d",
 				 tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
 				 tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec,
 				 microseconds);
 	}
 	else
 	{
-		snprintf(buf, sizeof(buf), "%4d%02d%02d %02d:%02d:%02d",
+		snprintf(buf, sizeof(buf), "%4d-%02d-%02d %02d:%02d:%02d",
 				 tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
 				 tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
 	}

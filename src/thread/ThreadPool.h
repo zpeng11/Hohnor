@@ -1,3 +1,6 @@
+/**
+ * Thread pool that manages threads
+ */
 #pragma once
 #include "Thread.h"
 #include "BoundedBlockingQueue.h"

@@ -1,3 +1,6 @@
+/**
+ * Wrapper for pthread mutex and the RAII guard class
+ */
 #pragma once
 
 #include "CurrentThread.h"

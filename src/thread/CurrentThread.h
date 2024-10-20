@@ -1,9 +1,12 @@
+/**
+ * Thread_local scope information that records thread-id and thread name
+ */
 #pragma once
 
 #include "Types.h"
 #include <string>
 #include <unistd.h>
-#include <sys/syscall.h>
+
 namespace Hohnor
 {
 	namespace CurrentThread
@@ -13,7 +16,7 @@ namespace Hohnor
 		extern thread_local std::string t_threadName;
 
 		int tid();
-		const std::string& name();
+		const std::string &name();
 		bool isMainThread();
 
 		void sleepUsec(int64_t usec);

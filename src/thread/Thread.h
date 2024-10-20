@@ -1,3 +1,6 @@
+/**
+ * Wrapper for pthread's thread
+ */
 #pragma once
 
 #include "CountDownLatch.h"

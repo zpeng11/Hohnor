@@ -1,20 +1,30 @@
+/**
+ * A more advanced Blocking queue, it has bounded size limit, thread safe.
+ * The basic level uses circular buffer to implement, since it has scheduled fixed memory,
+ * it works faster than normal queue, 
+ * the drawback is that size of the queue should be larger than 1
+ * (otherwise ring buffer will be hard to implement)
+ */
 #pragma once
 
 #include "Mutex.h"
 #include "Condition.h"
 #include "CircularBuffer.h"
+#include "SyncQueue.h"
+#include <atomic>
 
 namespace Hohnor
 {
 	template <typename T>
-	class BoundedBlockingQueue : NonCopyable
+	class BoundedBlockingQueue : public SyncQueue<T>
 	{
 	public:
 		explicit BoundedBlockingQueue(int maxSize)
 			: mutex_(),
 			  notEmpty_(mutex_),
 			  notFull_(mutex_),
-			  queue_(maxSize)
+			  queue_(maxSize),
+              end_(false)
 		{
 		}
 
@@ -64,7 +74,7 @@ namespace Hohnor
 			assert(!queue_.empty());
 			T front(std::move(queue_.dequeue()));
 			notFull_.notify();
-			return front;
+			return std::move(front);
 		}
 
 		bool empty() const
@@ -101,22 +111,11 @@ namespace Hohnor
 			notFull_.notifyAll();
 		}
 
-		// queue_type drain()
-		// {
-		// 	std::deque<T> queue;
-		// 	{
-		// 		MutexGuard lock(mutex_);
-		// 		queue = std::move(queue_);
-		// 		assert(queue_.empty());
-		// 	}
-		// 	return queue;
-		// }
-
 	private:
 		mutable Mutex mutex_;
 		Condition notEmpty_ ;
 		Condition notFull_ ;
 		CircularBuffer<T> queue_;
-		bool end_ = false;
+		std::atomic<bool> end_ ;
 	};
 }

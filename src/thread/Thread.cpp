@@ -1,8 +1,13 @@
+/**
+ * Wrapper for pthread 
+ */
 #include "Thread.h"
 #include <unistd.h>
-#include <sys/prctl.h>
 #include <exception>
 #include "Exception.h"
+#ifndef __CYGWIN__
+#include <sys/prctl.h>
+#endif
 
 namespace Hohnor
 {
@@ -28,9 +33,11 @@ namespace Hohnor
 
 		data->tid_ = CurrentThread::tid();
 		data->latch_.countDown();
-		CurrentThread::t_threadName = data->name_.empty()?"HohnorThread":data->name_;
+		CurrentThread::t_threadName = data->name_.empty() ? "HohnorThread" : data->name_;
+#ifndef __CYGWIN__
 		::prctl(PR_SET_NAME, CurrentThread::t_threadName);
-
+#endif
+		
 		try
 		{
 			data->func_();
@@ -75,7 +82,7 @@ Hohnor::Thread::Thread(ThreadFunc func, const std::string name) : started_(false
 	int num = ++(this->numCreated_);
 	if (name_.empty())
 	{
-		name_ = "HohnorThread" + std::to_string(num) ;
+		name_ = "HohnorThread" + std::to_string(num);
 	}
 }
 
@@ -87,8 +94,8 @@ void Hohnor::Thread::start()
 	if (pthread_create(&pthreadId_, NULL, threadStarter, data))
 	{
 		started_ = false;
-		delete data; 
-		std::cout<< "Failed in pthread_create"<<std::endl;
+		delete data;
+		std::cout << "Failed in pthread_create" << std::endl;
 	}
 	else
 	{
@@ -103,7 +110,7 @@ int Hohnor::Thread::join()
 	assert(!joined_);
 	joined_ = true;
 	return pthread_join(pthreadId_, NULL);
-} 
+}
 
 Hohnor::Thread::~Thread()
 {
@@ -112,4 +119,3 @@ Hohnor::Thread::~Thread()
 		pthread_detach(pthreadId_);
 	}
 }
-

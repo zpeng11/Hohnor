@@ -1,3 +1,7 @@
+/**
+ * A latch structure that is simular to singal-slot mechanism, 
+ *  consumer(s) wait on the latch for the producer to notify
+ */
 #pragma once 
 
 #include "Condition.h"
@@ -28,7 +32,7 @@ namespace Hohnor
 			MutexGuard guard(this->mutex_);
 			return count_;
 		}
-		int countDown()
+		void countDown()
 		{
 			MutexGuard guard(this->mutex_);
 			--count_;

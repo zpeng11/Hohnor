@@ -41,34 +41,14 @@
 #include <cstring>
 #include <string>
 #include <iosfwd> // for ostream forward-declaration
-#include <pcre.h>
 
 using std::memcmp;
 using std::string;
 using std::strlen;
 namespace Hohnor
 {
-	// For passing C-style string argument to a function.
-	class StringArg // copyable
-	{
-	public:
-		StringArg(const char *str)
-			: str_(str)
-		{
-		}
-
-		StringArg(const string &str)
-			: str_(str.c_str())
-		{
-		}
-
-		const char *c_str() const { return str_; }
-
-	private:
-		const char *str_;
-	};
-
-	class PCRECPP_EXP_DEFN StringPiece
+    //Simular to c++14 stringview
+	class StringPiece
 	{
 	private:
 		const char *ptr_;
