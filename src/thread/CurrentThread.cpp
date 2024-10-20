@@ -5,6 +5,8 @@
 
 #include <cxxabi.h>
 #include <sys/syscall.h>
+#include <pthread.h>
+#include <time.h>
 #include <execinfo.h>
 #include <stdlib.h>
 
