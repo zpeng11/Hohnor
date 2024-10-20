@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-// #include "hohnor/common/"
 #include <functional>
 #include <memory>
 #include "hohnor/common/BinaryHeap.h"
+using namespace Hohnor;
 
 std::function<bool(int &, int &)> intLessThan = 
     [](int &lhs, int &rhs) ->bool{return lhs < rhs;};
@@ -55,7 +55,14 @@ TEST(binaryHeap, putAndGet) {
 TEST(binaryHeap, checkorder) {
   // Expect two strings not to be equal.
   BinaryHeap<int> intBH(intLessThan);
-  BinaryHeap<float> floatBH(floatLessThan);
-  BinaryHeap<std::shared_ptr<mockStruct>> structBH(structLessThan);
-  
+  std::vector<int> list = {5,3,1,4,2};
+  for(int n : list){
+    intBH.insert(n);
+  }
+  int idx = 0;
+  std::vector<int> compareList = {1,2,3,4,5};
+  while(intBH.size()){
+    EXPECT_EQ(compareList[idx], intBH.popTop());
+    idx ++;
+  }
 }
