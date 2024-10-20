@@ -44,7 +44,7 @@ I know std::thread is good enough, but implementing threadpool and thread-utils 
 + `ThreadPool.h` implement threadpool
 
 ## Logging related design
-Logging thread is standalone from all threadpool managed threads(which allows run outside of threadpool lifespan). The content of log are produced and stored in a smart-ptr-managed buffer, then put in thread-safe queue for stdout/filewriter to comsume. 
+The logging function works in an async way, which means the earlier executed log code is not garenteed to be in a upper line inside log output, this happens because we only flush string of log when the logger object's destructor stage. The message in log messages has timestamps to ensure reader can understand what actually happened. Logging thread is standalone from all threadpool managed threads(which allows run outside of threadpool lifespan). The content of log are produced and stored in a smart-ptr-managed buffer, then put in thread-safe queue for stdout/filewriter to comsume. 
 + `LogStream` simulated output stream, use macros to do dynamaic checking and logging infomation
 (refer interface from glog)
 + `logging` provide lower level support for LogStream

@@ -45,21 +45,6 @@ namespace Hohnor
             "FATAL ",
     };
 
-    Mutex m;
-    void defaultOutput(std::shared_ptr<LogStream::Buffer> buffer)
-    {
-        MutexGuard guard(m);
-        auto msg = buffer->data();
-        auto len = buffer->length();
-        size_t n = fwrite(msg, 1, len, stdout);
-        assert(n == len && "Write to stdout error");
-    }
-    void defaultFlush()
-    {
-        MutexGuard guard(m);
-        fflush(stdout);
-    }
-
     //Log level initilization according to running environment
     Logger::LogLevel initGlobalLogLevel()
     {
@@ -71,8 +56,7 @@ namespace Hohnor
             return Logger::INFO;
     }
 
-    Logger::OutputFunc g_output = defaultOutput;
-    Logger::FlushFunc g_flush = defaultFlush;
+    std::shared_ptr<AsyncLog> g_asynclog = std::make_shared<AsyncLogStdout>();
     Logger::LogLevel g_logLevel = initGlobalLogLevel();
     // TimeZone g_logTimeZone;
 
@@ -143,10 +127,10 @@ Logger::Logger(StringPiece file, int line, bool toAbort)
 Logger::~Logger()
 {
     stream_ << " - " << fileBaseName_ << ':' << line_ << '\n';
-    g_output(stream_.moveBuffer());
+    g_asynclog->addLog(stream_.moveBuffer());
     if (level_ == FATAL)
     {
-        g_flush();
+        g_asynclog->flush();
         abort();
     }
 }
@@ -161,18 +145,7 @@ Logger::LogLevel GlobalLogLevel()
     return g_logLevel;
 }
 
-void Logger::setOutput(OutputFunc out)
+void Logger::setAsyncLog(std::shared_ptr<AsyncLog> log)
 {
-    g_output = out;
-}
-
-void Logger::setFlush(FlushFunc flush)
-{
-    g_flush = flush;
-}
-
-void Logger::setAsyncLog(Hohnor::AsyncLog &al)
-{
-    Hohnor::Logger::setOutput(std::bind(&Hohnor::AsyncLog::addLog, &al, std::placeholders::_1));
-    Hohnor::Logger::setFlush(std::bind(&Hohnor::AsyncLog::flush, &al));
+    g_asynclog = log;
 }

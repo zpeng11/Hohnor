@@ -47,17 +47,8 @@ namespace Hohnor
         //Set global log level
         static void setGlobalLogLevel(LogLevel level);
 
-        //Define callback output function type that deal with moved buffer ptr
-        typedef std::function<void(std::shared_ptr<LogStream::Buffer>)> OutputFunc;
-        //Define callback flush function type that works with output function
-        typedef std::function<void()> FlushFunc;
-
-        //Set the global output callback function
-        static void setOutput(OutputFunc);
-        //Set the global flush callback function
-        static void setFlush(FlushFunc);
         //Set asyncLog
-        static void setAsyncLog(Hohnor::AsyncLog &al);
+        static void setAsyncLog(std::shared_ptr<AsyncLog>);//Most likely use to prepare AsyncLogFile or self-defined Async implementation
 
     private:
         LogStream stream_;

@@ -4,15 +4,7 @@
 
 using namespace Hohnor;
 
-AsyncLog::AsyncLog(const string &basename,
-                   const string &directory,
-                   int checkEveryN,
-                   int flushInterval,
-                   off_t rollSize,
-                   int rollInterval,
-                   Timestamp::TimeStandard standrad)
-    : logFile_(basename, directory, checkEveryN, flushInterval, rollSize, rollInterval, standrad),
-      logThread_(std::bind(&Hohnor::AsyncLog::logThreadFunc, this), "AsyncLogThread"),
+AsyncLog::AsyncLog():logThread_(std::bind(&AsyncLog::logThreadFunc, this), "AsyncLogThread"),
       bufferQueue_(),
       stop_(false)
 {
@@ -33,13 +25,13 @@ void AsyncLog::logThreadFunc()
         auto buffer = bufferQueue_.take();
         if (UNLIKELY(buffer == nullptr)) //That is a flush
         {
-            logFile_.flush();
+            output_flush();
         }
         else   //normal data
         {
             auto msg = buffer->data();
             auto len = buffer->length();
-            logFile_.append(msg, len);
+            output_append(msg, len);
         }
     }
 }
