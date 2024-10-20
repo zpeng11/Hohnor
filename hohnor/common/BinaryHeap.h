@@ -11,6 +11,7 @@
 /**
  * In logic, this is a binary heap with smallest-top, 
  * but you can use it as greatest-top by defining lessThanCmp.
+ * Ideally the template type T should be either value or smart-ptr
  */
 template <class T>
 class BinaryHeap
