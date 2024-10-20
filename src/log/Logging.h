@@ -1,7 +1,7 @@
 /**
  * logging interface to log information and dynamic check
  */
-//TODO enable message with defferent level to have differnt way of write and flush
+
 #pragma once
 
 #include <memory>

@@ -2,7 +2,7 @@
  * File descriptor utillities
  */
 
-//TODO create machanism to prevent fork after any fd is created(I do not want to handle this for a multi-thread lib)
+
 
 #pragma once
 #include <unistd.h>

@@ -3,7 +3,6 @@
  * which is simular to a IO event dispatcher
  */
 
-//TODO create keyboard input event
 
 #pragma once
 #include "NonCopyable.h"
