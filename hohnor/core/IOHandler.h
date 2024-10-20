@@ -3,9 +3,9 @@
  */
 
 #pragma once
-#include "common/NonCopyable.h"
-#include "common/Callbacks.h"
-#include "EventLoop.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Callbacks.h"
+#include "hohnor/core/EventLoop.h"
 
 namespace Hohnor
 {

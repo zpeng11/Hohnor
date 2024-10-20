@@ -4,7 +4,7 @@
  */
 #pragma once 
 
-#include "Condition.h"
+#include "hohnor/thread/Condition.h"
 
 
 namespace Hohnor

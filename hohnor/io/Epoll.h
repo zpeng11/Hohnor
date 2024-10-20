@@ -5,9 +5,9 @@
 #include <cstddef> // NULL
 #include <memory>  //std::unique_ptr
 #include <sys/epoll.h>
-#include "common/NonCopyable.h"
-#include "Logging.h"
-#include "FdUtils.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/log/Logging.h"
+#include "hohnor/io/FdUtils.h"
 
 namespace Hohnor
 {

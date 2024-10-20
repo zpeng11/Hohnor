@@ -7,7 +7,7 @@
 #pragma once
 #include <unistd.h>
 #include <memory>
-#include "common/NonCopyable.h"
+#include "hohnor/common/NonCopyable.h"
 
 namespace Hohnor
 {

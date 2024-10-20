@@ -1,11 +1,11 @@
 #pragma once
 #include <memory>
-#include "common/Types.h"
-#include "common/NonCopyable.h"
-#include "BlockingQueue.h"
-#include "Thread.h"
-#include "LogStream.h"
-#include "LogFile.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/thread/BlockingQueue.h"
+#include "hohnor/thread/Thread.h"
+#include "hohnor/log/LogStream.h"
+#include "hohnor/file/LogFile.h"
 
 namespace Hohnor
 {

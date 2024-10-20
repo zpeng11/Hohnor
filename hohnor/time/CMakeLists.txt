@@ -6,6 +6,6 @@ add_library(TIME STATIC ${DIR_SRCS})
 #target_link_libraries(TIME PUBLIC THREAD)
 
 #add current directory *.h for upper level to include
-target_include_directories(TIME INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(TIME PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 

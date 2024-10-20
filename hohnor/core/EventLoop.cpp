@@ -1,5 +1,5 @@
-#include "core/EventLoop.h"
-#include "time/Timestamp.h"
+#include "hohnor/core/EventLoop.h"
+#include "hohnor/time/Timestamp.h"
 #include "IOHandler.h"
 #include "TimerQueue.h"
 #include "Timer.h"

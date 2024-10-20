@@ -1,5 +1,5 @@
 #include "TCPSocket.h"
-#include "Logging.h"
+#include "hohnor/log/Logging.h"
 
 using namespace Hohnor;
 std::shared_ptr<struct tcp_info> TCPListenSocket::getTCPInfo() const

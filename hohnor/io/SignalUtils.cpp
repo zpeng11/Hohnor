@@ -1,6 +1,6 @@
 #include "SignalUtils.h"
-#include "Logging.h"
-#include "time/Timestamp.h"
+#include "hohnor/log/Logging.h"
+#include "hohnor/time/Timestamp.h"
 #include <sys/socket.h>
 #include <set>
 

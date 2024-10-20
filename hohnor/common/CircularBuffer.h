@@ -10,8 +10,8 @@
 #pragma once
 #include <memory>
 #include <type_traits>
-#include "common/Types.h"
-#include "common/NonCopyable.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/common/NonCopyable.h"
 
 namespace Hohnor
 {

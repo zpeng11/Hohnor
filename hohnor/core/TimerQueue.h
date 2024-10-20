@@ -3,11 +3,11 @@
  */
 
 #pragma once
-#include "common/NonCopyable.h"
-#include "time/Timestamp.h"
-#include "common/Callbacks.h"
-#include "common/BinaryHeap.h"
-#include "IOHandler.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/time/Timestamp.h"
+#include "hohnor/common/Callbacks.h"
+#include "hohnor/common/BinaryHeap.h"
+#include "hohnor/core/IOHandler.h"
 #include <set>
 #include <vector>
 

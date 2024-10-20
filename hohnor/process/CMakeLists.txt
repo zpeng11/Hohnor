@@ -8,4 +8,4 @@ target_link_libraries(PROCESS PUBLIC FILE)
 target_link_libraries(PROCESS PUBLIC TIME)
 
 #add current directory *.h for upper level to include
-target_include_directories(PROCESS INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(PROCESS PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

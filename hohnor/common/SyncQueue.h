@@ -2,7 +2,7 @@
  * Common interface for syncnized queue, implementations can be bounded or unbounded
  */
 #pragma once
-#include "common/NonCopyable.h"
+#include "hohnor/common/NonCopyable.h"
 
 namespace Hohnor
 {

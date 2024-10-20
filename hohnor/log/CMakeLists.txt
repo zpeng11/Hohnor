@@ -8,4 +8,4 @@ target_link_libraries(LOG PUBLIC TIME)
 target_link_libraries(LOG PUBLIC FILE)
 
 #add current directory *.h for upper level to include
-target_include_directories(LOG INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(LOG PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

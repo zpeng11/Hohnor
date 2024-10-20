@@ -1,5 +1,5 @@
 #include "Socket.h"
-#include "Logging.h"
+#include "hohnor/log/Logging.h"
 #include <sstream>
 
 using namespace std;

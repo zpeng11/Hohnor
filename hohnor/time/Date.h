@@ -2,7 +2,7 @@
  * Date and Julian day calculation
  */
 #pragma once
-#include "common/Types.h"
+#include "hohnor/common/Types.h"
 
 struct tm;
 

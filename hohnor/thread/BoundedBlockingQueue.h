@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include "Mutex.h"
-#include "Condition.h"
-#include "common/CircularBuffer.h"
-#include "common/SyncQueue.h"
+#include "hohnor/thread/Mutex.h"
+#include "hohnor/thread/Condition.h"
+#include "hohnor/common/CircularBuffer.h"
+#include "hohnor/common/SyncQueue.h"
 #include <atomic>
 
 namespace Hohnor

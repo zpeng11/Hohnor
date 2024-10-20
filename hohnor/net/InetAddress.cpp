@@ -1,6 +1,6 @@
 #include "InetAddress.h"
-#include "Logging.h"
-#include "common/Types.h"
+#include "hohnor/log/Logging.h"
+#include "hohnor/common/Types.h"
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -102,7 +102,7 @@ uint32_t InetAddress::ipv4NetEndian() const
 }
 
 using namespace std;
-#include "LogStream.h"
+#include "hohnor/log/LogStream.h"
 std::vector<InetAddress> InetAddress::resolve(StringPiece hostName, StringPiece serviceName)
 {
     struct addrinfo hints; //provice hints for getaddrinfo(3)

@@ -8,8 +8,8 @@
 #include <errno.h>
 #include <functional>
 #include <vector>
-#include "FdUtils.h"
-#include "Logging.h"
+#include "hohnor/io/FdUtils.h"
+#include "hohnor/log/Logging.h"
 
 namespace Hohnor
 {

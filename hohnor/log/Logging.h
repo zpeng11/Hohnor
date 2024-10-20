@@ -6,9 +6,9 @@
 
 #include <memory>
 #include <functional>
-#include "LogStream.h"
-#include "time/Timestamp.h"
-#include "AsyncLogging.h"
+#include "hohnor/log/LogStream.h"
+#include "hohnor/time/Timestamp.h"
+#include "hohnor/log/AsyncLogging.h"
 
 namespace Hohnor
 {

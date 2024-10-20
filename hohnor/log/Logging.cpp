@@ -1,7 +1,6 @@
-#include "Logging.h"
-#include "CurrentThread.h"
-#include "Exception.h"
-#include "Mutex.h"
+#include "hohnor/log/Logging.h"
+#include "hohnor/thread/CurrentThread.h"
+#include "hohnor/thread/Mutex.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>

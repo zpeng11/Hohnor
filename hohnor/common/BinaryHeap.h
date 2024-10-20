@@ -5,8 +5,8 @@
 #include <type_traits>
 #include <vector>
 #include <functional>
-#include "common/Types.h"
-#include "common/Copyable.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/common/Copyable.h"
 
 /**
  * In logic, this is a binary heap with smallest-top, 

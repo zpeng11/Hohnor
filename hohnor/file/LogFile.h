@@ -13,9 +13,9 @@
  */
 
 #pragma once
-#include "common/NonCopyable.h"
-#include "time/Timestamp.h"
-#include "FileUtils.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/time/Timestamp.h"
+#include "hohnor/file/FileUtils.h"
 #include <map>
 #include <memory>
 

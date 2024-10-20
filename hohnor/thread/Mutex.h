@@ -3,8 +3,8 @@
  */
 #pragma once
 
-#include "CurrentThread.h"
-#include "common/NonCopyable.h"
+#include "hohnor/thread/CurrentThread.h"
+#include "hohnor/common/NonCopyable.h"
 #include <assert.h>
 #include <pthread.h>
 #include <iostream>

@@ -3,8 +3,8 @@
  */
 #pragma once
 
-#include "CountDownLatch.h"
-#include "CurrentThread.h"
+#include "hohnor/thread/CountDownLatch.h"
+#include "hohnor/thread/CurrentThread.h"
 #include "pthread.h"
 #include <functional>
 #include <string>

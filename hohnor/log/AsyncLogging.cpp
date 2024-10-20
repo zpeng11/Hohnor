@@ -1,6 +1,6 @@
 #include "AsyncLogging.h"
 #include <functional>
-#include "common/Types.h"
+#include "hohnor/common/Types.h"
 
 using namespace Hohnor;
 

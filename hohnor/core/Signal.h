@@ -2,9 +2,9 @@
  * Events of signals
  */
 #pragma once
-#include "common/NonCopyable.h"
-#include "common/Callbacks.h"
-#include "common/Copyable.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Callbacks.h"
+#include "hohnor/common/Copyable.h"
 #include <signal.h>
 #include <atomic>
 

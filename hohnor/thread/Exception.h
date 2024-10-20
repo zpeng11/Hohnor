@@ -3,7 +3,7 @@
  */
 #pragma once
 
-#include "CurrentThread.h"
+#include "hohnor/thread/CurrentThread.h"
 
 namespace Hohnor
 {

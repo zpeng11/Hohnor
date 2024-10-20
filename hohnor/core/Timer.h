@@ -3,10 +3,10 @@
  */
 
 #pragma once
-#include "time/Timestamp.h"
-#include "common/NonCopyable.h"
-#include "common/Copyable.h"
-#include "common/Callbacks.h"
+#include "hohnor/time/Timestamp.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Copyable.h"
+#include "hohnor/common/Callbacks.h"
 #include <atomic>
 
 namespace Hohnor

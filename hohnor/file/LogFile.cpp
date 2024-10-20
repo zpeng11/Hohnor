@@ -1,6 +1,6 @@
 #include "LogFile.h"
 #include <time.h>
-#include "time/Timestamp.h"
+#include "hohnor/time/Timestamp.h"
 
 using namespace Hohnor;
 LogFile::LogFile(const string &basename,

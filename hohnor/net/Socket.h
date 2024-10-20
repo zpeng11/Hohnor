@@ -2,12 +2,12 @@
  * Class wrapper for sockets, builds on SocketWrap.h
  */
 #pragma once
-#include "common/Types.h"
-#include "SocketWrap.h"
-#include "InetAddress.h"
-#include "common/NonCopyable.h"
-#include "common/Copyable.h"
-#include "FdUtils.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/net/SocketWrap.h"
+#include "hohnor/net/InetAddress.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Copyable.h"
+#include "hohnor/io/FdUtils.h"
 #include <netinet/tcp.h>
 #include <memory>
 #include <map>

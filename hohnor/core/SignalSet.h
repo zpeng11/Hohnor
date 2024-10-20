@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "common/NonCopyable.h"
-#include "common/Callbacks.h"
-#include "Signal.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Callbacks.h"
+#include "hohnor/core/Signal.h"
 #include "IOHandler.h"
 
 namespace Hohnor

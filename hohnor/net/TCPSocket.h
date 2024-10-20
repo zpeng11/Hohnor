@@ -2,7 +2,7 @@
  * Socket for TCP, inherit from Hohnor::Socket
  */
 #pragma once
-#include "Socket.h"
+#include "hohnor/net/Socket.h"
 
 namespace Hohnor
 {

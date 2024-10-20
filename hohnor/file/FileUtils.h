@@ -4,9 +4,9 @@
  * 2. Read file that can easily get string from files
  */
 #pragma once
-#include "common/Types.h"
-#include "common/NonCopyable.h"
-#include "common/Copyable.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Copyable.h"
 #include <stdio.h>
 
 namespace Hohnor

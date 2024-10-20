@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "common/Copyable.h"
-#include "common/Types.h"
-#include "common/StringPiece.h"
-#include "SocketWrap.h"
+#include "hohnor/common/Copyable.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/common/StringPiece.h"
+#include "hohnor/net/SocketWrap.h"
 #include <netinet/in.h>
 #include <vector>
 

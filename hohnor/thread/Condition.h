@@ -3,7 +3,7 @@
  */
 #pragma once
 
-#include "Mutex.h"
+#include "hohnor/thread/Mutex.h"
 #include "pthread.h"
 
 namespace Hohnor

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common/StringPiece.h"
-#include "common/Types.h"
-#include "time/Timestamp.h"
+#include "hohnor/common/StringPiece.h"
+#include "hohnor/common/Types.h"
+#include "hohnor/time/Timestamp.h"
 #include <vector>
 #include <unistd.h>
 

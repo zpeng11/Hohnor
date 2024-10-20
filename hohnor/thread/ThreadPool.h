@@ -2,8 +2,8 @@
  * Thread pool that manages threads
  */
 #pragma once
-#include "Thread.h"
-#include "BoundedBlockingQueue.h"
+#include "hohnor/thread/Thread.h"
+#include "hohnor/thread/BoundedBlockingQueue.h"
 #include <vector>
 #include <memory>
 

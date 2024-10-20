@@ -10,4 +10,4 @@ target_link_libraries(NET PUBLIC LOG)
 target_link_libraries(NET PUBLIC IO)
 
 #add current directory *.h for upper level to include
-target_include_directories(NET INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(NET PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

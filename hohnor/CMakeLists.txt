@@ -1,0 +1,23 @@
+add_library(Hohnor INTERFACE)
+
+target_include_directories(Hohnor INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(thread)
+add_subdirectory(time)
+add_subdirectory(log)
+add_subdirectory(file)
+add_subdirectory(process)
+add_subdirectory(net)
+add_subdirectory(io)
+add_subdirectory(core)
+
+target_link_libraries(Hohnor INTERFACE THREAD)
+target_link_libraries(Hohnor INTERFACE TIME)
+target_link_libraries(Hohnor INTERFACE LOG)
+target_link_libraries(Hohnor INTERFACE FILE)
+target_link_libraries(Hohnor INTERFACE PROCESS)
+target_link_libraries(Hohnor INTERFACE NET)
+target_link_libraries(Hohnor INTERFACE IO)
+target_link_libraries(Hohnor INTERFACE CORE)

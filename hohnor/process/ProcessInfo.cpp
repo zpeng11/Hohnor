@@ -4,8 +4,8 @@
 #include <pwd.h>
 #include <sys/resource.h>
 #include <algorithm>
-#include "CurrentThread.h"
-#include "FileUtils.h"
+#include "hohnor/thread/CurrentThread.h"
+#include "hohnor/file/FileUtils.h"
 
 namespace Hohnor
 {
