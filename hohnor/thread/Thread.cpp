@@ -12,7 +12,8 @@
 namespace Hohnor
 {
 	/**
-	 * Data carrier struct, helps void*(void*) interface pass parameters.
+	 * Data carrier struct, helps void*(void*) interface pass parameters. 
+	 * It takes reference to member data of Thread class, allows the owner of the object update threadinfo
 	 */
 	struct ThreadData
 	{
@@ -99,7 +100,7 @@ void Hohnor::Thread::start()
 	}
 	else
 	{
-		latch_.wait();
+		latch_.wait();//Sync with execution inside the opened thread
 		assert(tid_ > 0);
 	}
 }

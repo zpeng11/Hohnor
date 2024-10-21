@@ -14,6 +14,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(common)
+add_subdirectory(thread)
 
 add_executable(LittleTest Test.cpp)
 add_executable(LittleTestClient TestClient.cpp)
