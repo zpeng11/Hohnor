@@ -114,7 +114,7 @@ void TimerQueue::addTimer(TimerCallback cb,
 void TimerQueue::addTimerInLoop(Timer *timer)
 {
     loop_->assertInLoopThread();
-    CHECK_NOTNULL(timer);
+    HCHECK_NOTNULL(timer);
     heap_.insert(timer);
     if(heap_.top() == timer)
     {

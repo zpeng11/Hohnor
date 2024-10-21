@@ -83,7 +83,7 @@ void EventLoop::loop()
             auto event = res.next();
             IOHandler *handler = (IOHandler *)event.data.ptr;
             auto iter = IOHandlers_.find(handler);
-            CHECK_NE(iter, IOHandlers_.end()) << " handler ptr returned by epoll should be exist in the set";
+            HCHECK_NE(iter, IOHandlers_.end()) << " handler ptr returned by epoll should be exist in the set";
             handler->retEvents(event.events);
             handler->run();
         }
@@ -96,7 +96,7 @@ void EventLoop::loop()
         }
         for (Functor func : funcs)
         {
-            CHECK_NE(func, nullptr) << " pending functors should not be nullptr";
+            HCHECK_NE(func, nullptr) << " pending functors should not be nullptr";
             func();
         }
     }
@@ -165,7 +165,7 @@ void EventLoop::endLoop()
 void EventLoop::addIOHandler(IOHandler *handler)
 {
     assertInLoopThread();
-    CHECK_EQ(IOHandlers_.find(handler), IOHandlers_.end()) << " the handler is already in set";
+    HCHECK_EQ(IOHandlers_.find(handler), IOHandlers_.end()) << " the handler is already in set";
     IOHandlers_.insert(handler);
     // int event = handler->enabled() ? handler->getEvents() : 0;
     // poller_.add(handler->fd(),event, (void *) handler);
@@ -174,10 +174,10 @@ void EventLoop::addIOHandler(IOHandler *handler)
 void EventLoop::updateIOHandler(IOHandler *handler, bool addNew)
 {
     assertInLoopThread();
-    CHECK_NE(IOHandlers_.find(handler), IOHandlers_.end()) << " can not find the handler in set";
+    HCHECK_NE(IOHandlers_.find(handler), IOHandlers_.end()) << " can not find the handler in set";
     if (addNew)
     {
-        CHECK(handler->enabled());
+        HCHECK(handler->enabled());
         poller_.add(handler->fd(), handler->getEvents(), (void *)handler);
     }
     else if (handler->enabled())
@@ -194,7 +194,7 @@ void EventLoop::removeIOHandler(IOHandler *handler)
 {
     assertInLoopThread();
     auto it = IOHandlers_.find(handler);
-    CHECK_NE(it, IOHandlers_.end()) << " can not find the handler in set";
+    HCHECK_NE(it, IOHandlers_.end()) << " can not find the handler in set";
     IOHandlers_.erase(it);
     // poller_.remove(handler->fd());
 }

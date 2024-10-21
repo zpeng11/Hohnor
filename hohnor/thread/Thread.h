@@ -16,7 +16,7 @@ namespace Hohnor
 	{
 	public:
 	/**
-	 * Usually works with lambda functions.
+	 * Usually works with lambda or std::bind functions.
 	 */
 		typedef std::function<void()> ThreadFunc;
 
@@ -28,7 +28,7 @@ namespace Hohnor
 		ThreadFunc func_;
 		std::string name_;
 		CountDownLatch latch_;
-		static std::atomic_int32_t numCreated_;
+		static std::atomic_int32_t numCreated_;//Used to record how many hohnor threads are created in the process
 
 	public:
 	/**

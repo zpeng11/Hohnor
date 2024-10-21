@@ -16,7 +16,7 @@
 namespace Hohnor
 {
 	/**
-	 * T type requires to have default constructor, assignment operator
+	 * T type requires to have default constructor, assignment operator ideally a value or smart-ptr protected obj
 	 */
 	template <typename T>
 	class CircularBuffer : Hohnor::NonCopyable
@@ -27,14 +27,14 @@ namespace Hohnor
 		std::size_t head = 0;
 		std::size_t tail = 0;
 		std::size_t max_size;
-		T empty_item;
+		const static T empty_item;
 
 	public:
-		explicit CircularBuffer(std::size_t maxSize) : buffer(), max_size(maxSize){
+		explicit CircularBuffer(std::size_t maxSize) : buffer(), max_size(maxSize + 1){
             //Check if the template type is capable with the buffer
             static_assert(std::is_default_constructible<T>::value, "Template type does not have default constructor as required");
             static_assert(std::is_copy_assignable<T>::value, "Template type does not have assignment operator as required");
-			buffer = std::move(std::unique_ptr<T[]>(new T[max_size]));
+			buffer = std::move(std::unique_ptr<T[]>(new T[max_size]));//Use one more space as buffer
 			assert(maxSize>=2);
 		}
 		// Add an item to this circular buffer.

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     StringPiece server = argc < 2 ? "localhost" : argv[1];
     //Resolve input server address
     auto addres = InetAddress::resolve(server, std::to_string(SERVER_PORT));
-    CHECK_NE(addres.size(), 0);
+    HCHECK_NE(addres.size(), 0);
     LOG_INFO << addres[0].toIpPort();
     //Connect to the server if found
     Socket socket(AF_INET, SOCK_STREAM, 0);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
-    CHECK_NE(pipe(pipefd), -1);
+    HCHECK_NE(pipe(pipefd), -1);
 
     char buf[BUFSIZ] = {0};
     while (!stopServer)

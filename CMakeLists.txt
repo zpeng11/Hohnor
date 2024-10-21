@@ -20,8 +20,7 @@ list(APPEND libs NET)
 list(APPEND libs IO)
 list(APPEND libs CORE)
 
-
-add_executable(Test test/Test.cpp)
-add_executable(TestClient test/TestClient.cpp)
-target_link_libraries(Test PUBLIC Hohnor)
-target_link_libraries(TestClient PUBLIC Hohnor)
+option(ENABLE_UNIT_TEST "ENABLE_UNIT_TEST" ON) #in case cmake does not supporting FetchContent or compiler does not support C++14
+if(ENABLE_UNIT_TEST)
+    add_subdirectory(test)
+endif()

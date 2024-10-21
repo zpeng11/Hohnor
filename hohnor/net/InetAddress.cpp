@@ -97,7 +97,7 @@ uint16_t InetAddress::port() const
 
 uint32_t InetAddress::ipv4NetEndian() const
 {
-    CHECK_EQ(this->family(), AF_INET);
+    HCHECK_EQ(this->family(), AF_INET);
     return addr_.sin_addr.s_addr;
 }
 

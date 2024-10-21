@@ -15,7 +15,7 @@ namespace Hohnor
     /**
 	 * This class manages a few global variables like log level, log output function, and log flush function. These variables are used for all threads in a application.
 	 * 
-	 * Logger class is servered for LOG and CHECK macros to conviently record run time information, Users most likely do not use this class directly but using macros.
+	 * Logger class is servered for LOG and HCHECK macros to conviently record run time information, Users most likely do not use this class directly but using macros.
 	 * 
 	 * The defalt output of logging is stdout, if you want to use logging macros in multi-threading environment,
 	 * you should define you own output function that is thread-safe, for here, that is AsyncLogging
@@ -84,26 +84,26 @@ namespace Hohnor
 #define LOG_SYSERR Hohnor::Logger(__FILE__, __LINE__, false).stream()
 #define LOG_SYSFATAL Hohnor::Logger(__FILE__, __LINE__, true).stream()
 
-    //Reference to glog CHECK() macro
+    //Reference to glog HCHECK() macro
 
-#define CHECK(condition) \
+#define HCHECK(condition) \
     if (!(condition))    \
     (LOG_FATAL) << "'" #condition "' Must be true "
 
-#define CHECK_EQ(lhs, rhs)                        \
+#define HCHECK_EQ(lhs, rhs)                        \
     if (lhs != rhs)                               \
     (LOG_FATAL) << "'" #lhs "' Must be equal to " \
                 << "'" #rhs "' "
 
-#define CHECK_NE(lhs, rhs)                         \
+#define HCHECK_NE(lhs, rhs)                         \
     if (lhs == rhs)                                \
     (LOG_FATAL) << "'" #lhs "' Must not equal to " \
                 << "'" #rhs "' "
 
-#define CHECK_NOTNULL(val) \
+#define HCHECK_NOTNULL(val) \
     CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
 
-    // A small helper for CHECK_NOTNULL() because we want the check function to return ptr for following usage
+    // A small helper for HCHECK_NOTNULL() because we want the check function to return ptr for following usage
     template <typename T>
     T *CheckNotNull(StringPiece file, int line, const char *names, T *ptr)
     {
