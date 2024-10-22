@@ -45,4 +45,6 @@ namespace Hohnor
 
         ~Timer() = default;
     };
+
+    //TODO make a TimerHandle class, which holds a weak_ptr to Timer, update TimerQueue to only use disable to mange ending of a timer.
 } // namespace Hohnor
