@@ -2,6 +2,8 @@
 #include "hohnor/log/Logging.h"
 #include "hohnor/time/Timestamp.h"
 #include <sys/socket.h>
+#include <sys/signalfd.h>
+#include <signal.h>
 #include <set>
 
 namespace Hohnor
@@ -72,22 +74,33 @@ SignalUtils::Iter SignalUtils::receive()
     return Iter(g_retSignals, ret);
 }
 
-void SignalUtils::handleSignal(int signal, SigAction action)
+int SignalUtils::createSignalFD(int sig){
+    int sfd;
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, sig);
+    if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1){//Block default signal action
+        LOG_SYSERR << "sigprocmask block failed";
+    }
+    return signalfd(-1, &mask, 0);
+}
+
+void SignalUtils::handleSignal(int sig, SigAction action)
 {
-    if (signal <= 0 || signal >= 65)
+    if (sig <= 0 || sig >= 65)
         LOG_FATAL << "Invalid signal value";
     struct sigaction sa;
     memZero(&sa, sizeof sa);
     if (action == Piped)
         sa.sa_handler = sigHandle;
-    else if (action == Ignored)
-        sa.sa_handler = SIG_IGN;
+    if (action == Ignored)
+        signal(sig, SIG_IGN);
     else
         sa.sa_handler = SIG_DFL;
     sa.sa_flags |= SA_RESTART;
-    sigfillset(&sa.sa_mask);
+    sigfillset(&sa.sa_mask);//To protect safe when setting up
     //::sigaction(3) is signal safe, so we do not need to surround it with signal blocking guard
-    if (::sigaction(signal, &sa, NULL) < 0)
+    if (::sigaction(sig, &sa, NULL) < 0)
         LOG_SYSERR << "SignalUtils action settle failed";
 }
 

@@ -51,6 +51,8 @@ namespace Hohnor
         Iter receive();
 
         int readEndFd();
+
+        int createSignalFD(int sig);
     }
 
 } // namespace Hohnor
