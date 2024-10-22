@@ -70,9 +70,9 @@ namespace Hohnor
         bool hasIOHandler(IOHandler *event);
 
         //Add timer event to the event set
-        void addTimer(TimerCallback cb, Timestamp when, double interval);
+        std::weak_ptr<Timer> addTimer(TimerCallback cb, Timestamp when, double interval);
         //Delete a specific timer
-        void removeTimer(TimerHandle id);
+        void removeTimer(std::weak_ptr<Timer>);
 
         //Add a signal event to the reactor
         void addSignal(char signal, SignalCallback cb);

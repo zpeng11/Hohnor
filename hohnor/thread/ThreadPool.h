@@ -50,6 +50,7 @@ namespace Hohnor
 		std::size_t poolSize() const{return pool_.size();}
 		//Get busy threads
 		std::size_t busyThreads() {return busyThreads_;}
+		bool isBusy(){return busyThreads() == poolSize();}
 
 	private:
 		std::string name_;

@@ -1,5 +1,7 @@
 #include "TimerQueue.h"
 #include "Timer.h"
+#include "EventLoop.h"
+#include "hohnor/log/Logging.h"
 #include <sys/timerfd.h>
 
 namespace Hohnor
@@ -30,14 +32,9 @@ namespace Hohnor
         return ts;
     }
 
-    bool timerCmpLessThan(Hohnor::Timer *&lhs, Hohnor::Timer *&rhs)
+    bool timerCmpLessThan(std::pair<Timestamp, std::weak_ptr<Timer>>&lhs, std::pair<Timestamp, std::weak_ptr<Timer>>&rhs)
     {
-        if (lhs->expiration().microSecondsSinceEpoch() < rhs->expiration().microSecondsSinceEpoch())
-            return true;
-        else if (lhs->expiration().microSecondsSinceEpoch() > rhs->expiration().microSecondsSinceEpoch())
-            return false;
-        else
-            return lhs->sequence() < rhs->sequence();
+        return lhs.first().microSecondsSinceEpoch() < rhs.first().microSecondsSinceEpoch();
     }
 
     void resetTimerfd(int timerfd, Timestamp expiration)
@@ -56,19 +53,14 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-TimerQueue::TimerQueue(EventLoop *loop) : timerFd_(createTimerfd()), loop_(loop), timerFdIOHandle_(loop, timerFd_.fd()),
-                                          heap_(timerCmpLessThan)
+TimerQueue::TimerQueue(EventLoop * loop) : timerFd_(createTimerfd()), timers_(),
+                                          heap_(timerCmpLessThan), loop_(loop)
 {
-    timerFdIOHandle_.setReadCallback(std::bind(&TimerQueue::handleRead, this));
-    timerFdIOHandle_.enable();
+    //TODO prepare a read IOHandler in Eventloop and bind with timer fd.
 }
 
-TimerQueue::~TimerQueue()
-{
-    while (heap_.size())
-    {
-        delete heap_.popTop();
-    }
+TimerQueue::~TimerQueue(){
+    LOG_INFO << "Still have "<<timers_.size()<<" timers no finished";
 }
 
 void TimerQueue::handleRead()
@@ -83,18 +75,20 @@ void TimerQueue::handleRead()
         LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
     }
 
-    while (heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
+    while (heap_.size() && heap_.top().first().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
     {
-        auto ptr = heap_.popTop();
-        ptr->run(now, TimerHandle(ptr, loop_));
-        if (ptr->repeat())
-        {
-            ptr->restart(now);
-            loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, ptr));
-        }
-        else
-        {
-            delete ptr;
+        auto lockedTmr = heap_.popTop().second().lock();
+        if(lockedTmr){
+            lockedTmr->run(now, lockedTmr);
+            if (lockedTmr->repeat())
+            {
+                lockedTmr->restart(now);
+                loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, heap_.popTop().second()));
+            }
+            else
+            {
+                delete ptr;
+            }
         }
     }
     if (heap_.size())
@@ -103,32 +97,39 @@ void TimerQueue::handleRead()
     }
 }
 
-void TimerQueue::addTimer(TimerCallback cb,
+void TimerQueue::restartTimer(std::weak_ptr<Timer> tmr){
+    loop_->assertInLoopThread();
+    auto lockedTmr = tmr.lock();
+    if(lockedTmr){
+        heap_.insert({lockedTmr->sequence(), tmr});
+        if(heap_.top().second() == weakTimer){
+            resetTimerfd(timerFd_.fd(), timer->expiration());
+        }
+    }
+}
+
+std::weak_ptr<Timer> TimerQueue::addTimer(TimerCallback cb,
                              Timestamp when,
                              double interval)
 {
-    auto ptr = new Timer(std::move(cb), when, interval);
-    loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, ptr));
-}
-
-void TimerQueue::addTimerInLoop(Timer *timer)
-{
     loop_->assertInLoopThread();
-    HCHECK_NOTNULL(timer);
-    heap_.insert(timer);
-    if(heap_.top() == timer)
-    {
+    auto timer = std::make_shared<Timer>(cb, when, interval);
+    std::weak_ptr<Timer> weakTimer = timer;
+    timers_.insert({timer->sequence(), timer});
+    heap_.insert({when, weakTimer});
+    if(heap_.top().second() == weakTimer){
         resetTimerfd(timerFd_.fd(), timer->expiration());
     }
 }
 
-void TimerQueue::cancel(Timer * timer)
-{
-    loop_->queueInLoop(std::bind(&TimerQueue::cancelInLoop, this, timer));
-}
 
-void TimerQueue::cancelInLoop(Timer * timer)
+void TimerQueue::cancel(std::weak_ptr<Timer> tmr)
 {
     loop_->assertInLoopThread();
-    timer->disable();
+    auto lockedTmr = tmr.lock();
+    if(lockedTmr){
+        auto sequence = lockedTmr->sequence();
+        lockedTmr->disable();
+        timers_.erase(sequence);
+    }
 }

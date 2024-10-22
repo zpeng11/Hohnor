@@ -3,51 +3,43 @@
  */
 
 #pragma once
-#include "hohnor/common/NonCopyable.h"
+#include "hohnor/common/Copyable.h"
 #include "hohnor/common/Callbacks.h"
-#include "hohnor/core/EventLoop.h"
 
 namespace Hohnor
 {
-    class IOHandler : NonCopyable
+    class EventLoop;
+    class IOHandler : Copyable
     {
+        /*
+        * A Handler used to carry callback function to a fd when event happens.
+        * It should be created by the user and passed to eventloop by value. 
+        */
+        friend class EventLoop;
     private:
         //do not manage life cycle of this fd
-        EventLoop *loop_;
         const int fd_;
+        //When setting up callbacks, this valuable will be automatically setup
         int events_;
         int revents_;
-        bool enable_;
         ReadCallback readCallback_;
         WriteCallback writeCallback_;
         CloseCallback closeCallback_;
         ErrorCallback errorCallback_;
-        //update EPOLL flags in the loop
-        void update(bool addNew = false);
-        void runGuarded();
 
-        std::weak_ptr<void> tie_;
-        bool tied_;
+        //Run the events according to revents, only happens in eventloop
+        void run();
+
+        //Used by event loop to put epoll result back to handler
+        void retEvents(int revents) { revents_ = revents; }
 
     public:
-        IOHandler(EventLoop *loop, int fd);
+        IOHandler(int fd);
         ~IOHandler();
 
         int fd() { return fd_; }
         //Get current event setting
         int getEvents() { return events_; }
-        //Used by event loop to put epoll result back to handler
-        void retEvents(int revents) { revents_ = revents; }
-        //Run the events according to revents
-        void run();
-        //if events are enabled
-        bool enabled() { return enable_; }
-        //Diable all events on this handler from the eventloop
-        void disable();
-        //Enable all events on this handler from the eventloop
-        void enable();
-
-        void tie(const std::shared_ptr<void>& obj);
 
         void setReadCallback(ReadCallback cb);
         void setWriteCallback(WriteCallback cb);

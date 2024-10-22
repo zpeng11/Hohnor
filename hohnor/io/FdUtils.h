@@ -38,6 +38,6 @@ namespace Hohnor
         FdGuard(int fd = -1) : fd_(fd) {}
         int fd() const { return fd_; }
         void setFd(int fd) { fd_ = fd; }
-        ~FdGuard() { FdUtils::close(fd_); }
+        ~FdGuard() { if(fd_ != -1) FdUtils::close(fd_); }
     };
 } // namespace Hohnor

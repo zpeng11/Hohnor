@@ -8,7 +8,7 @@
 namespace Hohnor
 {
     class Timestamp;
-    class TimerHandle;
+    class Timer;
     class SignalHandle;
     typedef std::function<void()> Callback;
     typedef std::function<void()> Functor;
@@ -17,6 +17,6 @@ namespace Hohnor
     typedef std::function<void()> CloseCallback;
     typedef std::function<void()> ErrorCallback;
     typedef std::function<void(int, SignalHandle)> SignalCallback;
-    typedef std::function<void(Timestamp, TimerHandle)> TimerCallback;
+    typedef std::function<void(Timestamp, std::shared_ptr<Timer>)> TimerCallback;
 
 } // namespace Hohnor

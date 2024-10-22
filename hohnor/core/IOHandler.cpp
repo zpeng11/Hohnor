@@ -26,47 +26,13 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), fd_(fd), events_(0), revents_(0), enable_(false), tied_(false)
-{
-    loop_->addIOHandler(this);
-}
+IOHandler::IOHandler(int fd) :fd_(fd), events_(0), revents_(0){}
 
-IOHandler::~IOHandler()
-{
-    disable();
-    loop_->removeIOHandler(this);
-}
-
-void IOHandler::update(bool addNew)
-{
-    loop_->updateIOHandler(this, addNew);
-}
+IOHandler::~IOHandler(){}
 
 void IOHandler::run()
 {
-  std::shared_ptr<void> guard;
-  if (tied_)
-  {
-    guard = tie_.lock();
-    if (guard)
-    {
-      this->runGuarded();
-    }
-  }
-  else
-  {
-    this->runGuarded();
-  }
-}
-
-void IOHandler::runGuarded()
-{
     LOG_DEBUG << "Handling event for " << eventsToString(fd_, revents_);
-    if (enable_ != true)
-    {
-        LOG_WARN << " When running, the Handler should be enabled";
-        return;
-    }
         
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN))
     {
@@ -96,33 +62,11 @@ void IOHandler::runGuarded()
         else
             writeCallback_();
     }
-}
-
-void IOHandler::disable()
-{
-    if (enable_)
-    {
-        enable_ = false;
-        update(false);
-    }
-    else
-    {
-        LOG_WARN << "IOHandler has been disabled do not need again";
+    else{
+        LOG_WARN<<"A run on IOHandler that has not received event back";
     }
 }
 
-void IOHandler::enable()
-{
-    if (!enable_)
-    {
-        enable_ = true;
-        update(true);
-    }
-    else
-    {
-        LOG_WARN << "IOHandler has been enabled do not need again";
-    }
-}
 
 void IOHandler::setReadCallback(ReadCallback cb)
 {
@@ -133,10 +77,8 @@ void IOHandler::setReadCallback(ReadCallback cb)
     else
     {
         events_ |= EPOLLIN;
-        readCallback_ = std::move(cb);
+        readCallback_ = cb;
     }
-    if (enable_)
-        update(false);
 }
 
 void IOHandler::setWriteCallback(WriteCallback cb)
@@ -148,10 +90,8 @@ void IOHandler::setWriteCallback(WriteCallback cb)
     else
     {
         events_ |= EPOLLOUT;
-        writeCallback_ = std::move(cb);
+        writeCallback_ = cb;
     }
-    if (enable_)
-        update(false);
 }
 
 void IOHandler::setCloseCallback(CloseCallback cb)
@@ -163,10 +103,8 @@ void IOHandler::setCloseCallback(CloseCallback cb)
     else
     {
         events_ |= EPOLLRDHUP;
-        closeCallback_ = std::move(cb);
+        closeCallback_ = cb;
     }
-    if (enable_)
-        update(false);
 }
 void IOHandler::setErrorCallback(ErrorCallback cb)
 {
@@ -177,14 +115,6 @@ void IOHandler::setErrorCallback(ErrorCallback cb)
     else
     {
         events_ |= EPOLLERR;
-        errorCallback_ = std::move(cb);
+        errorCallback_ = cb;
     }
-    if (enable_)
-        update(false);
-}
-
-void IOHandler::tie(const std::shared_ptr<void>& obj)
-{
-  tie_ = obj;
-  tied_ = true;
 }

@@ -12,11 +12,11 @@ Timer::Timer(TimerCallback callback, Timestamp when, double interval) : callback
 {
 }
 
-void Timer::run(Timestamp now, TimerHandle handle)
+void Timer::run(Timestamp now, std::weak_ptr<Timer> tmr)
 {
     if (!disabled_)
     {
-        callback_(now, handle);
+        callback_(now, tmr);
     }
 }
 
@@ -36,10 +36,4 @@ void Timer::restart(Timestamp now)
     {
         expiration_ = Timestamp::invalid();
     }
-}
-
-
-void TimerHandle::cancel()
-{
-    loop_->removeTimer(*this);
 }
