@@ -1,5 +1,5 @@
 /**
- * Thread_local scope information that records thread-id and thread name
+ * Thread_local scope information that records thread-id and thread name, when necessary, backtrace thread info
  */
 #pragma once
 

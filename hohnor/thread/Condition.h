@@ -29,7 +29,7 @@ namespace Hohnor
 		void wait()
 		{
 			mutexlock.unassignHolder(); //The holder property is not useful when waiting cond due to cond's design idea
-			MCHECK(pthread_cond_wait(&cond, mutexlock.getPthreadMutex()));
+			MCHECK(pthread_cond_wait(&cond, mutexlock.getPthreadMutex()));//Unlocks the mutex atomically and put thread to sleep at this point
 			mutexlock.assignHolder();
 		}
 		bool timedWait(double seconds)

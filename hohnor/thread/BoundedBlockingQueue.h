@@ -2,15 +2,14 @@
  * A more advanced Blocking queue, it has bounded size limit, thread safe.
  * The basic level uses circular buffer to implement, since it has scheduled fixed memory,
  * it works faster than normal queue, 
- * the drawback is that size of the queue should be larger than 1
- * (otherwise ring buffer will be hard to implement)
+ * But carrying data type should be copyable and has its default constructor
  */
 #pragma once
 
 #include "hohnor/thread/Mutex.h"
 #include "hohnor/thread/Condition.h"
 #include "hohnor/common/CircularBuffer.h"
-#include "hohnor/common/SyncQueue.h"
+#include "hohnor/thread/SyncQueue.h"
 #include <atomic>
 
 namespace Hohnor

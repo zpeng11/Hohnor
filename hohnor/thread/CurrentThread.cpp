@@ -53,7 +53,7 @@ namespace Hohnor
             if (strings)
             {
                 size_t len = 256;
-                char *demangled = demangle ? static_cast<char *>(::malloc(len)) : nullptr;
+                char *demangled = demangle ? static_cast<char *>(::malloc(len)) : nullptr; //demangle to convert symbols into human readable names
                 for (int i = 1; i < nptrs; ++i) // skipping the 0-th, which is this function
                 {
                     if (demangle)
