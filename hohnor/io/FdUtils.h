@@ -1,9 +1,6 @@
 /**
  * File descriptor utillities
  */
-
-
-
 #pragma once
 #include <unistd.h>
 #include <memory>

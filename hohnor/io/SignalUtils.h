@@ -42,7 +42,7 @@ namespace Hohnor
         {
             Ignored,
             Default,
-            Piped //put signal into pipe for epoll to receive
+            Piped //put signal into pipe for epoll to receive and handle using callback function
         };
         //Handle a signal with callback function, thread safe
         void handleSignal(int signal, SigAction action = Piped);

@@ -44,19 +44,7 @@ void IOHandler::update(bool addNew)
 
 void IOHandler::run()
 {
-  std::shared_ptr<void> guard;
-  if (tied_)
-  {
-    guard = tie_.lock();
-    if (guard)
-    {
-      this->runGuarded();
-    }
-  }
-  else
-  {
     this->runGuarded();
-  }
 }
 
 void IOHandler::runGuarded()

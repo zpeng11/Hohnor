@@ -15,7 +15,7 @@ namespace Hohnor
      * Wrapper for ::epoll(2) in linux, 
      * kindly reminder that ctl Ops are safe while another thread is waiting.
      */
-    class Epoll : public FdGuard
+    class Epoll : public FdGuard  //Inherited as FD holder class
     {
     private:
         typedef struct epoll_event epoll_event;
