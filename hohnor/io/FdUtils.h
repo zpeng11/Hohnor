@@ -34,7 +34,7 @@ namespace Hohnor
     public:
         FdGuard(int fd = -1) : fd_(fd) {}
         int fd() const { return fd_; }
-        void setFd(int fd) { fd_ = fd; }
+        void setFd(int fd);
         ~FdGuard() { FdUtils::close(fd_); }
     };
 } // namespace Hohnor

@@ -1,97 +1,59 @@
+/**
+ * Handling signal to prevent interupt, send them to a socket pipe and allow epoll to handle
+ */
+
+#pragma once
 #include "SignalUtils.h"
+#include <unistd.h>
+#include <iostream>
+#include <cstring>
+#include <sys/signalfd.h>
 #include "hohnor/log/Logging.h"
-#include "hohnor/time/Timestamp.h"
-#include <sys/socket.h>
-#include <set>
-
-namespace Hohnor
-{
-    namespace Handler
-    {
-
-        int g_pipefd[2];
-
-        const static int retSize = 512;
-        char g_retSignals[retSize];
-
-        void sigHandle(int sig)
-        {
-            int save_errno = errno;
-            char msg = static_cast<char>(sig);
-            if (send(g_pipefd[1], (char *)&msg, 1, 0) <= 0)
-                LOG_SYSERR << "Handling signal and putting message into pipe error";
-            errno = save_errno;
-        }
-        void afterFork()
-        {
-            if (socketpair(AF_UNIX, SOCK_STREAM, 0, g_pipefd) < 0)
-                LOG_SYSERR << "At fork socketpair creation error";
-
-            //Nonblocking write so that writing to pipe would not be blocked(signal handle should return fast!)
-            FdUtils::setNonBlocking(g_pipefd[1]);
-            //close on exec so that different process doesnot share same pipe(processes should have own SignalHandler)
-            FdUtils::setCloseOnExec(g_pipefd[0]);
-            FdUtils::setCloseOnExec(g_pipefd[1]);
-            memZero(g_retSignals, 512);
-        }
-        class SignalHandlerInitilizer
-        {
-        public:
-            SignalHandlerInitilizer()
-            {
-                afterFork();
-                pthread_atfork(NULL, NULL, afterFork);
-                //by default ignore SIGPIPE 
-                SignalUtils::handleSignal(SIGPIPE, SignalUtils::Ignored);
-            }
-            ~SignalHandlerInitilizer()
-            {
-                FdUtils::close(g_pipefd[0]);
-                FdUtils::close(g_pipefd[1]);
-            }
-        };
-        SignalHandlerInitilizer init;
-    } // namespace handle
-
-} // namespace Hohnor
 
 using namespace Hohnor;
-using namespace Hohnor::Handler;
+using namespace Hohnor::SignalUtils;
 
-SignalUtils::Iter SignalUtils::receive()
-{
-    int ret = ::recv(g_pipefd[0], g_retSignals, retSize, 0);
-    if (ret == -1)
-    {
-        LOG_SYSERR << "SignalUtils::receive() Handler recieve error";
-    }
-    else if (ret == 0 && errno != EINTR)
-    {
-        LOG_ERROR << "SignalUtils::receive() Handler recieve error, writing end may be closed";
-    }
-    return Iter(g_retSignals, ret);
-}
 
-void SignalUtils::handleSignal(int signal, SigAction action)
-{
+int SignalUtils::handleSignal(int signal, SigAction action){
     if (signal <= 0 || signal >= 65)
         LOG_FATAL << "Invalid signal value";
+
+    if (action == Handled){
+        // Block signal so it doesn't get handled by the default handler
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigaddset(&mask, signal);
+        if (sigprocmask(SIG_BLOCK, &mask, nullptr) == -1)
+            LOG_FATAL << "sigprocmask error";
+
+        // Create signalfd for signal
+        int sfd = signalfd(-1, &mask, SFD_CLOEXEC);
+        if (sfd == -1) 
+            LOG_FATAL << "signalfd error";
+        return sfd;
+    }
+
+    // Unblock signal so it is handled again by default handler
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, signal);
+    if (sigprocmask(SIG_UNBLOCK, &mask, nullptr) == -1)
+        LOG_FATAL << "sigprocmask error";
     struct sigaction sa;
     memZero(&sa, sizeof sa);
-    if (action == Piped)
-        sa.sa_handler = sigHandle;
-    else if (action == Ignored)
+    if (action == Ignored)
         sa.sa_handler = SIG_IGN;
     else
         sa.sa_handler = SIG_DFL;
     sa.sa_flags |= SA_RESTART;
-    sigfillset(&sa.sa_mask);
-    //::sigaction(3) is signal safe, so we do not need to surround it with signal blocking guard
     if (::sigaction(signal, &sa, NULL) < 0)
-        LOG_SYSERR << "SignalUtils action settle failed";
+        LOG_SYSERR << "sigaction error";
+    return -1;
 }
 
-int SignalUtils::readEndFd()
-{
-    return g_pipefd[0];
+void SignalUtils::signalFDRead(int fd, int signal){
+    struct signalfd_siginfo fdsi;
+    ssize_t s = read(fd, &fdsi, sizeof(fdsi));
+    HCHECK_EQ(s, sizeof(fdsi)) << "Read signal fd size error";
+    HCHECK_EQ(fdsi.ssi_signo, signal) << "Received unexpected signal: " << fdsi.ssi_signo;
 }

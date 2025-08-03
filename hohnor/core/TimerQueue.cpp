@@ -1,5 +1,7 @@
 #include "TimerQueue.h"
 #include "Timer.h"
+#include "EventLoop.h"
+#include "hohnor/log/Logging.h"
 #include <sys/timerfd.h>
 
 namespace Hohnor

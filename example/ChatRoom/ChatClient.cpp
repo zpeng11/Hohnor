@@ -26,14 +26,15 @@ int main(int argc, char *argv[])
     Hohnor::Epoll epoll;
 
     bool stopServer = false;
-    SignalUtils::handleSignal(SIGINT);
+    int signalFD = SignalUtils::handleSignal(SIGINT, SignalUtils::Handled);
 
     //add socket to epoll
     epoll.add(socket.fd(), EPOLLIN | EPOLLHUP);
     //Add stdin to epoll
     epoll.add(STDIN_FILENO, EPOLLIN);
+
     //Add signalHandler to epoll
-    epoll.add(SignalUtils::readEndFd(), EPOLLIN);
+    epoll.add(signalFD, EPOLLIN);
 
     //prepare pipe for zero-copy IO splice
     int pipefd[2];
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
                 LOG_WARN << "Server ends";
                 stopServer = true;
             }
-            else if (event.data.fd == SignalUtils::readEndFd() && event.events == EPOLLIN)
+            else if (event.data.fd == signalFD && event.events == EPOLLIN)
             {
                 auto iter = SignalUtils::receive();
                 while (iter.hasNext())

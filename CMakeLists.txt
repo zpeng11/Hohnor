@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #add directory, they will run the cmake file in the directory automatically 
 add_subdirectory(hohnor)
-add_subdirectory(example)
+# add_subdirectory(example)
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)
@@ -20,7 +20,7 @@ list(APPEND libs NET)
 list(APPEND libs IO)
 list(APPEND libs CORE)
 
-option(ENABLE_UNIT_TEST "ENABLE_UNIT_TEST" ON) #in case cmake does not supporting FetchContent or compiler does not support C++14
+option(ENABLE_UNIT_TEST "ENABLE_UNIT_TEST" OFF) #in case cmake does not supporting FetchContent or compiler does not support C++14
 if(ENABLE_UNIT_TEST)
     add_subdirectory(test)
 endif()

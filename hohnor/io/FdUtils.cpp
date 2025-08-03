@@ -1,5 +1,8 @@
 #include "FdUtils.h"
 #include <fcntl.h>
+#include <dirent.h>
+#include <string>
+#include <iostream>
 #include "hohnor/log/Logging.h"
 
 namespace Hohnor
@@ -54,4 +57,15 @@ void FdUtils::close(int socketfd)
     {
         LOG_SYSERR << "SocketFuncs::close " << socketfd << " error";
     }
+}
+
+static bool is_fd_in_procfs(int fd) {
+    std::string path = "/proc/self/fd/" + std::to_string(fd);
+    return access(path.c_str(), F_OK) == 0;
+}
+
+void FdGuard::setFd(int fd)
+{
+    HCHECK(is_fd_in_procfs(fd)) << "The fd trying to guard is not open to the process yet";
+    fd_ = fd;
 }

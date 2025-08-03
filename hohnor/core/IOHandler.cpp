@@ -1,4 +1,5 @@
-#include "IOHandler.h"
+#include "hohnor/core/IOHandler.h"
+#include "hohnor/core/EventLoop.h"
 #include <iostream>
 #include <sstream>
 
@@ -26,61 +27,55 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), fd_(fd), events_(0), revents_(0), enable_(false), tied_(false)
+IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created)
 {
-    loop_->addIOHandler(this);
+    this->setFd(fd);
 }
 
 IOHandler::~IOHandler()
 {
     disable();
-    loop_->removeIOHandler(this);
 }
 
-void IOHandler::update(bool addNew)
+void IOHandler::update(bool addNew) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
 {
-    loop_->updateIOHandler(this, addNew);
+    std::bind(&EventLoop::updateIOHandler, loop_, getTie(), addNew);
 }
 
 void IOHandler::run()
 {
-    this->runGuarded();
-}
-
-void IOHandler::runGuarded()
-{
-    LOG_DEBUG << "Handling event for " << eventsToString(fd_, revents_);
-    if (enable_ != true)
+    LOG_DEBUG << "Handling event for " << eventsToString(fd(), revents_);
+    if (!this->enabled())
     {
-        LOG_WARN << " When running, the Handler should be enabled";
+        LOG_WARN << " The handler is disabled during running, probably from anther thread";
         return;
     }
         
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN))
     {
         if (closeCallback_ == nullptr)
-            LOG_WARN << "There is not handler for CLOSE on fd:" << this->fd_;
+            LOG_WARN << "There is not handler for CLOSE on fd:" << fd();
         else
             closeCallback_();
     }
     if (revents_ & EPOLLERR)
     {
         if (errorCallback_ == nullptr)
-            LOG_WARN << "There is not handler for ERROR on fd:" << this->fd_;
+            LOG_WARN << "There is not handler for ERROR on fd:" << fd();
         else
             errorCallback_();
     }
     if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
     {
         if (readCallback_ == nullptr)
-            LOG_WARN << "There is not handler for READ on fd:" << this->fd_;
+            LOG_WARN << "There is not handler for READ on fd:" << fd();
         else
             readCallback_();
     }
     if (revents_ & EPOLLOUT)
     {
         if (writeCallback_ == nullptr)
-            LOG_WARN << "There is not handler for WRITE on fd:" << this->fd_;
+            LOG_WARN << "There is not handler for WRITE on fd:" << fd();
         else
             writeCallback_();
     }
@@ -88,22 +83,24 @@ void IOHandler::runGuarded()
 
 void IOHandler::disable()
 {
-    if (enable_)
+    HCHECK_NE(this->status(), Status::Created) << "You can not disable a handler when it is not enabled";
+    if (this->enabled())
     {
-        enable_ = false;
+        this->status_.store(Status::Disabled);
         update(false);
     }
     else
     {
-        LOG_WARN << "IOHandler has been disabled do not need again";
+        LOG_DEBUG << "IOHandler has been disabled do not need again";
     }
 }
 
 void IOHandler::enable()
 {
-    if (!enable_)
+    HCHECK_NE(this->status(), Status::Disabled) << "Trying to enable handler that has been disabled";
+    if (this->status() == Status::Created)
     {
-        enable_ = true;
+        this->status_.store(Status::Enabled);
         update(true);
     }
     else
@@ -123,7 +120,7 @@ void IOHandler::setReadCallback(ReadCallback cb)
         events_ |= EPOLLIN;
         readCallback_ = std::move(cb);
     }
-    if (enable_)
+    if (this->enabled())
         update(false);
 }
 
@@ -138,7 +135,7 @@ void IOHandler::setWriteCallback(WriteCallback cb)
         events_ |= EPOLLOUT;
         writeCallback_ = std::move(cb);
     }
-    if (enable_)
+    if (this->enabled())
         update(false);
 }
 
@@ -153,7 +150,7 @@ void IOHandler::setCloseCallback(CloseCallback cb)
         events_ |= EPOLLRDHUP;
         closeCallback_ = std::move(cb);
     }
-    if (enable_)
+    if (this->enabled())
         update(false);
 }
 void IOHandler::setErrorCallback(ErrorCallback cb)
@@ -167,12 +164,6 @@ void IOHandler::setErrorCallback(ErrorCallback cb)
         events_ |= EPOLLERR;
         errorCallback_ = std::move(cb);
     }
-    if (enable_)
+    if (this->enabled())
         update(false);
-}
-
-void IOHandler::tie(const std::shared_ptr<void>& obj)
-{
-  tie_ = obj;
-  tied_ = true;
 }

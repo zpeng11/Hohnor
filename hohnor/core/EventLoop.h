@@ -21,9 +21,6 @@ namespace Hohnor
 
     class Event;
     class IOHandler;
-    class Signal;
-    class SignalHandle;
-    class SignalHandlerSet;
     class TimerQueue;
     class TimerHandle;
     /**
@@ -31,6 +28,7 @@ namespace Hohnor
      */
     class EventLoop : NonCopyable
     {
+        friend class IOHandler;
     public:
         EventLoop();
         ~EventLoop();
@@ -60,24 +58,17 @@ namespace Hohnor
         //Assert that a thread that calls this method is the same thread as the loop
         void assertInLoopThread();
 
-        //Add a IO event to the epoll
-        void addIOHandler(IOHandler *handler);
-        //modify existing IO event in the epoll
-        void updateIOHandler(IOHandler *handler, bool addNew = false);
-        //Remove a IO event from the epoll
-        void removeIOHandler(IOHandler *handler);
+        //handle an IO FD into the loop, are create a handler for it, will take care of its ownership and lifecycle, threadsafe
+        std::shared_ptr<IOHandler> handleIO(int fd);
+    
         //if has the event
-        bool hasIOHandler(IOHandler *event);
+        bool hasIOHandler(std::shared_ptr<IOHandler> handler);
 
         //Add timer event to the event set
         void addTimer(TimerCallback cb, Timestamp when, double interval);
         //Delete a specific timer
         void removeTimer(TimerHandle id);
 
-        //Add a signal event to the reactor
-        void addSignal(char signal, SignalCallback cb);
-        //remove a signal event from the reactor
-        void removeSignal(SignalHandle id);
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
         //After ctor and Before calling loop(), it is Ready state,
@@ -106,16 +97,12 @@ namespace Hohnor
         Timestamp pollReturnTime_;
 
         //To check if the IO handler is still available in the reactor
-        std::set<IOHandler *> IOHandlers_;
+        std::set<std::shared_ptr<IOHandler>> IOHandlers_;
 
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
         std::unique_ptr<IOHandler> wakeUpHandler_;
-        //manage fd life cycle
-        std::unique_ptr<FdGuard> wakeUpFd_;
 
         std::unique_ptr<TimerQueue> timers_;
-
-        std::unique_ptr<SignalHandlerSet> signalHandlers_;
 
         //used for protecting pending Functors in mult-threading, change of evenloop data
         //from other threads are only allowed to commit their change into pendingFunctors,
@@ -129,5 +116,10 @@ namespace Hohnor
         void handleWakeUp();
 
         bool isLoopThread() { return CurrentThread::tid() == threadId_; }
+
+        //Add a handler to manage lifecycle
+        void addIOHandler(std::shared_ptr<IOHandler> handler);
+        //modify or remove existing IO event in the epoll
+        void updateIOHandler(std::weak_ptr<IOHandler> handler, bool addNew);
     };
 } // namespace Hohnor
