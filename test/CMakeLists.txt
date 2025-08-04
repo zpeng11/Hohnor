@@ -6,7 +6,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # Find all test files
-file(GLOB_RECURSE TEST_SOURCES "time/*.cpp" "thread/*.cpp" "process/*.cpp" "file/*.cpp")
+file(GLOB_RECURSE TEST_SOURCES "time/*.cpp" "thread/*.cpp" "process/*.cpp" "file/*.cpp" "io/*.cpp")
 
 # Add the main test executable
 add_executable(runTests TestMain.cpp ${TEST_SOURCES})

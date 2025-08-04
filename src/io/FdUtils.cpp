@@ -38,24 +38,29 @@ int FdUtils::setCloseOnExec(int fd, bool closeOnExec)
     int oldOptions = fcntl(fd, F_GETFD);
     if (oldOptions == -1)
     {
-        LOG_SYSERR << "FdUtils::setCloseOnExec error";
+        LOG_SYSERR << "FdUtils::setCloseOnExec error (F_GETFD)";
         return -1;
     }
-    int newOptions = closeOnExec ? (oldOptions | O_CLOEXEC) : (oldOptions & ~(O_CLOEXEC));
+
+    int newOptions = closeOnExec ? (oldOptions | FD_CLOEXEC)
+                                 : (oldOptions & ~FD_CLOEXEC);
+
     int retVal = fcntl(fd, F_SETFD, newOptions);
     if (retVal == -1)
     {
-        LOG_SYSERR << "FdUtils::setCloseOnExec error";
+        LOG_SYSERR << "FdUtils::setCloseOnExec error (F_SETFD)";
         return -1;
     }
+
     return oldOptions;
 }
 
-void FdUtils::close(int socketfd)
+
+void FdUtils::close(int fd)
 {
-    if (::close(socketfd) < 0)
+    if (::close(fd) < 0)
     {
-        LOG_SYSERR << "SocketFuncs::close " << socketfd << " error";
+        LOG_SYSERR << "close " << fd << " error";
     }
 }
 
