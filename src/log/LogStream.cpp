@@ -1,4 +1,4 @@
-#include "LogStream.h"
+#include "hohnor/log/LogStream.h"
 
 #include <algorithm>
 #include <limits>

@@ -1,4 +1,4 @@
-#include "LogFile.h"
+#include "hohnor/file/LogFile.h"
 #include <time.h>
 #include "hohnor/time/Timestamp.h"
 

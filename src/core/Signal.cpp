@@ -1,7 +1,7 @@
-#include "Signal.h"
-#include "EventLoop.h"
+#include "hohnor/core/Signal.h"
+#include "hohnor/core/EventLoop.h"
 #include "hohnor/log/Logging.h"
-#include "IOHandler.h"
+#include "hohnor/core/IOHandler.h"
 #include <signal.h>
 #include <sys/signalfd.h>
 

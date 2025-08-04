@@ -2,9 +2,9 @@
 #include "hohnor/core/Signal.h"
 #include "hohnor/io/Epoll.h"
 #include "hohnor/thread/Mutex.h"
-#include "IOHandler.h"
-#include "TimerQueue.h"
-#include "Timer.h"
+#include "hohnor/core/IOHandler.h"
+#include "hohnor/core/TimerQueue.h"
+#include "hohnor/core/Timer.h"
 #include <sys/eventfd.h>
 
 namespace Hohnor

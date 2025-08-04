@@ -1,10 +1,10 @@
 /**
  * Wrapper for pthread 
  */
-#include "Thread.h"
+#include "hohnor/thread/Thread.h"
 #include <unistd.h>
 #include <exception>
-#include "Exception.h"
+#include "hohnor/thread/Exception.h"
 #ifndef __CYGWIN__
 #include <sys/prctl.h>
 #endif

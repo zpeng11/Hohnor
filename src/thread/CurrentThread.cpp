@@ -1,7 +1,7 @@
 /**
  * Thread_local scope information that records thread-id and thread name
  */
-#include "CurrentThread.h"
+#include "hohnor/thread/CurrentThread.h"
 
 #include <cxxabi.h>
 #include <sys/syscall.h>

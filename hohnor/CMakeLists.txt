@@ -1,8 +1,0 @@
-add_subdirectory(thread)
-add_subdirectory(time)
-add_subdirectory(log)
-add_subdirectory(file)
-add_subdirectory(process)
-add_subdirectory(net)
-add_subdirectory(io)
-add_subdirectory(core)
