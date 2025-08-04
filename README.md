@@ -36,7 +36,7 @@ Hohnor
 
 # TODO List:
 * Add support for keyboard input event
-* Intruduce GTest and makes unit test cases
 * Create cmake interface and doc instruction for other project to import
 * Create machanism to restrictly check and prevent user fork happens after evenloop happens(fd safety)
 * Log enable message with defferent level to have differnt way of write and flush
+* Github CI
