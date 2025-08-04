@@ -33,10 +33,7 @@ IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents
     this->setFd(fd);
 }
 
-IOHandler::~IOHandler()
-{
-    disable();
-}
+IOHandler::~IOHandler(){}
 
 void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
 {
@@ -50,7 +47,7 @@ void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStat
 
 void IOHandler::run()
 {
-    LOG_DEBUG << "Handling event for " << eventsToString(fd(), revents_);
+    LOG_TRACE << "Handling event for " << eventsToString(fd(), revents_);
     if (!this->isEnabled())
     {
         LOG_WARN << " The handler is disabled during running, probably from anther thread";
@@ -92,10 +89,16 @@ void IOHandler::update(Status nextStatus){
     loop_->runInLoop([weak_self, nextStatus](){
         auto handler = weak_self.lock();
         if(handler){
+            if (handler->status() == Status::Created && nextStatus == Status::Disabled)
+                LOG_SYSERR << "Trying to disable a handler that has not been enabled";
+            if (handler->status() == Status::Disabled && nextStatus == Status::Enabled)
+                LOG_SYSERR << "Trying to enable a handler that has been disabled";
+            if (handler->status() == Status::Disabled && nextStatus == Status::Disabled)
+                LOG_SYSERR << "Trying to disable a handler multiple times";
             handler->updateInLoop(handler, nextStatus);
         }
         else{
-            LOG_WARN << "Calling IOHandler disable multiple times";
+            LOG_WARN << "IOHandler is been freed, can not update status";
         }
     });
 }
@@ -104,13 +107,11 @@ void IOHandler::update(Status nextStatus){
 
 void IOHandler::disable()
 {
-    HCHECK_NE(this->status(), Status::Created) << "You can not disable a handler when it is not enabled";
     update(Status::Disabled);
 }
 
 void IOHandler::enable()
 {
-    HCHECK_NE(this->status(), Status::Disabled) << "Trying to enable handler that has been disabled";
     update(Status::Enabled);
 }
 

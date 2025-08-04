@@ -55,7 +55,7 @@ namespace Hohnor
         //Get the iteration num
         int64_t iteration() { return iteration_; }
 
-        //Return timestamp of poll_wait return
+        //Return timestamp of last poll_wait return
         Timestamp pollReturnTime() { return pollReturnTime_; }
 
         //Assert that a thread that calls this method is the same thread as the loop
@@ -82,25 +82,27 @@ namespace Hohnor
             End
         };
 
+        LoopState state() const { return state_; }
+
     private:
         //The essential of eventloop
         Epoll * poller_;
 
         std::atomic<bool> quit_;
-        const pid_t threadId_;
+        pid_t threadId_;
         //for debug
         uint64_t iteration_;
 
-        LoopState state_;
+        std::atomic<LoopState> state_;
 
         //Time when epoll returns
-        Timestamp pollReturnTime_;
+        std::atomic<Timestamp> pollReturnTime_;
 
         //To check if the IO handler is still available in the reactor
         std::set<std::shared_ptr<IOHandler>> IOHandlers_;
 
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
-        std::unique_ptr<IOHandler> wakeUpHandler_;
+        std::shared_ptr<IOHandler> wakeUpHandler_;
 
         TimerQueue * timers_;
 

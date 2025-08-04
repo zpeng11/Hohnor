@@ -2,6 +2,7 @@
 #include "hohnor/core/Signal.h"
 #include "hohnor/io/Epoll.h"
 #include "hohnor/thread/Mutex.h"
+#include "hohnor/thread/Exception.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/core/TimerQueue.h"
 #include "hohnor/core/Timer.h"
@@ -34,22 +35,11 @@ EventLoop::EventLoop()
       timers_(new TimerQueue(this)),
       pendingFunctorsLock_(new Mutex()), pendingFunctors_(), signalMap_()
 {
-    //verify there is single loop in a thread
-    if (Loop::t_loopInThisThread)
-    {
-        LOG_FATAL << "Another EventLoop " << Loop::t_loopInThisThread
-                  << " exists in this thread " << threadId_;
-    }
-    else
-    {
-        Loop::t_loopInThisThread = this;
-    }
-
     //create eventfd for wake up
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0)
         LOG_SYSFATAL << "Fail to create eventfd for wake up";
-    wakeUpHandler_.reset(new IOHandler(this, evtfd));
+    wakeUpHandler_ = this->handleIO(evtfd);
     wakeUpHandler_->setReadCallback(std::bind(&EventLoop::handleWakeUp, this));
     wakeUpHandler_->enable();
 
@@ -58,16 +48,34 @@ EventLoop::EventLoop()
 
 EventLoop::~EventLoop()
 {
-    wakeUpHandler_.reset();
+    endLoop();
+    Loop::t_loopInThisThread = nullptr;
     delete poller_;
     delete timers_;
     delete pendingFunctorsLock_;
-    Loop::t_loopInThisThread = NULL;
     LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_;
 }
 
 void EventLoop::loop()
 {
+    //verify there is single loop in a thread
+    if (Loop::t_loopInThisThread)
+    {
+        LOG_FATAL << "Another EventLoop " << Loop::t_loopInThisThread
+                << " exists in this thread " << threadId_;
+    }
+    else
+    {
+        Loop::t_loopInThisThread = this;
+    }
+    if(CurrentThread::tid() != threadId_)
+    {
+        LOG_WARN << "EventLoop::loop() - EventLoop " << this
+                  << " was created in threadId_ = " << threadId_
+                  << ", but current thread id = " <<  CurrentThread::tid()
+                  << ", Updated thread id to current thread";
+        threadId_ = CurrentThread::tid();
+    }
     assertInLoopThread();
     while (!quit_)
     {
@@ -98,6 +106,7 @@ void EventLoop::loop()
             func();
         }
     }
+    state_ = End;
 }
 
 void EventLoop::runInLoop(Functor cb)
@@ -155,7 +164,6 @@ void EventLoop::assertInLoopThread()
 
 void EventLoop::endLoop()
 {
-    assertInLoopThread();
     quit_ = true;
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended by call";
 }
