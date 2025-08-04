@@ -41,7 +41,7 @@ namespace Hohnor
 		//Get pool name
 		const string& name() const{ return name_; }
 		//Capacity of the queue
-		std::size_t queueCapacity() const{return queue_->capacity();}
+		std::size_t queueCapacity() const{return queue_->capacity() - 1;} // -1 for the empty item
 		//Size of current queue
 		std::size_t queueSize()const {return queue_->size();}
 		//If the queue is full

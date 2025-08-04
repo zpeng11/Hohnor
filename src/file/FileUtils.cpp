@@ -68,6 +68,8 @@ size_t AppendFile::write(const char *logline, size_t len)
 	return fwrite_unlocked(logline, 1, len, fp_);
 }
 
+const int ReadSmallFile::kBufferSize;
+
 ReadSmallFile::ReadSmallFile(StringPiece filename)
 	: fd_(open(filename.data(), O_RDONLY | O_CLOEXEC)),
 	  err_(0)

@@ -1,6 +1,10 @@
 #include "hohnor/file/LogFile.h"
 #include <time.h>
 #include "hohnor/time/Timestamp.h"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <atomic>
 
 using namespace Hohnor;
 LogFile::LogFile(const string &basename,
@@ -67,6 +71,14 @@ void LogFile::flush()
     file_->flush();
 }
 
+static std::atomic<uint64_t> logFileCounter(0);
+
+std::string to8DigitString(uint64_t number) {
+    std::ostringstream oss;
+    oss << std::setw(8) << std::setfill('0') << number;
+    return oss.str();
+}
+
 std::pair<time_t, string> LogFile::getLogFileName(const string &basename, const string &dir, Timestamp::TimeStandard standard)
 {
     string res = dir;
@@ -80,8 +92,9 @@ std::pair<time_t, string> LogFile::getLogFileName(const string &basename, const 
         gmtime_r(&now, &tm);
     else
         localtime_r(&now, &tm);
-    strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S.", &tm);
+    strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S-", &tm);
     res += timebuf;
-    res += "log";
+    res += to8DigitString(logFileCounter++); // Append a random 4-digit hex for uniqueness
+    res += ".log";
     return {now, res};
 }

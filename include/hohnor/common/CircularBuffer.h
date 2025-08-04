@@ -86,7 +86,7 @@ namespace Hohnor
 		T front() { return buffer[head]; }
 
 		// Return true if this circular buffer is empty, and false otherwise.
-		bool empty() { return head == tail; }
+		bool empty() const { return head == tail; }
 
 		// Return true if this circular buffer is full, and false otherwise.
 		bool full()const { 
