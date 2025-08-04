@@ -4,31 +4,37 @@
 #pragma once
 #include "hohnor/common/NonCopyable.h"
 #include "hohnor/common/Callbacks.h"
-#include "hohnor/common/Copyable.h"
-#include "IOHandler.h"
-#include "hohnor/io/SignalUtils.h"
-#include <signal.h>
+
 #include <atomic>
+#include <memory>
 
 namespace Hohnor
 {
+    enum SignalAction
+    {
+        Ignored,
+        Default,
+        Handled //Return signal fd that handles the signal
+    };
     class EventLoop;
+    class IOHandler;
     class SignalHandler : NonCopyable
     {
         friend class EventLoop;
     private:
-        SignalUtils::SigAction action_;
+        SignalAction action_;
         int signal_;
         std::shared_ptr<IOHandler> ioHandler_;
         EventLoop * loop_;
-        void createIOHandler(int fd, std::function<void()> cb);
+        void createIOHandler(int fd, Functor cb);
     protected:
-        SignalHandler(EventLoop* loop, int signal, SignalUtils::SigAction action, std::function<void()> cb = nullptr);
+        SignalHandler(EventLoop* loop, int signal, SignalAction action, SignalCallback cb = nullptr);
     public:
         SignalHandler() = delete;
-        ~SignalHandler();
-        SignalUtils::SigAction action() { return action_; }
+        ~SignalHandler(){}
+        SignalAction action() { return action_; }
         int signal() { return signal_; }
-        void update(SignalUtils::SigAction action, std::function<void()> cb = nullptr);
+        void update(SignalAction action, SignalCallback cb = nullptr);
+        void disable() { update(SignalAction::Default); }
     };
 } // namespace Hohnor

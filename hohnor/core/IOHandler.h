@@ -16,38 +16,32 @@
 namespace Hohnor
 {
     class IOHandler;
-    struct EpollContext {
-        std::weak_ptr<IOHandler> tie;
-        int fd;
-        EpollContext(std::weak_ptr<IOHandler> tie_, int fd_):tie(tie_),fd(fd_){}
-    };
-
     class EventLoop;
+    class TimerQueue; 
     class IOHandler: public FdGuard, public std::enable_shared_from_this<IOHandler> 
     {
         friend class EventLoop;
+        friend class TimerQueue; //temporary, need to change
     public:
         enum class Status {
             Created,
             Enabled,
             Disabled
         };
+
     private:
         //do not manage life cycle of this fd
         EventLoop *loop_;
         int events_;
         int revents_;
-        std::atomic<Status> status_;
+        Status status_;
         ReadCallback readCallback_;
         WriteCallback writeCallback_;
         CloseCallback closeCallback_;
         ErrorCallback errorCallback_;
         //update EPOLL in the loop
-        void update(bool addNew);
-
-        EpollContext * context;
-
-        std::weak_ptr<IOHandler> tie_;
+        void updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus);
+        void update(Status nextStatus);
         
         //Run the events according to revents
         void run();
@@ -55,40 +49,32 @@ namespace Hohnor
         //Used by event loop to put epoll result back to handler
         void retEvents(int revents) { revents_ = revents; }
 
-
+    protected:
+        IOHandler(EventLoop *loop, int fd);
     public:
         // Only allow Eventloop to create it
-        IOHandler(EventLoop *loop, int fd);
+
         IOHandler() = delete;
         ~IOHandler();
         //Get current event setting
         int getEvents() { return events_; }
         
         //if events are enabled
-        bool enabled() { return status() == Status::Enabled; }
+        bool inline isEnabled() { return status() == Status::Enabled; }
         //Get current status of IOHandler
-        Status status() { return status_.load();}
+        Status inline status() { return status_;}
         //Diable all events on this handler from the eventloop, thread safe
         void disable();
         //Enable all events on this handler from the eventloop, thread safe
         void enable();
-
+        //thread safe
         void setReadCallback(ReadCallback cb);
-        bool hasReadCallback(){ return this->readCallback_ != nullptr; }
-
+        //thread safe
         void setWriteCallback(WriteCallback cb);
-        bool hasWriteCallback(){ return this->writeCallback_ != nullptr; }
-
+        //thread safe
         void setCloseCallback(CloseCallback cb);
-        bool hasCloseCallback(){ return this->closeCallback_ != nullptr; }
-
+        //thread safe
         void setErrorCallback(ErrorCallback cb);
-        bool hasErrorCallback(){ return this->errorCallback_ != nullptr; }
-
-        void tie() { tie_ = shared_from_this(); }
-
-        std::weak_ptr<IOHandler> getTie() const { return tie_; }
-
     };
 
 } // namespace Hohnor

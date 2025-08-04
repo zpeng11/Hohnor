@@ -1,5 +1,7 @@
 #include "hohnor/core/EventLoop.h"
-#include "hohnor/time/Timestamp.h"
+#include "hohnor/core/Signal.h"
+#include "hohnor/io/Epoll.h"
+#include "hohnor/thread/Mutex.h"
 #include "IOHandler.h"
 #include "TimerQueue.h"
 #include "Timer.h"
@@ -23,14 +25,14 @@ EventLoop *EventLoop::loopOfCurrentThread()
 }
 
 EventLoop::EventLoop()
-    : poller_(), quit_(false),
+    : poller_(new Epoll()), quit_(false),
       threadId_(CurrentThread::tid()),
       iteration_(0), state_(Ready),
       pollReturnTime_(Timestamp::now()),
       IOHandlers_(),
       wakeUpHandler_(), //initilize later
       timers_(new TimerQueue(this)),
-      pendingFunctorsLock_(), pendingFunctors_()
+      pendingFunctorsLock_(new Mutex()), pendingFunctors_(), signalMap_()
 {
     //verify there is single loop in a thread
     if (Loop::t_loopInThisThread)
@@ -57,7 +59,9 @@ EventLoop::EventLoop()
 EventLoop::~EventLoop()
 {
     wakeUpHandler_.reset();
-    timers_.reset();
+    delete poller_;
+    delete timers_;
+    delete pendingFunctorsLock_;
     Loop::t_loopInThisThread = NULL;
     LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_;
 }
@@ -70,29 +74,22 @@ void EventLoop::loop()
         ++iteration_;
         state_ = Polling;
         //epoll Wait for any IO events
-        auto res = poller_.wait();
+        auto res = poller_->wait();
         pollReturnTime_ = Timestamp::now();
 
         state_ = IOHandling;
         while (res.hasNext())
         {
             auto event = res.next();
-            EpollContext *context = (EpollContext *)event.data.ptr;
-            auto handler = context->tie.lock();
-            if (LIKELY(handler && handler->enabled())){
-                handler->retEvents(event.events);
-                handler->run();
-            }
-            else
-            {
-                LOG_WARN << "Possiblly unresponded to an IO event due to disable asynchronize";
-            }
+            IOHandler *handler = (IOHandler *)event.data.ptr;
+            handler->retEvents(event.events);
+            handler->run();
         }
 
         state_ = PendingHandling;
         std::vector<Functor> funcs;
         {
-            MutexGuard guard(pendingFunctorsLock_);
+            MutexGuard guard(*pendingFunctorsLock_);
             funcs.swap(pendingFunctors_);
         }
         for (Functor func : funcs)
@@ -118,7 +115,7 @@ void EventLoop::runInLoop(Functor cb)
 void EventLoop::queueInLoop(Functor cb)
 {
     {
-        MutexGuard guard(pendingFunctorsLock_);
+        MutexGuard guard(*pendingFunctorsLock_);
         pendingFunctors_.push_back(std::move(cb));
     }
     if (!isLoopThread() || state_ == PendingHandling || state_ == Ready)
@@ -164,9 +161,9 @@ void EventLoop::endLoop()
 }
 
 std::shared_ptr<IOHandler> EventLoop::handleIO(int fd){
-    auto handler = std::make_shared<IOHandler>(this, fd);
-    handler->tie();
+    std::shared_ptr<IOHandler> handler(new IOHandler(this, fd));
     runInLoop(std::bind(&EventLoop::addIOHandler, this, handler));
+    return handler;
 }
 
 void EventLoop::addIOHandler(std::shared_ptr<IOHandler> handler) //Use a set to reserve ownership of IOHandlers
@@ -180,42 +177,53 @@ bool EventLoop::hasIOHandler(std::shared_ptr<IOHandler> handler){
     return IOHandlers_.find(handler) != IOHandlers_.end();
 }
 
-void EventLoop::updateIOHandler(std::weak_ptr<IOHandler> handler_weak, bool addNew) //Load handle's epoll context to epoll, and manage context lifecycle. 
+void EventLoop::updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew) //Load handle's epoll context to epoll, and manage context lifecycle. 
 // addNew == true && enabled == true means creating epoll node, addNew == false && enabled == true means modifing events in epoll, enable == false means deleting epoll node and remove ownership
 {
     assertInLoopThread();
-    auto handler = handler_weak.lock();
     HCHECK(handler) << "Handler has been free";
     HCHECK(hasIOHandler(handler)) << " can not find the handler in set";
     if (addNew)
     {
-        HCHECK(handler->enabled())<< "Handler not enabled";
-        HCHECK(!handler->context)<< "Handler's epoll context has been created";
-        handler->context = new EpollContext(handler, handler->fd());
-        poller_.add(handler->fd(), handler->getEvents(), (void *)handler->context);
+        HCHECK(handler->isEnabled())<< "Handler not enabled";
+        poller_->add(handler->fd(), handler->getEvents(), (void *)handler.get());
     }
-    else if (handler->enabled())
+    else if (handler->isEnabled())
     {
-        HCHECK(handler->context)<< "Handler's epoll context has not been created";
-        poller_.modify(handler->fd(), handler->getEvents(), (void *)handler->context);
+        poller_->modify(handler->fd(), handler->getEvents(), (void *)handler.get());
     }
     else //diabled()
     {
-        HCHECK(handler->context)<< "Handler's epoll context has not been created";
-        poller_.remove(handler->fd());
-        delete handler->context;
-        handler->context = nullptr;
+        HCHECK(!handler->isEnabled())<< "This should be handler disabled case";
+        poller_->remove(handler->fd());
         auto it = IOHandlers_.find(handler);
         IOHandlers_.erase(it);
     }
 }
 
-void EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
+std::shared_ptr<TimerHandler> EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
 {
-    timers_->addTimer(std::move(cb), when, interval);
+    return timers_->addTimer(std::move(cb), when, interval);
 }
 
-void EventLoop::removeTimer(TimerHandle id)
+// void EventLoop::removeTimer(TimerHandle id)
+// {
+//     timers_->cancel(id.timer_);
+// }
+
+std::shared_ptr<SignalHandler> EventLoop::handleSignal(int signal, SignalAction action, SignalCallback cb)
 {
-    timers_->cancel(id.timer_);
+    auto it = signalMap_.find(signal);
+    if(it == signalMap_.end()){
+        auto handle = std::shared_ptr<SignalHandler>(new SignalHandler(this, signal, action, cb));
+        signalMap_[signal] = handle;
+        return handle;
+    }
+    else{
+        auto handle = it->second;
+        handle->update(action, cb);
+        return handle;
+    }
 }
+
+bool EventLoop::isLoopThread() { return CurrentThread::tid() == threadId_; }

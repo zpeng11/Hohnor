@@ -6,23 +6,26 @@
 
 #pragma once
 #include "hohnor/common/NonCopyable.h"
-#include "hohnor/time/Timestamp.h"
 #include "hohnor/common/Callbacks.h"
-#include "hohnor/thread/BlockingQueue.h"
-#include "hohnor/io/Epoll.h"
-#include "hohnor/common/BinaryHeap.h"
-#include "hohnor/core/Timer.h"
-#include "hohnor/core/Signal.h"
+#include "hohnor/time/Timestamp.h"
+#include "Signal.h"
+
 #include <atomic>
 #include <vector>
 #include <set>
+#include <unordered_map>
+#include <memory>
 namespace Hohnor
 {
 
     class Event;
     class IOHandler;
     class TimerQueue;
-    class TimerHandle;
+    class TimerHandler;
+    class Timestamp;
+    class SignalHandler;
+    class Mutex;
+    class Epoll;
     /**
      * 
      */
@@ -58,17 +61,14 @@ namespace Hohnor
         //Assert that a thread that calls this method is the same thread as the loop
         void assertInLoopThread();
 
-        //handle an IO FD into the loop, are create a handler for it, will take care of its ownership and lifecycle, threadsafe
+        //handle an IO FD into the loop, and create a handler for it, will take care of its ownership and lifecycle, threadsafe
         std::shared_ptr<IOHandler> handleIO(int fd);
-    
-        //if has the event
-        bool hasIOHandler(std::shared_ptr<IOHandler> handler);
 
         //Add timer event to the event set
-        void addTimer(TimerCallback cb, Timestamp when, double interval);
-        //Delete a specific timer
-        void removeTimer(TimerHandle id);
+        std::shared_ptr<TimerHandler> addTimer(TimerCallback cb, Timestamp when, double interval = 0.0f);
 
+        //Return a handler to manage signal
+        std::shared_ptr<SignalHandler> handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
         //After ctor and Before calling loop(), it is Ready state,
@@ -84,7 +84,7 @@ namespace Hohnor
 
     private:
         //The essential of eventloop
-        Epoll poller_;
+        Epoll * poller_;
 
         std::atomic<bool> quit_;
         const pid_t threadId_;
@@ -102,24 +102,29 @@ namespace Hohnor
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
         std::unique_ptr<IOHandler> wakeUpHandler_;
 
-        std::unique_ptr<TimerQueue> timers_;
+        TimerQueue * timers_;
 
         //used for protecting pending Functors in mult-threading, change of evenloop data
         //from other threads are only allowed to commit their change into pendingFunctors,
         //And let the loop thread to actually run these changes, In this way we only need to
         //mantain pendingFunctors to be thread-safe
-        Mutex pendingFunctorsLock_;
+        Mutex * pendingFunctorsLock_;
         //priorty map to functor
         std::vector<Functor> pendingFunctors_;
+
+        std::unordered_map<int, std::shared_ptr<SignalHandler>> signalMap_;
 
         //To bind for wake up event
         void handleWakeUp();
 
-        bool isLoopThread() { return CurrentThread::tid() == threadId_; }
+        bool isLoopThread();
+
+        //if has the event
+        bool hasIOHandler(std::shared_ptr<IOHandler> handler);
 
         //Add a handler to manage lifecycle
         void addIOHandler(std::shared_ptr<IOHandler> handler);
         //modify or remove existing IO event in the epoll
-        void updateIOHandler(std::weak_ptr<IOHandler> handler, bool addNew);
+        void updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew);
     };
 } // namespace Hohnor

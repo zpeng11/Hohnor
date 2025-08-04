@@ -1,9 +1,58 @@
 #include "Signal.h"
 #include "EventLoop.h"
+#include "hohnor/log/Logging.h"
+#include "IOHandler.h"
+#include <signal.h>
+#include <sys/signalfd.h>
+
 
 using namespace Hohnor;
 
-void SignalHandler::createIOHandler(int fd, std::function<void()> cb)
+int handleSignal(int signal, SignalAction action){
+    if (signal <= 0 || signal >= 65)
+        LOG_FATAL << "Invalid signal value";
+
+    if (action == SignalAction::Handled){
+        // Block signal so it doesn't get handled by the default handler
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigaddset(&mask, signal);
+        if (sigprocmask(SIG_BLOCK, &mask, nullptr) == -1)
+            LOG_FATAL << "sigprocmask error";
+
+        // Create signalfd for signal
+        int sfd = signalfd(-1, &mask, SFD_CLOEXEC);
+        if (sfd == -1) 
+            LOG_FATAL << "signalfd error";
+        return sfd;
+    }
+
+    // Unblock signal so it is handled again by default handler
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, signal);
+    if (sigprocmask(SIG_UNBLOCK, &mask, nullptr) == -1)
+        LOG_FATAL << "sigprocmask error";
+    struct sigaction sa;
+    memZero(&sa, sizeof sa);
+    if (action == SignalAction::Ignored)
+        sa.sa_handler = SIG_IGN;
+    else
+        sa.sa_handler = SIG_DFL;
+    sa.sa_flags |= SA_RESTART;
+    if (::sigaction(signal, &sa, NULL) < 0)
+        LOG_SYSERR << "sigaction error";
+    return -1;
+}
+
+void signalFDRead(int fd, int signal){
+    struct signalfd_siginfo fdsi;
+    ssize_t s = read(fd, &fdsi, sizeof(fdsi));
+    HCHECK_EQ(s, sizeof(fdsi)) << "Read signal fd size error";
+    HCHECK_EQ(fdsi.ssi_signo, signal) << "Received unexpected signal: " << fdsi.ssi_signo;
+}
+
+void SignalHandler::createIOHandler(int fd, Functor cb)
 {
     if(cb == nullptr){
         LOG_WARN << "Creating signal io without callback";
@@ -12,38 +61,39 @@ void SignalHandler::createIOHandler(int fd, std::function<void()> cb)
     int signal = signal_;
     ioHandler_ = loop_->handleIO(fd);
     ioHandler_->setReadCallback([fd, signal, cb](){
-        SignalUtils::signalFDRead(fd, signal);
+        signalFDRead(fd, signal);
         cb();
     });
     ioHandler_->enable();
 }
 
-SignalHandler::SignalHandler(EventLoop* loop, int signal, SignalUtils::SigAction action, std::function<void()> cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
+SignalHandler::SignalHandler(EventLoop* loop, int signal, SignalAction action, SignalCallback cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
 {
-    int fd = SignalUtils::handleSignal(signal, action);
-    if(action == SignalUtils::SigAction::Handled){
+    int fd = handleSignal(signal, action);
+    if(action == SignalAction::Handled){
         createIOHandler(fd, cb);
     }
 }
 
-void SignalHandler::update(SignalUtils::SigAction action, std::function<void()> cb)
+void SignalHandler::update(SignalAction action, SignalCallback cb)
 {
     int oldAction = action_;
     action_ = action;
-    if(oldAction == action && action == SignalUtils::Handled) //Switching callback in handle
+    if(oldAction == action && action == SignalAction::Handled) //Stay in handle but change callback
     {
         ioHandler_->setReadCallback(cb);
         return;
     }
-    else if(oldAction == SignalUtils::Handled && action != oldAction){ //Does not need IOHandler now, switch to default or ignore
+    else if(oldAction == SignalAction::Handled && action != oldAction){ //Switch from handle to default or ignore
         ioHandler_->disable();
         ioHandler_ = nullptr;
-        SignalUtils::handleSignal(signal_, action);
+        handleSignal(signal_, action);
     }
-    else{
-        int fd = SignalUtils::handleSignal(signal_, action);
-        if(action == SignalUtils::SigAction::Handled){ //switched to handle
+    else{//switch from default or ignore
+        int fd = handleSignal(signal_, action);
+        if(action == SignalAction::Handled){ //switched to handle
             createIOHandler(fd, cb);
         }
     }
 }
+

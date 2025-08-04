@@ -5,59 +5,40 @@
 #pragma once
 #include "hohnor/time/Timestamp.h"
 #include "hohnor/common/NonCopyable.h"
-#include "hohnor/common/Copyable.h"
 #include "hohnor/common/Callbacks.h"
 #include <atomic>
+#include <memory>
 
 namespace Hohnor
 {
-    class TimerHandle;
-    class Timer : NonCopyable
+    class EventLoop;
+    class TimerQueue;
+    class TimerHandler : NonCopyable, public std::enable_shared_from_this<TimerHandler> 
     {
+        friend class TimerQueue;
     private:
-        const TimerCallback callback_;
+        TimerCallback callback_;
         Timestamp expiration_;
         //if greater than 0 means it is a repeated event
         double interval_;
-        const int64_t sequence_;
         bool disabled_;
-
+        const int64_t sequence_;
+        EventLoop *loop_;
         static std::atomic<uint64_t> s_numCreated_;
-
+    protected:
+        TimerHandler(EventLoop *loop, TimerCallback callback, Timestamp when, double interval);
+        void run();
+        //Reload expiration with interval, so that timer run next loop
+        void reloadInLoop();
     public:
-        Timer(TimerCallback callback, Timestamp when, double interval);
-        void run(Timestamp, TimerHandle);
+        void updateCallback(TimerCallback callback);
         void disable();
         Timestamp expiration() const { return expiration_; }
-        inline bool repeat() const { return interval_ > 0.0; }
+        double repeatInterval() const { return interval_; }
+        inline bool isRepeat() const { return interval_ > 0.0; }
         int64_t sequence() const { return sequence_; }
-        void restart(Timestamp now);
         static int64_t numCreated() { return s_numCreated_; }
-        ~Timer() = default;
+        ~TimerHandler() = default;
     };
 
-    class EventLoop;
-    class TimerHandle : public Copyable
-    {
-    public:
-        TimerHandle()
-            : timer_(NULL), loop_(NULL)
-        {
-        }
-
-        TimerHandle(Timer *timer, EventLoop *loop)
-            : timer_(timer), loop_(loop) {}
-
-        EventLoop *loop() { return loop_; }
-
-        void cancel();
-
-        // default copy-ctor, dtor and assignment are okay
-
-        friend class EventLoop;
-
-    private:
-        Timer *timer_;
-        EventLoop *loop_;
-    };
 } // namespace Hohnor

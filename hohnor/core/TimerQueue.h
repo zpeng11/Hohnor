@@ -3,46 +3,40 @@
  */
 
 #pragma once
-#include "hohnor/common/NonCopyable.h"
-#include "hohnor/time/Timestamp.h"
+#include "hohnor/io/FdUtils.h"
 #include "hohnor/common/Callbacks.h"
 #include "hohnor/common/BinaryHeap.h"
-#include "hohnor/core/IOHandler.h"
 #include <set>
 #include <vector>
 
 namespace Hohnor
 {
     class EventLoop;
-    class Timer;
-    class TimerHandle;
-    class TimerQueue
+    class TimerHandler;
+    class IOHandler;
+    class Timestamp;
+    class TimerQueue : public FdGuard
     {
+    friend class EventLoop;
     public:
-        explicit TimerQueue(EventLoop *loop);
         ~TimerQueue();
-
+    protected:
+        explicit TimerQueue(EventLoop *loop);
+    private:
         ///
         /// Schedules the callback to be run at given time,
         /// repeats if @c interval > 0.0.
         ///
         /// Must be thread safe. Usually be called from other threads.
-        void addTimer(TimerCallback cb,
+        std::shared_ptr<TimerHandler> addTimer(TimerCallback cb,
                          Timestamp when,
                          double interval);
-
-        //For cancellation we do not directly discard the timer object in the heap, but set the running Functor of the specific timer to nullptr
-        void cancel(Timer *timer);
-
-    private:
-        void addTimerInLoop(Timer *timer);
-        void cancelInLoop(Timer *timer);
+        void addTimerInLoop(std::shared_ptr<TimerHandler> timerHandler);
         // called when timerfd alarms
         void handleRead();
-        FdGuard timerFd_;
-        IOHandler timerFdIOHandle_;
+        std::shared_ptr<IOHandler> timerFdIOHandle_;
         EventLoop *loop_;
-        BinaryHeap<Timer *> heap_;
+        BinaryHeap<std::shared_ptr<TimerHandler>> heap_;
     };
 
 } // namespace Hohnor
