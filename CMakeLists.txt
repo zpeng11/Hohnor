@@ -6,10 +6,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 #add directory, they will run the cmake file in the directory automatically 
 add_subdirectory(hohnor)
 # add_subdirectory(example)
+
+
 
 list(APPEND libs THREAD)
 list(APPEND libs TIME)

@@ -6,4 +6,4 @@ target_link_libraries(CORE PUBLIC TIME)
 target_link_libraries(CORE PUBLIC IO)
 target_link_libraries(CORE PUBLIC LOG)
 
-target_include_directories(CORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hohnor/core)
