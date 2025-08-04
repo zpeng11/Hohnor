@@ -3,8 +3,9 @@
 #include "hohnor/io/Epoll.h"
 #include "hohnor/thread/Mutex.h"
 #include "hohnor/thread/Exception.h"
+#include "hohnor/thread/ThreadPool.h"
 #include "hohnor/core/IOHandler.h"
-#include "hohnor/core/TimerQueue.h"
+#include "hohnor/core/Timer.h"
 #include "hohnor/core/Timer.h"
 #include <sys/eventfd.h>
 
@@ -33,7 +34,8 @@ EventLoop::EventLoop()
       IOHandlers_(),
       wakeUpHandler_(), //initilize later
       timers_(new TimerQueue(this)),
-      pendingFunctorsLock_(new Mutex()), pendingFunctors_(), signalMap_()
+      pendingFunctorsLock_(new Mutex()), pendingFunctors_(), signalMap_(),
+      threadPool_()
 {
     //create eventfd for wake up
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -130,6 +132,34 @@ void EventLoop::queueInLoop(Functor cb)
     if (!isLoopThread() || state_ == PendingHandling || state_ == Ready)
     {
         wakeUp();
+    }
+}
+
+void EventLoop::setThreadPools(size_t size)
+{
+    if (size > 0)
+    {
+        threadPool_.reset(new ThreadPool("EventLoop-ThreadPool"));
+        threadPool_->start(size);
+        LOG_DEBUG << "EventLoop " << this << " created thread pool with " << size << " threads";
+    }
+    else
+    {
+        threadPool_.reset();
+        LOG_DEBUG << "EventLoop " << this << " disabled thread pool";
+    }
+}
+
+void EventLoop::runInPool(Functor callback)
+{
+    if (threadPool_)
+    {
+        threadPool_->run(std::move(callback));
+    }
+    else
+    {
+        // If no thread pool is configured, run in the event loop thread
+        runInLoop(std::move(callback));
     }
 }
 

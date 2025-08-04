@@ -2,6 +2,7 @@
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/thread/Thread.h"
 #include "hohnor/thread/CurrentThread.h"
+#include "hohnor/log/Logging.h"
 #include <gtest/gtest.h>
 #include <atomic>
 #include <memory>
@@ -18,12 +19,10 @@ protected:
         // Create a test file descriptor (eventfd)
         test_fd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         ASSERT_GT(test_fd_, 0);
+        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
     }
     
     void TearDown() override {
-        if (test_fd_ > 0) {
-            ::close(test_fd_);
-        }
         loop_.reset();
     }
 

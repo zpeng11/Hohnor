@@ -16,7 +16,7 @@ class EventLoopTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Each test gets a fresh EventLoop
-        Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
+        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
     }
     
     void TearDown() override {
@@ -41,8 +41,6 @@ TEST_F(EventLoopTest, ConstructorAndDestructor) {
 
 TEST_F(EventLoopTest, OnlyOneLoopPerThread) {
     EventLoop loop1;
-    EXPECT_EQ(EventLoop::loopOfCurrentThread(), nullptr);
-    
     // Creating another loop in the same thread should cause a fatal error
     // We can't test this directly as it would terminate the test
     // But we can verify the current loop is set correctly
@@ -246,4 +244,264 @@ TEST_F(EventLoopTest, MultipleCallbacksInQueue) {
     for (int i = 0; i < 5; ++i) {
         EXPECT_EQ(execution_order[i], i);
     }
+}
+
+// ThreadPool functionality tests
+TEST_F(EventLoopTest, ThreadPoolInitialization) {
+    EventLoop loop;
+    
+    // Initially no thread pool should be configured
+    // Test setting up thread pool with different sizes
+    loop.setThreadPools(2);
+    
+    // Test disabling thread pool
+    loop.setThreadPools(0);
+    
+    // Test setting up thread pool again
+    loop.setThreadPools(3);
+}
+
+TEST_F(EventLoopTest, RunInPoolWithoutThreadPool) {
+    EventLoop loop;
+    std::atomic<bool> callback_executed{false};
+    std::atomic<pid_t> execution_thread_id{0};
+    
+    // Without thread pool, runInPool should behave like runInLoop
+    loop.runInPool([&callback_executed, &execution_thread_id]() {
+        callback_executed = true;
+        execution_thread_id = CurrentThread::tid();
+    });
+    
+    EXPECT_TRUE(callback_executed.load());
+    EXPECT_EQ(execution_thread_id.load(), CurrentThread::tid());
+}
+
+TEST_F(EventLoopTest, RunInPoolWithThreadPool) {
+    EventLoop loop;
+    std::atomic<bool> callback_executed{false};
+    std::atomic<pid_t> execution_thread_id{0};
+    std::atomic<pid_t> main_thread_id{CurrentThread::tid()};
+    
+    // Set up thread pool with 2 threads
+    loop.setThreadPools(2);
+    
+    // Give thread pool time to start
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    loop.runInPool([&callback_executed, &execution_thread_id]() {
+        callback_executed = true;
+        execution_thread_id = CurrentThread::tid();
+    });
+    
+    // Wait for task to complete
+    CurrentThread::sleepUsec(100 * 1000); // 100ms
+    
+    EXPECT_TRUE(callback_executed.load());
+    // Task should execute in a different thread than main thread
+    EXPECT_NE(execution_thread_id.load(), main_thread_id.load());
+}
+
+TEST_F(EventLoopTest, MultipleTasksInThreadPool) {
+    EventLoop loop;
+    const int num_tasks = 10;
+    std::atomic<int> completed_tasks{0};
+    std::vector<std::atomic<pid_t>> thread_ids(num_tasks);
+    std::atomic<pid_t> main_thread_id{CurrentThread::tid()};
+    
+    // Set up thread pool with 3 threads
+    loop.setThreadPools(3);
+    
+    // Give thread pool time to start
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit multiple tasks
+    for (int i = 0; i < num_tasks; ++i) {
+        loop.runInPool([&completed_tasks, &thread_ids, i]() {
+            thread_ids[i] = CurrentThread::tid();
+            completed_tasks++;
+            // Simulate some work
+            CurrentThread::sleepUsec(10 * 1000); // 10ms
+        });
+    }
+    
+    // Wait for all tasks to complete
+    CurrentThread::sleepUsec(500 * 1000); // 500ms
+    
+    EXPECT_EQ(completed_tasks.load(), num_tasks);
+    
+    // Verify tasks ran in different threads
+    std::set<pid_t> unique_thread_ids;
+    for (int i = 0; i < num_tasks; ++i) {
+        pid_t tid = thread_ids[i].load();
+        EXPECT_NE(tid, main_thread_id.load());
+        unique_thread_ids.insert(tid);
+    }
+    
+    // Should have used multiple threads (at most 3 since pool size is 3)
+    EXPECT_LE(unique_thread_ids.size(), 3);
+    EXPECT_GE(unique_thread_ids.size(), 1);
+}
+
+TEST_F(EventLoopTest, ThreadPoolWithEventLoopIntegration) {
+    EventLoop loop;
+    std::atomic<bool> pool_task_executed{false};
+    std::atomic<bool> loop_task_executed{false};
+    std::atomic<pid_t> pool_thread_id{0};
+    std::atomic<pid_t> loop_thread_id{0};
+    
+    // Set up thread pool
+    loop.setThreadPools(2);
+    
+    // Give thread pool time to start
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit task to thread pool
+    loop.runInPool([&pool_task_executed, &pool_thread_id]() {
+        pool_task_executed = true;
+        pool_thread_id = CurrentThread::tid();
+    });
+    
+    // Submit task to event loop
+    loop.runInLoop([&loop_task_executed, &loop_thread_id]() {
+        loop_task_executed = true;
+        loop_thread_id = CurrentThread::tid();
+    });
+    
+    // Wait for pool task to complete
+    CurrentThread::sleepUsec(100 * 1000); // 100ms
+    
+    EXPECT_TRUE(pool_task_executed.load());
+    EXPECT_TRUE(loop_task_executed.load());
+    
+    // Pool task should run in different thread, loop task in main thread
+    EXPECT_NE(pool_thread_id.load(), loop_thread_id.load());
+    EXPECT_EQ(loop_thread_id.load(), CurrentThread::tid());
+}
+
+TEST_F(EventLoopTest, ThreadPoolReconfiguration) {
+    EventLoop loop;
+    std::atomic<int> task_count{0};
+    
+    // Start with 2 threads
+    loop.setThreadPools(2);
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit some tasks
+    for (int i = 0; i < 5; ++i) {
+        loop.runInPool([&task_count]() {
+            task_count++;
+            CurrentThread::sleepUsec(20 * 1000); // 20ms
+        });
+    }
+    
+    // Wait for tasks to start
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Reconfigure to 4 threads
+    loop.setThreadPools(4);
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit more tasks
+    for (int i = 0; i < 5; ++i) {
+        loop.runInPool([&task_count]() {
+            task_count++;
+            CurrentThread::sleepUsec(20 * 1000); // 20ms
+        });
+    }
+    
+    // Wait for all tasks to complete
+    CurrentThread::sleepUsec(300 * 1000); // 300ms
+    
+    EXPECT_EQ(task_count.load(), 10);
+}
+
+TEST_F(EventLoopTest, ThreadPoolDisableAfterUse) {
+    EventLoop loop;
+    std::atomic<bool> pool_task_executed{false};
+    std::atomic<bool> fallback_task_executed{false};
+    std::atomic<pid_t> pool_thread_id{0};
+    std::atomic<pid_t> fallback_thread_id{0};
+    
+    // Set up thread pool
+    loop.setThreadPools(2);
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit task to thread pool
+    loop.runInPool([&pool_task_executed, &pool_thread_id]() {
+        pool_task_executed = true;
+        pool_thread_id = CurrentThread::tid();
+    });
+    
+    // Wait for task to complete
+    CurrentThread::sleepUsec(100 * 1000); // 100ms
+    
+    // Disable thread pool
+    loop.setThreadPools(0);
+    
+    // Submit another task - should fallback to runInLoop
+    loop.runInPool([&fallback_task_executed, &fallback_thread_id]() {
+        fallback_task_executed = true;
+        fallback_thread_id = CurrentThread::tid();
+    });
+    
+    EXPECT_TRUE(pool_task_executed.load());
+    EXPECT_TRUE(fallback_task_executed.load());
+    
+    // First task ran in pool thread, second in main thread
+    EXPECT_NE(pool_thread_id.load(), CurrentThread::tid());
+    EXPECT_EQ(fallback_thread_id.load(), CurrentThread::tid());
+}
+
+TEST_F(EventLoopTest, ThreadPoolTaskExceptionHandling) {
+    EventLoop loop;
+    std::atomic<bool> normal_task_executed{false};
+    
+    // Set up thread pool
+    loop.setThreadPools(2);
+    CurrentThread::sleepUsec(50 * 1000); // 50ms
+    
+    // Submit a normal task first to verify pool works
+    loop.runInPool([&normal_task_executed]() {
+        normal_task_executed = true;
+    });
+    
+    // Wait for normal task to complete
+    CurrentThread::sleepUsec(100 * 1000); // 100ms
+    
+    EXPECT_TRUE(normal_task_executed.load());
+    
+    // Note: According to ThreadPool design, exceptions in tasks cause abort()
+    // We cannot test exception throwing directly as it would terminate the test process
+    // The ThreadPool implementation catches exceptions and calls abort() for safety
+    // This test verifies that normal tasks execute successfully before any potential exceptions
+}
+
+TEST_F(EventLoopTest, ThreadPoolWithEventLoopLifecycle) {
+    std::atomic<bool> pool_task_started{false};
+    std::atomic<bool> pool_task_completed{false};
+    
+    {
+        EventLoop loop;
+        loop.setThreadPools(2);
+        CurrentThread::sleepUsec(50 * 1000); // 50ms
+        
+        // Submit a long-running task
+        loop.runInPool([&pool_task_started, &pool_task_completed]() {
+            pool_task_started = true;
+            CurrentThread::sleepUsec(200 * 1000); // 200ms
+            pool_task_completed = true;
+        });
+        
+        // Wait for task to start
+        CurrentThread::sleepUsec(50 * 1000); // 50ms
+        EXPECT_TRUE(pool_task_started.load());
+        
+        // EventLoop destructor should properly clean up thread pool
+    } // EventLoop goes out of scope here
+    
+    // Wait a bit more to see if task completes
+    CurrentThread::sleepUsec(300 * 1000); // 300ms
+    
+    // Task should have been allowed to complete
+    EXPECT_TRUE(pool_task_completed.load());
 }

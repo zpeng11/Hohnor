@@ -33,7 +33,9 @@ IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents
     this->setFd(fd);
 }
 
-IOHandler::~IOHandler(){}
+IOHandler::~IOHandler(){
+    LOG_DEBUG << "Destroying IOHandler as well as guard for fd " << fd();
+}
 
 void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
 {

@@ -26,6 +26,7 @@ namespace Hohnor
     class SignalHandler;
     class Mutex;
     class Epoll;
+    class ThreadPool;
     /**
      * 
      */
@@ -115,6 +116,9 @@ namespace Hohnor
         std::vector<Functor> pendingFunctors_;
 
         std::unordered_map<int, std::shared_ptr<SignalHandler>> signalMap_;
+
+        //ThreadPool for running tasks in background threads
+        std::unique_ptr<ThreadPool> threadPool_;
 
         //To bind for wake up event
         void handleWakeUp();

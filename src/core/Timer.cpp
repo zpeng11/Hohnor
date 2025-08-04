@@ -1,6 +1,6 @@
 #include "hohnor/core/Timer.h"
 #include "hohnor/core/EventLoop.h"
-#include "hohnor/core/TimerQueue.h"
+#include "hohnor/core/Timer.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/log/Logging.h"
 #include <sys/timerfd.h>
@@ -122,8 +122,8 @@ void TimerHandler::reloadInLoop()
 TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop), timerFdIOHandle_(nullptr),
                                           heap_(timerCmpLessThan)
 {
-    setFd(createTimerfd());
-    timerFdIOHandle_ = loop->handleIO(fd());
+    int fd = createTimerfd();
+    timerFdIOHandle_ = loop->handleIO(fd);
     timerFdIOHandle_->setReadCallback(std::bind(&TimerQueue::handleRead, this));
     timerFdIOHandle_->enable();
 }
@@ -134,6 +134,8 @@ TimerQueue::~TimerQueue()
     {
         heap_.popTop();
     }
+    // timerFdIOHandle_->disable();
+    // timerFdIOHandle_.reset();
 }
 
 void TimerQueue::handleRead()
@@ -141,7 +143,7 @@ void TimerQueue::handleRead()
     loop_->assertInLoopThread();
     Timestamp now(Timestamp::now());
     uint64_t howmany;
-    ssize_t n = ::read(this->fd(), &howmany, sizeof howmany);
+    ssize_t n = ::read(timerFdIOHandle_->fd(), &howmany, sizeof howmany);
     LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at " << now.toString();
     if (UNLIKELY(n != sizeof howmany))
     {
@@ -164,7 +166,7 @@ void TimerQueue::handleRead()
     }
     if (heap_.size())
     {
-        resetTimerfd(this->fd(), heap_.top()->expiration());
+        resetTimerfd(timerFdIOHandle_->fd(), heap_.top()->expiration());
     }
 }
 
@@ -184,6 +186,6 @@ void TimerQueue::addTimerInLoop(std::shared_ptr<TimerHandler> timerHandler)
     heap_.insert(timerHandler);
     if(heap_.top() == timerHandler)
     {
-        resetTimerfd(this->fd(), timerHandler->expiration());
+        resetTimerfd(timerFdIOHandle_->fd(), timerHandler->expiration());
     }
 }

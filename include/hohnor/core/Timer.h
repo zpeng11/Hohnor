@@ -6,8 +6,12 @@
 #include "hohnor/time/Timestamp.h"
 #include "hohnor/common/NonCopyable.h"
 #include "hohnor/common/Callbacks.h"
+#include "hohnor/common/BinaryHeap.h"
+#include "hohnor/io/FdUtils.h"
 #include <atomic>
 #include <memory>
+#include <set>
+#include <vector>
 
 namespace Hohnor
 {
@@ -39,6 +43,32 @@ namespace Hohnor
         int64_t sequence() const { return sequence_; }
         static int64_t numCreated() { return s_numCreated_; }
         ~TimerHandler() = default;
+    };
+
+    class IOHandler;
+    class Timestamp;
+    class TimerQueue : public NonCopyable
+    {
+    friend class EventLoop;
+    public:
+        ~TimerQueue();
+    protected:
+        explicit TimerQueue(EventLoop *loop);
+    private:
+        ///
+        /// Schedules the callback to be run at given time,
+        /// repeats if @c interval > 0.0.
+        ///
+        /// Must be thread safe. Usually be called from other threads.
+        std::shared_ptr<TimerHandler> addTimer(TimerCallback cb,
+                         Timestamp when,
+                         double interval);
+        void addTimerInLoop(std::shared_ptr<TimerHandler> timerHandler);
+        // called when timerfd alarms
+        void handleRead();
+        std::shared_ptr<IOHandler> timerFdIOHandle_;
+        EventLoop *loop_;
+        BinaryHeap<std::shared_ptr<TimerHandler>> heap_;
     };
 
 } // namespace Hohnor
