@@ -20,7 +20,8 @@ namespace Hohnor
         BlockingQueue()
             : mutex_(),
               notEmpty_(mutex_),
-              queue_()
+              queue_(),
+              end_(false)
         {
         }
 

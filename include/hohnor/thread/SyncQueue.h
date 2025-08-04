@@ -3,6 +3,7 @@
  */
 #pragma once
 #include "hohnor/common/NonCopyable.h"
+#include <cstddef>
 
 namespace Hohnor
 {
