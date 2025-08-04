@@ -35,12 +35,8 @@ Hohnor
 
 
 # TODO List:
-* Use signalfd to handle signal
-* Update handler interface in eventloop that allow async management.
 * Add support for keyboard input event
 * Intruduce GTest and makes unit test cases
-* Create alternative for epoll on cygwin(poll)
 * Create cmake interface and doc instruction for other project to import
 * Create machanism to restrictly check and prevent user fork happens after evenloop happens(fd safety)
 * Log enable message with defferent level to have differnt way of write and flush
-* Current thread id management is highly depend on linux platform's pid system instead of pure pthread.
