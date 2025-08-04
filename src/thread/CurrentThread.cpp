@@ -38,11 +38,11 @@ namespace Hohnor
         void sleepUsec(int64_t usec)
         {
             struct timespec ts = {0, 0};
-            ts.tv_sec = static_cast<time_t>(usec / 1000 * 1000);
-            ts.tv_nsec = static_cast<long>(usec % 1000);
+            const int64_t kMicrosecondsPerSecond = 1000 * 1000;
+            ts.tv_sec = static_cast<time_t>(usec / kMicrosecondsPerSecond);
+            ts.tv_nsec = static_cast<long>((usec % kMicrosecondsPerSecond) * 1000);
             ::nanosleep(&ts, NULL);
         }
-
         string stackTrace(bool demangle)
         {
             string stack;
