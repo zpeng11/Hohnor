@@ -195,6 +195,7 @@ void EventLoop::assertInLoopThread()
 void EventLoop::endLoop()
 {
     quit_ = true;
+    wakeUp();
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended by call";
 }
 
