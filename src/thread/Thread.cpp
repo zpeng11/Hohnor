@@ -1,10 +1,11 @@
 /**
- * Wrapper for pthread 
+ * Wrapper for pthread
  */
 #include "hohnor/thread/Thread.h"
 #include <unistd.h>
 #include <exception>
 #include "hohnor/thread/Exception.h"
+#include "signal.h"
 #ifndef __CYGWIN__
 #include <sys/prctl.h>
 #endif
@@ -30,6 +31,11 @@ namespace Hohnor
 	 */
 	void *threadStarter(void *args)
 	{
+		// Block all signals in the new thread to prevent interference with signalfd
+		sigset_t mask;
+		sigfillset(&mask);
+		pthread_sigmask(SIG_BLOCK, &mask, nullptr);
+
 		ThreadData *data = static_cast<ThreadData *>(args);
 
 		data->tid_ = CurrentThread::tid();

@@ -28,7 +28,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
-option(ENABLE_UNIT_TEST "ENABLE_UNIT_TEST" OFF) #in case cmake does not supporting FetchContent or compiler does not support C++14
+option(ENABLE_UNIT_TEST "ENABLE_UNIT_TEST" ON) #in case cmake does not supporting FetchContent or compiler does not support C++14
 if(ENABLE_UNIT_TEST)
     enable_testing()
     add_subdirectory(test)

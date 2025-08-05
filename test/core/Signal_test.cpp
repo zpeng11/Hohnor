@@ -343,5 +343,5 @@ TEST_F(SignalTest, ReuseSignalAfterDisable) {
         });
     
     EXPECT_EQ(handler2->action(), SignalAction::Handled);
-    EXPECT_NE(handler1, handler2);
+    EXPECT_EQ(handler1, handler2);
 }

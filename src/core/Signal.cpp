@@ -12,11 +12,21 @@ int handleSignal(int signal, SignalAction action){
     if (signal <= 0 || signal >= 65)
         LOG_FATAL << "Invalid signal value";
 
+    // Set up the signal mask Back to default for all cases
+    struct sigaction sa;
+    memZero(&sa, sizeof sa);
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, signal);
+    
     if (action == SignalAction::Handled){
+        // Set signal action to default to prevent ignore
+        sa.sa_handler = SIG_DFL;
+        sa.sa_flags = 0;
+        if (::sigaction(signal, &sa, NULL) < 0)
+            LOG_SYSERR << "sigaction error";
         // Block signal so it doesn't get handled by the default handler
-        sigset_t mask;
-        sigemptyset(&mask);
-        sigaddset(&mask, signal);
         if (sigprocmask(SIG_BLOCK, &mask, nullptr) == -1)
             LOG_FATAL << "sigprocmask error";
 
@@ -28,13 +38,9 @@ int handleSignal(int signal, SignalAction action){
     }
 
     // Unblock signal so it is handled again by default handler
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, signal);
     if (sigprocmask(SIG_UNBLOCK, &mask, nullptr) == -1)
         LOG_FATAL << "sigprocmask error";
-    struct sigaction sa;
-    memZero(&sa, sizeof sa);
+    // Set the signal action to default or ignore
     if (action == SignalAction::Ignored)
         sa.sa_handler = SIG_IGN;
     else
