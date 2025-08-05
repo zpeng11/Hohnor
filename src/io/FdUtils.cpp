@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <string>
 #include <iostream>
+#include <termios.h>
 #include "hohnor/log/Logging.h"
 
 namespace Hohnor
@@ -73,4 +74,37 @@ void FdGuard::setFd(int fd)
 {
     HCHECK(is_fd_in_procfs(fd)) << "The fd trying to guard is not open to the process yet";
     fd_ = fd;
+}
+
+// Store original terminal attributes to restore them on exit
+static struct termios saved_attributes;
+
+// Function to reset terminal to its original settings
+void FdUtils::resetInputInteractive(void) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+    printf("\nTerminal mode restored.\n");
+}
+
+// Function to set terminal to non-canonical, no-echo mode
+void FdUtils::setInputInteractive(void) {
+    struct termios tattr;
+
+    // Make sure stdin is a terminal
+    HCHECK(!isatty(STDIN_FILENO)) << "Not a terminal.";
+
+    // Save the original terminal attributes
+    tcgetattr(STDIN_FILENO, &saved_attributes);
+    // Register the reset function to be called on exit
+    atexit(resetInputInteractive);
+
+    // Get the current attributes
+    tcgetattr(STDIN_FILENO, &tattr);
+    // Disable canonical mode and echo
+    tattr.c_lflag &= ~(ICANON | ECHO);
+    // Set the terminal to read one character at a time
+    tattr.c_cc[VMIN] = 1;
+    tattr.c_cc[VTIME] = 0;
+    // Apply the new attributes
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr);
+    LOG_INFO << "Terminal iteractive mode.";
 }

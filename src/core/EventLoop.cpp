@@ -252,6 +252,7 @@ std::shared_ptr<TimerHandler> EventLoop::addTimer(TimerCallback cb, Timestamp wh
 
 std::shared_ptr<SignalHandler> EventLoop::handleSignal(int signal, SignalAction action, SignalCallback cb)
 {
+    assertInLoopThread();
     auto it = signalMap_.find(signal);
     if(it == signalMap_.end()){
         auto handle = std::shared_ptr<SignalHandler>(new SignalHandler(this, signal, action, cb));

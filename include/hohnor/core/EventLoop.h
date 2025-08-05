@@ -62,13 +62,14 @@ namespace Hohnor
         //Assert that a thread that calls this method is the same thread as the loop
         void assertInLoopThread();
 
-        //handle an IO FD into the loop, and create a handler for it, will take care of its ownership and lifecycle, threadsafe
+        //handle an IO FD into the loop, and create a handler for it, will take over fd's ownership and lifecycle, threadsafe
         std::shared_ptr<IOHandler> handleIO(int fd);
 
-        //Add timer event to the event set
+        //Add timer event to the event set, threadsafe
+        //If interval > 0, it is a repeated timer
         std::shared_ptr<TimerHandler> addTimer(TimerCallback cb, Timestamp when, double interval = 0.0f);
 
-        //Return a handler to manage signal
+        //Return a handler to manage signal, must be called in loop thread
         std::shared_ptr<SignalHandler> handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling

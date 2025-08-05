@@ -19,6 +19,12 @@ namespace Hohnor
         //Set close on exec function, so that children process can not share this fd with parent
         int setCloseOnExec(int fd, bool closeOnExec = true);
 
+        // Function to reset terminal to its original settings
+        void resetInputInteractive(void);
+
+        // Function to set terminal to non-canonical, no-echo mode
+        void setInputInteractive(void);
+
     } // namespace FdUtils
 
     /**
