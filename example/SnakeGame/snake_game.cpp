@@ -53,7 +53,7 @@ private:
 public:
     SnakeGame(EventLoop* loop) 
         : loop_(loop), direction_(RIGHT), nextDirection_(RIGHT), 
-          score_(0), gameWidth_(40), gameHeight_(20), gameOver_(false), paused_(false),
+          score_(0), gameWidth_(30), gameHeight_(15), gameOver_(false), paused_(false),
           rng_(std::random_device{}()), 
           widthDist_(1, gameWidth_ - 2), 
           heightDist_(1, gameHeight_ - 2) {
@@ -77,6 +77,17 @@ public:
         noecho();
         curs_set(0);
         keypad(stdscr, TRUE);
+
+        // Initialize colors
+        if (has_colors()) {
+            start_color();
+            use_default_colors(); // Use terminal's default background
+            init_pair(1, COLOR_GREEN, -1); // Snake body
+            init_pair(2, COLOR_YELLOW, -1); // Snake head
+            init_pair(3, COLOR_RED, -1);    // Food
+            init_pair(4, COLOR_BLUE, -1);   // Border
+            init_pair(5, COLOR_CYAN, -1);   // Text
+        }
         
         // Check terminal size
         int termHeight, termWidth;
@@ -84,7 +95,7 @@ public:
         
         if (termWidth < gameWidth_ + 2 || termHeight < gameHeight_ + 5) {
             cleanup();
-            std::cerr << "Terminal too small! Need at least " 
+            std::cerr << "Terminal too small! Need at least "
                       << (gameWidth_ + 2) << "x" << (gameHeight_ + 5) << std::endl;
             loop_->endLoop();
             return;
@@ -226,6 +237,7 @@ public:
         clear();
         
         // Draw border
+        if (has_colors()) attron(COLOR_PAIR(4)); // Blue for border
         for (int x = 0; x < gameWidth_; x++) {
             mvaddch(0, x, '#');
             mvaddch(gameHeight_ - 1, x, '#');
@@ -234,21 +246,29 @@ public:
             mvaddch(y, 0, '#');
             mvaddch(y, gameWidth_ - 1, '#');
         }
-        
+        if (has_colors()) attroff(COLOR_PAIR(4));
+
         // Draw snake
         for (size_t i = 0; i < snake_.size(); i++) {
             const Point& segment = snake_[i];
             if (i == 0) {
+                if (has_colors()) attron(COLOR_PAIR(2)); // Yellow for head
                 mvaddch(segment.y, segment.x, '@'); // Head
+                if (has_colors()) attroff(COLOR_PAIR(2));
             } else {
+                if (has_colors()) attron(COLOR_PAIR(1)); // Green for body
                 mvaddch(segment.y, segment.x, 'o'); // Body
+                if (has_colors()) attroff(COLOR_PAIR(1));
             }
         }
         
         // Draw food
+        if (has_colors()) attron(COLOR_PAIR(3)); // Red for food
         mvaddch(food_.y, food_.x, '*');
+        if (has_colors()) attroff(COLOR_PAIR(3));
         
         // Draw score and status
+        if (has_colors()) attron(COLOR_PAIR(5)); // Cyan for text
         mvprintw(gameHeight_ + 1, 0, "Score: %d", score_);
         mvprintw(gameHeight_ + 2, 0, "Controls: WASD to move, P to pause, Q to quit");
         
@@ -257,6 +277,7 @@ public:
         } else if (paused_) {
             mvprintw(gameHeight_ + 3, 0, "PAUSED - Press P to continue");
         }
+        if (has_colors()) attroff(COLOR_PAIR(5));
         
         refresh();
     }
