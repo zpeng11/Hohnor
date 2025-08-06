@@ -24,6 +24,8 @@ namespace Hohnor
     {
     private:
         std::shared_ptr<IOHandler> socketHandler_;
+    protected:
+        void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr) { socketHandler_ = std::move(handler); }
     public:
         typedef int SocketFd;
         //Initilize from existing IOHandler, used for accept
