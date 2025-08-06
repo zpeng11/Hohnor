@@ -6,22 +6,31 @@
 #include "hohnor/net/SocketWrap.h"
 #include "hohnor/net/InetAddress.h"
 #include "hohnor/common/NonCopyable.h"
-#include "hohnor/common/Copyable.h"
+#include "hohnor/common/Callbacks.h"
 #include "hohnor/io/FdUtils.h"
 #include <netinet/tcp.h>
 #include <memory>
-#include <map>
 
 namespace Hohnor
 {
-    class Socket : public FdGuard
+    class IOHandler;
+    class EventLoop;
+
+    /*
+    * General Socket class, used for both client and server(mostly for client), it takes care of the socket fd
+    * and fd's lifecycle & ownership And provides some basic functions like connect, get local/peer address, etc. 
+    */
+    class Socket : public NonCopyable
     {
+    private:
+        std::shared_ptr<IOHandler> socketHandler_;
     public:
         typedef int SocketFd;
-        //Initilize from existing fd
-        Socket(SocketFd socketFd) : FdGuard(socketFd) {}
+        //Initilize from existing IOHandler, used for accept
+        Socket(std::shared_ptr<IOHandler> socketHandler) : socketHandler_(socketHandler) {}
+
         //Initilize with paramters, in case failed, !!!abort the program
-        Socket(int family, int type, int protocol = 0) : FdGuard(SocketFuncs::socket(family, type, protocol)) {}
+        Socket(EventLoop* loop, int family, int type, int protocol = 0);
 
         //For clent connect
         void connect(const InetAddress &addr) { SocketFuncs::connect(fd(), addr.getSockAddr()); }
@@ -35,14 +44,22 @@ namespace Hohnor
         InetAddress getPeerAddr() { return InetAddress(SocketFuncs::getPeerAddr(fd())) ; }
         bool isSelfConnect() { return SocketFuncs::isSelfConnect(fd()); }
 
+        SocketFd fd() const;
+
+        EventLoop *loop();
+
+        std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
+
+        void setReadCallback(ReadCallback cb);
+        void setWriteCallback(WriteCallback cb);
+        void setCloseCallback(CloseCallback cb);
+        void setErrorCallback(ErrorCallback cb);
         ~Socket() = default;
     };
 
-    inline std::shared_ptr<Socket> socketSharedManage(Socket::SocketFd fd)
-    {
-        return std::shared_ptr<Socket>(new Socket(fd));
-    }
-
+    /*
+    * General Listen Socket class, used for server
+    */
     class ListenSocket : public Socket
     {
     private:
@@ -52,9 +69,9 @@ namespace Hohnor
         bool isSelfConnect();
 
     public:
-        ListenSocket(Socket::SocketFd fd) : Socket(fd) {}
-        ListenSocket(int family, int type, int protocol = 0)
-            : Socket(family, type, protocol) {}
+        ListenSocket(std::shared_ptr<IOHandler> socketHandler) : Socket(socketHandler) {}
+        ListenSocket(EventLoop * loop, int family, int type, int protocol = 0)
+            : Socket(loop, family, type, protocol) {}
 
         //Bind the address. In case failed, !!!abort the program
         void bindAddress(const InetAddress &localaddr) { SocketFuncs::bind(fd(), localaddr.getSockAddr()); }

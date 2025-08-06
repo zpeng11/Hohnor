@@ -3,29 +3,34 @@
  */
 #pragma once
 #include "hohnor/net/Socket.h"
+#include "hohnor/common/Callbacks.h"
+#include <memory>
 
 namespace Hohnor
 {
-    class SocketAddrPair;
+    class EventLoop;
+    class IOHandler;
+    /**
+     * TCP Listen Socket, used for server
+     * It is a wrapper of ListenSocket, which is a Socket with listen(2) and accept(2) functions
+     */
     class TCPListenSocket : public ListenSocket
     {
     public:
-        explicit TCPListenSocket(Socket::SocketFd fd) : ListenSocket(fd) {}
-        explicit TCPListenSocket(int options = SOCK_STREAM, bool ipv6 = false)
-            : ListenSocket(ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
+        explicit TCPListenSocket(std::shared_ptr<IOHandler> socketHandler) : ListenSocket(socketHandler) {}
+        explicit TCPListenSocket(EventLoop * loop, int options = SOCK_STREAM, bool ipv6 = false)
+            : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
 
         //Get Tcp infomation. In case failed return !nullptr
-        std::shared_ptr<struct tcp_info> getTCPInfo() const;
+        struct tcp_info getTCPInfo() const;
         //Get Tcp information string. In case failed return empty string
         std::string getTCPInfoStr() const;
 
-        //Accept a connection, gets a shared ptr to pair of connected socket and connected address
-        //In case connection error, !nullptr will be returned
-        DEPRECATED(SocketAddrPair accept());
-        //accept a connection, return the connected fd, and fill InetAddress * returnAddr,
-        //This is faster than returning SocketAddrPair by avoiding copying
-        //returnAddr can be NULL if you do not care about peer address
-        int accept(InetAddress * returnAddr);
+        //Actively accept a connection, return a pair of IOHandler and InetAddress, can be
+        //used for in a socket read callback
+        std::pair<std::shared_ptr<IOHandler>, InetAddress> accept();
+
+        void setAcceptCallback(ReadCallback cb){ setReadCallback(std::move(cb)); }
 
         //Shutdown writing of the socket
         void shutdownWrite() { SocketFuncs::shutdownWrite(fd()); }
@@ -35,21 +40,5 @@ namespace Hohnor
 
         // Enable/disable SO_KEEPALIVE
         void setKeepAlive(bool on);
-    };
-
-    /**
-     * The (socketfd<-->address) pair that a server would get after accepting a TCP connection from client
-     */
-    class SocketAddrPair : public Copyable
-    {
-    private:
-        std::pair<Socket::SocketFd, InetAddress> pair_;
-
-    public:
-        friend class TCPListenSocket;
-        SocketAddrPair() : pair_() {}
-        Socket::SocketFd &fd() { return std::get<0>(pair_); }
-        InetAddress &addr() { return std::get<1>(pair_); }
-        InetAddress* addrPtr() { return &pair_.second; }
     };
 } // namespace Hohnor

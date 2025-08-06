@@ -1,9 +1,39 @@
 #include "hohnor/net/Socket.h"
 #include "hohnor/log/Logging.h"
+#include "hohnor/io/FdUtils.h"
+#include "hohnor/core/EventLoop.h"
+#include "hohnor/core/IOHandler.h"
 #include <sstream>
 
 using namespace std;
 using namespace Hohnor;
+
+Socket::Socket(EventLoop* loop, int family, int type, int protocol)
+{
+    int fd = SocketFuncs::socket(family, type, protocol);
+    socketHandler_ = loop->handleIO(fd);
+}
+
+int Socket::fd() const { return socketHandler_->fd(); }
+
+EventLoop * Socket::loop() { return socketHandler_->loop(); }
+
+void Socket::setReadCallback(ReadCallback cb)
+{
+    socketHandler_->setReadCallback(std::move(cb));
+}
+void Socket::setWriteCallback(WriteCallback cb)
+{
+    socketHandler_->setWriteCallback(std::move(cb));
+}
+void Socket::setCloseCallback(CloseCallback cb)
+{
+    socketHandler_->setCloseCallback(std::move(cb));
+}
+void Socket::setErrorCallback(ErrorCallback cb)
+{
+    socketHandler_->setErrorCallback(std::move(cb));
+}
 
 void ListenSocket::bindAddress(uint16_t port, bool loopbackOnly, bool ipv6)
 {

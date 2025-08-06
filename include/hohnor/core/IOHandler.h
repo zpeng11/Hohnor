@@ -1,10 +1,4 @@
-/**
- * IO handler, it handles the lifecycle of a fd, manage how the fd reactively works in event loop. 
- * An IOHandler's lifecycle has 3 phases: Create -> Enabled -> Disabled
- * Created phase is right after constructor in eventloop, give shared ownership to both user and eventloop. 
- * Enabled phase create epoll ctx, loads the fd to epoll, ready for income event.
- * Disabled phase deleted epoll ctx, unload the fd from epoll, do not respond income event, and remove ownership in eventloop.
- */
+
 
 #pragma once
 #include "hohnor/common/NonCopyable.h"
@@ -18,6 +12,14 @@ namespace Hohnor
     class IOHandler;
     class EventLoop;
     class TimerQueue; 
+
+    /**
+    * IO handler, it handles the lifecycle of a fd, manage how the fd reactively works in event loop. 
+    * An IOHandler's lifecycle has 3 phases: Create -> Enabled -> Disabled
+    * Created phase is right after constructor in eventloop, give shared ownership to both user and eventloop. 
+    * Enabled phase create epoll ctx, loads the fd to epoll, ready for income event. Most of the time, it is enabled.
+    * Disabled phase deleted epoll ctx, unload the fd from epoll, do not respond income event, and remove ownership in eventloop.
+    */
     class IOHandler: public FdGuard, public std::enable_shared_from_this<IOHandler> 
     {
         friend class EventLoop;
@@ -75,6 +77,9 @@ namespace Hohnor
         void setCloseCallback(CloseCallback cb);
         //thread safe
         void setErrorCallback(ErrorCallback cb);
+
+        //Get the loop that manages this handler
+        EventLoop* loop() { return loop_; }
     };
 
 } // namespace Hohnor
