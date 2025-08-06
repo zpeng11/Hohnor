@@ -43,6 +43,12 @@ namespace Hohnor
 
         sa_family_t family() const { return addr_.sin_family; }
 
+        bool isValid() const { return family() == AF_INET || family() == AF_INET6; }
+        bool isIPv6() const { return family() == AF_INET6; }
+        bool isIPv4() const { return family() == AF_INET; }
+
+        ssize_t getSockLen() const { return family() == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6); }
+
         string toIp() const;
         string toIpPort() const;
         uint16_t port() const;
@@ -50,6 +56,11 @@ namespace Hohnor
         // default copy/assignment are Okay
 
         const struct sockaddr *getSockAddr() const { return SocketFuncs::sockaddr_cast(&addr6_); }
+
+        const struct sockaddr_in * getSockAddr4() const { return isIPv4() ? &addr_ : reinterpret_cast<const struct sockaddr_in *>(&addr6_); }
+
+        const struct sockaddr_in6 * getSockAddr6() const { return isIPv6() ? &addr6_ : reinterpret_cast<const struct sockaddr_in6 *>(&addr_); }
+
         void setSockAddrInet6(const struct sockaddr_in6 &addr6) { addr6_ = addr6; }
 
         uint32_t ipv4NetEndian() const;
