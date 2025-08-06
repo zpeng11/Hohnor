@@ -35,6 +35,15 @@ void Socket::setErrorCallback(ErrorCallback cb)
     socketHandler_->setErrorCallback(std::move(cb));
 }
 
+void Socket::enable()
+{
+    socketHandler_->enable();
+}
+void Socket::disable()
+{
+    socketHandler_->disable();
+}
+
 void ListenSocket::bindAddress(uint16_t port, bool loopbackOnly, bool ipv6)
 {
     InetAddress ina(port, loopbackOnly, ipv6);

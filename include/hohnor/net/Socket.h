@@ -50,10 +50,13 @@ namespace Hohnor
 
         std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
 
+        //Expose IOHandler's interface
         void setReadCallback(ReadCallback cb);
         void setWriteCallback(WriteCallback cb);
         void setCloseCallback(CloseCallback cb);
         void setErrorCallback(ErrorCallback cb);
+        void enable();
+        void disable();
         ~Socket() = default;
     };
 
