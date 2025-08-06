@@ -72,6 +72,12 @@ namespace Hohnor
         //Return a handler to manage signal, must be called in loop thread
         std::shared_ptr<SignalHandler> handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
 
+        //Manage keyboard in an interactive Non-Canonical way, must be called in loop thread
+        void handleKeyboard(KeyboardCallback cb);
+
+        //Unmanage keyboard and change back to normal Canonical way, must be called in loop thread
+        void unHandleKeyboard();
+
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
         //After ctor and Before calling loop(), it is Ready state,
         //After calling endLoop(), it is end state
@@ -120,6 +126,8 @@ namespace Hohnor
 
         //ThreadPool for running tasks in background threads
         std::unique_ptr<ThreadPool> threadPool_;
+
+        static std::shared_ptr<IOHandler> interactiveIOHandler_;
 
         //To bind for wake up event
         void handleWakeUp();

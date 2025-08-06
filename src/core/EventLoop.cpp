@@ -1,6 +1,7 @@
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/core/Signal.h"
 #include "hohnor/io/Epoll.h"
+#include "hohnor/io/FdUtils.h"
 #include "hohnor/thread/Mutex.h"
 #include "hohnor/thread/Exception.h"
 #include "hohnor/thread/ThreadPool.h"
@@ -263,6 +264,49 @@ std::shared_ptr<SignalHandler> EventLoop::handleSignal(int signal, SignalAction 
         auto handle = it->second;
         handle->update(action, cb);
         return handle;
+    }
+}
+
+std::shared_ptr<IOHandler> EventLoop::interactiveIOHandler_ = nullptr;
+
+void EventLoop::handleKeyboard(KeyboardCallback cb)
+{
+    assertInLoopThread();
+    auto fuc = [cb](){
+        char key;
+        int ret = read(STDIN_FILENO, &key, 1);
+        HCHECK_EQ(ret, 1) << "Failed to read from stdin, ret = " << ret;
+        cb(key);
+    };
+    if (interactiveIOHandler_)
+    {
+        LOG_WARN << "Interactive IO handler already exists, unhandle it first";
+        interactiveIOHandler_->setReadCallback(std::move(fuc));
+    }
+    else{
+        FdUtils::setInputInteractive();
+        //Create a new IOHandler for stdin
+        //This will take over the ownership of stdin file descriptor
+        //and set it to non-blocking and close-on-exec
+        interactiveIOHandler_ = handleIO(STDIN_FILENO);
+        interactiveIOHandler_->setReadCallback(std::move(fuc));
+        interactiveIOHandler_->enable();
+        LOG_DEBUG << "Interactive IO handler set for keyboard input";
+    }
+}
+
+void EventLoop::unHandleKeyboard()
+{
+    assertInLoopThread();
+    if (interactiveIOHandler_)
+    {
+        // Disable the interactive IO handler by removing its read callback instead of disabling it.
+        interactiveIOHandler_->setReadCallback(nullptr);
+        FdUtils::resetInputInteractive();
+    }
+    else
+    {
+        LOG_WARN << "No interactive IO handler to unhandle";
     }
 }
 

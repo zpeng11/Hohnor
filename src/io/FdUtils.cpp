@@ -90,7 +90,7 @@ void FdUtils::setInputInteractive(void) {
     struct termios tattr;
 
     // Make sure stdin is a terminal
-    HCHECK(!isatty(STDIN_FILENO)) << "Not a terminal.";
+    HCHECK(isatty(STDIN_FILENO)) << "Not a terminal.";
 
     // Save the original terminal attributes
     tcgetattr(STDIN_FILENO, &saved_attributes);
