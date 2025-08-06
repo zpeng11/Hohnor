@@ -24,7 +24,6 @@ class EchoClient {
 private:
     EventLoop* loop_;
     std::unique_ptr<Socket> socket_;
-    std::shared_ptr<IOHandler> socketHandler_;
     std::string serverHost_;
     uint16_t serverPort_;
     bool connected_;
@@ -45,18 +44,17 @@ public:
         try {
             // Create TCP socket
             socket_ = std::make_unique<Socket>(loop_, AF_INET, SOCK_STREAM);
-            socketHandler_ = socket_->getSocketHandler();
             
             // Set up callbacks
-            socketHandler_->setReadCallback([this]() {
+            socket_->setReadCallback([this]() {
                 this->handleServerResponse();
             });
 
-            socketHandler_->setCloseCallback([this]() {
+            socket_->setCloseCallback([this]() {
                 this->handleDisconnect();
             });
 
-            socketHandler_->setErrorCallback([this]() {
+            socket_->setErrorCallback([this]() {
                 this->handleError();
             });
 
@@ -79,7 +77,7 @@ public:
             std::cout << "Connected to server successfully!" << std::endl;
             
             // Enable socket handler
-            socketHandler_->enable();
+            socket_->enable();
             
             // Start sending messages periodically
             scheduleNextMessage();
@@ -96,8 +94,8 @@ public:
         running_ = false;
         connected_ = false;
         
-        if (socketHandler_) {
-            socketHandler_->disable();
+        if (socket_) {
+            socket_->disable();
         }
         
         if (socket_) {
@@ -129,7 +127,7 @@ private:
             std::cout << "Sending: " << message;
             
             // Send message to server
-            int fd = socketHandler_->fd();
+            int fd = socket_->fd();
             ssize_t bytesWritten = ::write(fd, message.c_str(), message.length());
             
             if (bytesWritten != static_cast<ssize_t>(message.length())) {
@@ -153,7 +151,7 @@ private:
         try {
             // Read response from server
             char buffer[4096];
-            int fd = socketHandler_->fd();
+            int fd = socket_->fd();
             ssize_t bytesRead = ::read(fd, buffer, sizeof(buffer) - 1);
             
             if (bytesRead > 0) {
