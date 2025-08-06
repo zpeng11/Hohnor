@@ -16,9 +16,10 @@ namespace Hohnor
 using namespace Hohnor;
 using namespace Hohnor::FdUtils;
 
-int Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
+bool Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
 {
     int oldOptions = fcntl(fd, F_GETFL);
+    bool isNonBlocking = (oldOptions & O_NONBLOCK) != 0;
     if (oldOptions == -1)
     {
         LOG_SYSERR << "FdUtils::setNonBlocking error";
@@ -31,12 +32,13 @@ int Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
         LOG_SYSERR << "FdUtils::setNonBlocking error";
         return -1;
     }
-    return oldOptions;
+    return isNonBlocking;
 }
 
-int FdUtils::setCloseOnExec(int fd, bool closeOnExec)
+bool FdUtils::setCloseOnExec(int fd, bool closeOnExec)
 {
     int oldOptions = fcntl(fd, F_GETFD);
+    bool isCloseOnExec = (oldOptions & FD_CLOEXEC) != 0;
     if (oldOptions == -1)
     {
         LOG_SYSERR << "FdUtils::setCloseOnExec error (F_GETFD)";
@@ -53,7 +55,7 @@ int FdUtils::setCloseOnExec(int fd, bool closeOnExec)
         return -1;
     }
 
-    return oldOptions;
+    return isCloseOnExec;
 }
 
 

@@ -179,13 +179,22 @@ int SocketFuncs::getSocketError(int socketfd)
     }
 }
 
-void SocketFuncs::connect(SocketFd socketfd, const struct sockaddr *addr)
+int SocketFuncs::connect(SocketFd socketfd, const struct sockaddr *addr)
 {
     int retVal = connect(socketfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
-    if (retVal < 0)
-    {
-        LOG_SYSERR << "SocketFuncs::connect error " ;
+    if (retVal == -1) {
+        if (errno == EINPROGRESS) {
+            LOG_INFO << "SocketFuncs::connect: connection in progress";
+            // Now you can add sockfd to epoll for EPOLLOUT
+        } else {
+            LOG_SYSERR << "SocketFuncs::connect error: " << strerror_tl(errno);
+        }
+    } else {
+        // Connection established immediately (e.g., connecting to localhost)
+        LOG_INFO << "Connection established immediately.";
+        // Proceed with I/O
     }
+    return retVal;
 }
 
 struct sockaddr_in6 SocketFuncs::getLocalAddr(int sockfd)

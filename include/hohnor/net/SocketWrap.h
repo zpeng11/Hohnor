@@ -51,8 +51,8 @@ namespace Hohnor
         //get errono from socket
         int getSocketError(int sockfd);
 
-        //wrapped connect(2) api, used only for clients
-        void connect(SocketFd socketfd, const struct sockaddr *addr);
+        //wrapped connect(2) api, used only for clients, return 0 on success, -1 on error
+        int connect(SocketFd socketfd, const struct sockaddr *addr);
 
         //Wrapper for getsockname(2)
         struct sockaddr_in6 getLocalAddr(int sockfd);

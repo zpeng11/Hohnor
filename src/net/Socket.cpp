@@ -44,6 +44,15 @@ void Socket::disable()
     socketHandler_->disable();
 }
 
+int Socket::connect(const InetAddress &addr, bool nonBlocking)
+{
+    bool oldNonBlockingState = FdUtils::setNonBlocking(fd(), nonBlocking);
+    int retVal = SocketFuncs::connect(fd(), addr.getSockAddr());
+    FdUtils::setNonBlocking(fd(), oldNonBlockingState);
+    return retVal;
+}
+
+
 void ListenSocket::bindAddress(uint16_t port, bool loopbackOnly, bool ipv6)
 {
     InetAddress ina(port, loopbackOnly, ipv6);

@@ -40,7 +40,7 @@ public:
             std::cout << "Client is already running!" << std::endl;
             return;
         }
-
+        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
         try {
             // Create TCP socket
             socket_ = std::make_unique<Socket>(loop_, AF_INET, SOCK_STREAM);
@@ -62,12 +62,12 @@ public:
             InetAddress serverAddr(serverHost_, serverPort_);
             std::cout << "Connecting to server " << serverAddr.toIpPort() << "..." << std::endl;
             
-            socket_->connect(serverAddr);
+            int conRet = socket_->connect(serverAddr, false);
             
             // Check if connection was successful
-            int sockError = socket_->getSockError();
-            if (sockError != 0) {
+            if (conRet != 0) {
                 std::cerr << "Failed to connect: " << socket_->getSockErrorStr() << std::endl;
+                loop_->endLoop();
                 return;
             }
 

@@ -71,7 +71,7 @@ namespace Hohnor
     {
     private:
         // Hide connect function as it's not typically used for UDP servers
-        void connect(const InetAddress &addr);
+        int connect(const InetAddress &addr, bool blockin);
         
     public:
         explicit UDPListenSocket(std::shared_ptr<IOHandler> socketHandler) : UDPSocket(socketHandler) {}

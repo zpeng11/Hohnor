@@ -32,8 +32,8 @@ namespace Hohnor
         //Initilize with paramters, in case failed, !!!abort the program
         Socket(EventLoop* loop, int family, int type, int protocol = 0);
 
-        //For clent connect
-        void connect(const InetAddress &addr) { SocketFuncs::connect(fd(), addr.getSockAddr()); }
+        //For clent connect, you can set nonBlocking to true, so that it will not block the thread for waiting handshake, return 0 on success, -1 on error
+        int connect(const InetAddress &addr, bool nonBlocking = false);
 
         //Socket error
         int getSockError() { return SocketFuncs::getSocketError(fd()); }
@@ -66,7 +66,7 @@ namespace Hohnor
     class ListenSocket : public Socket
     {
     private:
-        void connect(const InetAddress &addr);
+        int connect(const InetAddress &addr, bool blocking);
         InetAddress getLocalAddr();
         InetAddress getPeerAddr();
         bool isSelfConnect();
