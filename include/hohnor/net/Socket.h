@@ -24,12 +24,13 @@ namespace Hohnor
     {
     private:
         std::shared_ptr<IOHandler> socketHandler_;
+        EventLoop *loop_;
     protected:
-        void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr) { socketHandler_ = std::move(handler); }
+        void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr);
     public:
         typedef int SocketFd;
         //Initilize from existing IOHandler, used for accept
-        Socket(std::shared_ptr<IOHandler> socketHandler) : socketHandler_(socketHandler) {}
+        Socket(std::shared_ptr<IOHandler> socketHandler);
         ~Socket();
 
         //Initilize with paramters, in case failed, !!!abort the program

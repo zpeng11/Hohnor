@@ -12,16 +12,40 @@ Socket::Socket(EventLoop* loop, int family, int type, int protocol)
 {
     int fd = SocketFuncs::socket(family, type, protocol);
     socketHandler_ = loop->handleIO(fd);
+    loop_ = loop;
+    if (fd < 0)
+    {
+        LOG_SYSFATAL << "Failed to create socket with family " << family
+                     << ", type " << type << ", protocol " << protocol; 
+    }
+}
+
+Socket::Socket(std::shared_ptr<IOHandler> socketHandler){
+    HCHECK(socketHandler) << "Socket handler cannot be null";
+    socketHandler_ = std::move(socketHandler);
+    loop_ = socketHandler_->loop();
+    LOG_DEBUG << "Socket created with fd " << socketHandler_->fd();
 }
 
 Socket::~Socket()
 {
-    socketHandler_->disable(); //follow RAII, disable events, so that eventloop won't monitor this fd anymore
+    if(socketHandler_)
+    {
+        LOG_DEBUG << "Destroying Socket with fd " << socketHandler_->fd();
+    }
+    else
+    {
+        LOG_DEBUG << "Destroying Socket without fd, probably already closed";
+    }
 }
 
-int Socket::fd() const { return socketHandler_->fd(); }
+void Socket::resetSocketHandler(std::shared_ptr<IOHandler> handler) { 
+    socketHandler_.swap(handler);
+}
 
-EventLoop * Socket::loop() { return socketHandler_->loop(); }
+int Socket::fd() const { return socketHandler_? socketHandler_->fd() : -1; }
+
+EventLoop * Socket::loop() { return loop_; }
 
 void Socket::setReadCallback(ReadCallback cb)
 {

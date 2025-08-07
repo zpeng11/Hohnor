@@ -10,7 +10,7 @@ namespace Hohnor
     * TCPConnector is a class that handles the connection to a TCP server.
     * It uses the Socket class to manage the socket and provides a way to connect to a server.
     */
-    class TCPConnector : public Socket, std::enable_shared_from_this<TCPConnector>
+    class TCPConnector : public Socket, public std::enable_shared_from_this<TCPConnector>
     {
     public:
         typedef std::function<void (std::shared_ptr<IOHandler>)> NewConnectionCallback;
@@ -34,7 +34,7 @@ namespace Hohnor
         //Set the number of retries before giving up
         //If retries <= 0, it will retry indefinitely until success or stopped
         //If retries > 0, it will retry that many times before giving up
-        void setRetries(int retries) { retries_ = retries; }
+        void setRetries(int retries) { maxRetries_ = retries; }
 
         //Start the connection process, thread safe, can be called multiple times to create multiple connectors.
         void start(); 
@@ -50,7 +50,7 @@ namespace Hohnor
         static constexpr int DefaultRetryDelayMs = 500; // Default retry delay in milliseconds
         bool constantDelay_;
         int retryDelayMs_;
-        int retries_;
+        int maxRetries_;
         int currentRetries_;
         NewConnectionCallback newConnectionCallback_;
         RetryConnectionCallback retryCallback_;
@@ -58,13 +58,14 @@ namespace Hohnor
         State state_;
 
         //Hide setCallbacks from Socket into private, we don't need them
-        void setReadCallback(ReadCallback cb);
-        void setWriteCallback(WriteCallback cb);
-        void setCloseCallback(CloseCallback cb);
-        void setErrorCallback(ErrorCallback cb);
-        int connect(const InetAddress &addr);
-        void enable();
-        void disable();
+        using Socket::setReadCallback;
+        using Socket::setWriteCallback;
+        using Socket::setCloseCallback;
+        using Socket::setErrorCallback;
+        using Socket::enable;
+        using Socket::disable;
+
+        int connect(const InetAddress& addr);
 
         // connecting in progress, e.g. EINPROGRESS, need to setup writecallback and enable handler
         void connecting();

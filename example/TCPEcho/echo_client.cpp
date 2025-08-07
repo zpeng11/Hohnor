@@ -1,11 +1,11 @@
 /**
- * TCP Echo Client example using Hohnor EventLoop and TCPSocket
+ * TCP Echo Client example using Hohnor EventLoop and TCPConnector
  * This client connects to the echo server and sends hello messages with timestamps
  */
 
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/core/Signal.h"
-#include "hohnor/net/Socket.h"
+#include "hohnor/net/TCPConnector.h"
 #include "hohnor/net/InetAddress.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/time/Timestamp.h"
@@ -23,7 +23,8 @@ using namespace Hohnor;
 class EchoClient {
 private:
     EventLoop* loop_;
-    std::unique_ptr<Socket> socket_;
+    std::shared_ptr<TCPConnector> connector_;
+    std::shared_ptr<IOHandler> connection_;
     std::string serverHost_;
     uint16_t serverPort_;
     bool connected_;
@@ -32,7 +33,7 @@ private:
 
 public:
     EchoClient(EventLoop* loop, const std::string& host, uint16_t port)
-        : loop_(loop), serverHost_(host), serverPort_(port), 
+        : loop_(loop), serverHost_(host), serverPort_(port),
           connected_(false), running_(false), messageCount_(0) {}
 
     void start() {
@@ -42,45 +43,36 @@ public:
         }
         // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
         try {
-            // Create TCP socket
-            socket_ = std::make_unique<Socket>(loop_, AF_INET, SOCK_STREAM);
+            // Create TCP connector
+            InetAddress serverAddr(serverHost_, serverPort_);
+            connector_ = std::make_shared<TCPConnector>(loop_, serverAddr);
             
-            // Set up callbacks
-            socket_->setReadCallback([this]() {
-                this->handleServerResponse();
+            // Set up connection callbacks
+            connector_->setNewConnectionCallback([this](std::shared_ptr<IOHandler> handler) {
+                this->handleNewConnection(handler);
             });
 
-            socket_->setCloseCallback([this]() {
-                this->handleDisconnect();
+            connector_->setRetryConnectionCallback([this]() {
+                std::cout << "Retrying connection to server..." << std::endl;
             });
 
-            socket_->setErrorCallback([this]() {
+            connector_->setFailedConnectionCallback([this]() {
+                std::cerr << "Failed to connect to server after all retries" << std::endl;
                 this->handleError();
             });
 
-            // Connect to server
-            InetAddress serverAddr(serverHost_, serverPort_);
+            // Configure retry behavior (optional)
+            connector_->setRetries(5);  // Try 5 times before giving up
+            connector_->setRetryConstantDelay(1000);  // 1 second between retries
+
+            running_ = true;
+
+            LOG_DEBUG << "Finished settup values";
+            
             std::cout << "Connecting to server " << serverAddr.toIpPort() << "..." << std::endl;
             
-            int conRet = socket_->connect(serverAddr);
-            
-            // Check if connection was successful
-            if (conRet != 0) {
-                std::cerr << "Failed to connect: " << socket_->getSockErrorStr() << std::endl;
-                loop_->endLoop();
-                return;
-            }
-
-            connected_ = true;
-            running_ = true;
-            
-            std::cout << "Connected to server successfully!" << std::endl;
-            
-            // Enable socket handler
-            socket_->enable();
-            
-            // Start sending messages periodically
-            scheduleNextMessage();
+            // Start connection process
+            connector_->start();
 
         } catch (const std::exception& e) {
             std::cerr << "Failed to start client: " << e.what() << std::endl;
@@ -94,18 +86,48 @@ public:
         running_ = false;
         connected_ = false;
         
-        if (socket_) {
-            socket_->disable();
+        if (connection_) {
+            connection_->disable();
+            connection_.reset();
+            LOG_DEBUG << "Connection handler reset and disabled";
         }
         
-        if (socket_) {
-            socket_.reset();
+        if (connector_) {
+            connector_->stop();
+            connector_.reset();
+            LOG_DEBUG << "Connector stopped and reset";
         }
         
         std::cout << "Client stopped." << std::endl;
     }
 
 private:
+    void handleNewConnection(std::shared_ptr<IOHandler> handler) {
+        std::cout << "Connected to server successfully!" << std::endl;
+        
+        connection_ = handler;
+        connected_ = true;
+        
+        // Set up callbacks for the connection
+        connection_->setReadCallback([this]() {
+            this->handleServerResponse();
+        });
+
+        connection_->setCloseCallback([this]() {
+            this->handleDisconnect();
+        });
+
+        connection_->setErrorCallback([this]() {
+            this->handleError();
+        });
+        
+        // Enable the connection handler
+        connection_->enable();
+        
+        // Start sending messages periodically
+        scheduleNextMessage();
+    }
+
     void scheduleNextMessage() {
         if (!running_ || !connected_) return;
         
@@ -127,7 +149,7 @@ private:
             std::cout << "Sending: " << message;
             
             // Send message to server
-            int fd = socket_->fd();
+            int fd = connection_->fd();
             ssize_t bytesWritten = ::write(fd, message.c_str(), message.length());
             
             if (bytesWritten != static_cast<ssize_t>(message.length())) {
@@ -151,7 +173,7 @@ private:
         try {
             // Read response from server
             char buffer[4096];
-            int fd = socket_->fd();
+            int fd = connection_->fd();
             ssize_t bytesRead = ::read(fd, buffer, sizeof(buffer) - 1);
             
             if (bytesRead > 0) {
@@ -174,6 +196,7 @@ private:
 
     void handleDisconnect() {
         std::cout << "Disconnected from server" << std::endl;
+        LOG_DEBUG << "Handling disconnect for EchoClient";
         connected_ = false;
         running_ = false;
         loop_->endLoop();
@@ -181,6 +204,7 @@ private:
 
     void handleError() {
         std::cerr << "Socket error occurred" << std::endl;
+        LOG_DEBUG << "Handling error for EchoClient";
         connected_ = false;
         running_ = false;
         loop_->endLoop();
@@ -227,6 +251,8 @@ int main(int argc, char* argv[]) {
         
         // Run the event loop
         loop.loop();
+
+        LOG_DEBUG << "Event loop exited";
         
         std::cout << "Client shutdown complete." << std::endl;
         

@@ -15,7 +15,7 @@ TCPConnector::TCPConnector(EventLoop* loop, const InetAddress& addr)
       serverAddr_(addr),
       constantDelay_(false),
       retryDelayMs_(DefaultRetryDelayMs),
-      retries_(0),
+      maxRetries_(0),
       currentRetries_(0),
       newConnectionCallback_(),
       retryCallback_(),
@@ -45,7 +45,7 @@ void TCPConnector::start()
         }
         
         LOG_DEBUG << "TCPConnector starting connection to " << sharedThis->serverAddr_.toIpPort()
-                  << " with retryDelay=" << sharedThis->retryDelayMs_ << "ms, retries=" << sharedThis->retries_;
+                  << " with retryDelay=" << sharedThis->retryDelayMs_ << "ms, retries=" << sharedThis->maxRetries_;
         
         sharedThis->connect(sharedThis->serverAddr_);
     });
@@ -74,13 +74,15 @@ void TCPConnector::stop()
             LOG_DEBUG << "TCPConnector in connecting state, stopping running connector to " << sharedThis->serverAddr_.toIpPort();
             // Reset the socket handler to clean up the connection
             sharedThis->disable();
-            sharedThis->resetSocketHandler();
+            sharedThis->resetSocketHandler(nullptr);
         }
 
         sharedThis->state_ = Disconnected;
         // Create a new socket for potential future connections
         int newFd = SocketFuncs::socket(AF_INET, SOCK_STREAM, 0);
-        sharedThis->resetSocketHandler(sharedThis->loop()->handleIO(newFd));
+
+        auto newHandler = sharedThis->loop()->handleIO(newFd);
+        sharedThis->resetSocketHandler(newHandler);
     });
 }
 
@@ -200,8 +202,6 @@ void TCPConnector::handleConnectError()
 {
     this->loop()->assertInLoopThread();
     
-    LOG_DEBUG << "TCPConnector::handleConnectError for " << serverAddr_.toIpPort();
-    
     if (state_ == Connected) {
         LOG_WARN << "TCPConnector::handleConnectError called but already connected";
         return;
@@ -217,17 +217,20 @@ void TCPConnector::handleConnectError()
 void TCPConnector::retry()
 {
     this->loop()->assertInLoopThread();
+
+    LOG_DEBUG << "TCPConnector::retry for " << serverAddr_.toIpPort();
     
     stop();//will happen in place, reset the socket handler
     
-    if (retries_ < 0 || currentRetries_ < retries_) {
+    if (maxRetries_ < 0 || currentRetries_ < maxRetries_) {
+        currentRetries_++;
         if(!constantDelay_) {
             retryDelayMs_ = std::min(retryDelayMs_ * 2, 30000); //exponential grow but Cap at 30 seconds
         }
         
         
         LOG_DEBUG << "TCPConnector retrying connection to " << serverAddr_.toIpPort()
-                  << " in " << retryDelayMs_ << "ms, " << retries_ << " retries left";
+                  << " in " << retryDelayMs_ << "ms, " << (maxRetries_ < 0? -1: maxRetries_ - currentRetries_) << " retries left";
         
         std::weak_ptr<TCPConnector> weakThis = shared_from_this();
         // Schedule retry

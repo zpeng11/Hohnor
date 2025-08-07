@@ -30,6 +30,9 @@ using namespace Hohnor;
 
 IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created)
 {
+    HCHECK(loop) << "EventLoop cannot be null";
+    HCHECK(fd >= 0) << "File descriptor must be non-negative";
+    LOG_DEBUG << "Creating IOHandler for fd " << fd;
     this->setFd(fd);
 }
 
@@ -109,6 +112,7 @@ void IOHandler::update(Status nextStatus){
 
 void IOHandler::disable()
 {
+    LOG_DEBUG << "Disabling IOHandler for fd " << fd();
     update(Status::Disabled);
 }
 
