@@ -30,12 +30,13 @@ namespace Hohnor
         typedef int SocketFd;
         //Initilize from existing IOHandler, used for accept
         Socket(std::shared_ptr<IOHandler> socketHandler) : socketHandler_(socketHandler) {}
+        ~Socket();
 
         //Initilize with paramters, in case failed, !!!abort the program
         Socket(EventLoop* loop, int family, int type, int protocol = 0);
 
         //For clent connect, you can set nonBlocking to true, so that it will not block the thread for waiting handshake, return 0 on success, -1 on error
-        int connect(const InetAddress &addr, bool nonBlocking = false);
+        int connect(const InetAddress &addr);
 
         //Socket error
         int getSockError() { return SocketFuncs::getSocketError(fd()); }
@@ -59,7 +60,6 @@ namespace Hohnor
         void setErrorCallback(ErrorCallback cb);
         void enable();
         void disable();
-        ~Socket() = default;
     };
 
     /*
@@ -68,7 +68,7 @@ namespace Hohnor
     class ListenSocket : public Socket
     {
     private:
-        int connect(const InetAddress &addr, bool blocking);
+        int connect(const InetAddress &addr);
         InetAddress getLocalAddr();
         InetAddress getPeerAddr();
         bool isSelfConnect();

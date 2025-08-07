@@ -14,6 +14,11 @@ Socket::Socket(EventLoop* loop, int family, int type, int protocol)
     socketHandler_ = loop->handleIO(fd);
 }
 
+Socket::~Socket()
+{
+    socketHandler_->disable(); //follow RAII, disable events, so that eventloop won't monitor this fd anymore
+}
+
 int Socket::fd() const { return socketHandler_->fd(); }
 
 EventLoop * Socket::loop() { return socketHandler_->loop(); }
@@ -44,12 +49,9 @@ void Socket::disable()
     socketHandler_->disable();
 }
 
-int Socket::connect(const InetAddress &addr, bool nonBlocking)
+int Socket::connect(const InetAddress &addr)
 {
-    bool oldNonBlockingState = FdUtils::setNonBlocking(fd(), nonBlocking);
-    int retVal = SocketFuncs::connect(fd(), addr.getSockAddr());
-    FdUtils::setNonBlocking(fd(), oldNonBlockingState);
-    return retVal;
+    return SocketFuncs::connect(fd(), addr.getSockAddr());
 }
 
 

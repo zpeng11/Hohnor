@@ -62,7 +62,7 @@ public:
             InetAddress serverAddr(serverHost_, serverPort_);
             std::cout << "Connecting to server " << serverAddr.toIpPort() << "..." << std::endl;
             
-            int conRet = socket_->connect(serverAddr, false);
+            int conRet = socket_->connect(serverAddr);
             
             // Check if connection was successful
             if (conRet != 0) {

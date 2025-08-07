@@ -1,6 +1,7 @@
 #pragma once
 #include "hohnor/net/Socket.h"
 #include "hohnor/net/InetAddress.h"
+#include <memory>
 
 namespace Hohnor
 {
@@ -9,23 +10,36 @@ namespace Hohnor
     * TCPConnector is a class that handles the connection to a TCP server.
     * It uses the Socket class to manage the socket and provides a way to connect to a server.
     */
-    class TCPConnector : public Socket{
+    class TCPConnector : public Socket, std::enable_shared_from_this<TCPConnector>
+    {
     public:
         typedef std::function<void (std::shared_ptr<IOHandler>)> NewConnectionCallback;
         typedef std::function<void ()> RetryConnectionCallback;
         typedef std::function<void ()> FailedConnectionCallback;
         // Constructor that initializes the connector with an EventLoop and connection parameters
         TCPConnector(EventLoop* loop, const InetAddress& addr);
-        
+
+        //will be called when the connection is established
         void setNewConnectionCallback(NewConnectionCallback cb) { newConnectionCallback_ = std::move(cb); }
+        //will be called when the connection is retried
         void setRetryConnectionCallback(RetryConnectionCallback cb) { retryCallback_ = std::move(cb); }
+        //will be called when the connection fails after all retries
         void setFailedConnectionCallback(FailedConnectionCallback cb) { failedCallback_ = std::move(cb); }
-        void setRetryDelay(int delayMs) { retryDelayMs_ = delayMs; }
+
+        //By default the Connector uses exponential delay from 500ms, you can set a constant delay
+        //This is useful for testing or when you want to control the retry timing
+        //Note: This will override the exponential backoff behavior
+        //and use a constant delay for retries.
+        void setRetryConstantDelay(int delayMs) { retryDelayMs_ = delayMs; constantDelay_ = true; }
+        //Set the number of retries before giving up
+        //If retries <= 0, it will retry indefinitely until success or stopped
+        //If retries > 0, it will retry that many times before giving up
         void setRetries(int retries) { retries_ = retries; }
 
-        void start(int retryDelayMs = 500, int retries = 0); // Start the connection process
-        void stop();  // Stop the connection process
-        void restart(); // Restart the connection process
+        //Start the connection process, thread safe, can be called multiple times to create multiple connectors.
+        void start(); 
+        //Stop current connector's attempt to connect, thread safe.
+        void stop();  
 
         InetAddress getServerAddr() const { return serverAddr_; }
 
@@ -33,8 +47,11 @@ namespace Hohnor
     
     private:
         InetAddress serverAddr_;
+        static constexpr int DefaultRetryDelayMs = 500; // Default retry delay in milliseconds
+        bool constantDelay_;
         int retryDelayMs_;
         int retries_;
+        int currentRetries_;
         NewConnectionCallback newConnectionCallback_;
         RetryConnectionCallback retryCallback_;
         FailedConnectionCallback failedCallback_;
@@ -45,7 +62,7 @@ namespace Hohnor
         void setWriteCallback(WriteCallback cb);
         void setCloseCallback(CloseCallback cb);
         void setErrorCallback(ErrorCallback cb);
-        int connect(const InetAddress &addr, bool nonBlocking);
+        int connect(const InetAddress &addr);
         void enable();
         void disable();
 
