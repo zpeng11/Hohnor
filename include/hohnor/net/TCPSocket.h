@@ -18,7 +18,7 @@ namespace Hohnor
     {
     public:
         explicit TCPListenSocket(std::shared_ptr<IOHandler> socketHandler) : ListenSocket(socketHandler) {}
-        explicit TCPListenSocket(EventLoop * loop, int options = SOCK_STREAM, bool ipv6 = false)
+        explicit TCPListenSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_STREAM, bool ipv6 = false)
             : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
 
         //Get Tcp infomation. In case failed return !nullptr

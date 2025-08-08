@@ -20,7 +20,7 @@ namespace Hohnor
     {
     public:
         explicit UDPSocket(std::shared_ptr<IOHandler> socketHandler) : Socket(socketHandler) {}
-        explicit UDPSocket(EventLoop * loop, int options = SOCK_DGRAM, bool ipv6 = false)
+        explicit UDPSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : Socket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_DGRAM, 0) {}
 
         // Send data to a specific address (for client or server)
@@ -75,7 +75,7 @@ namespace Hohnor
         
     public:
         explicit UDPListenSocket(std::shared_ptr<IOHandler> socketHandler) : UDPSocket(socketHandler) {}
-        explicit UDPListenSocket(EventLoop * loop, int options = SOCK_DGRAM, bool ipv6 = false)
+        explicit UDPListenSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : UDPSocket(loop, options, ipv6) {}
 
         // Bind the address. In case failed, !!!abort the program

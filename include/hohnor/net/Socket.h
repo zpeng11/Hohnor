@@ -24,7 +24,7 @@ namespace Hohnor
     {
     private:
         std::shared_ptr<IOHandler> socketHandler_;
-        EventLoop *loop_;
+        std::shared_ptr<EventLoop> loop_;
     protected:
         void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr);
     public:
@@ -34,7 +34,7 @@ namespace Hohnor
         ~Socket();
 
         //Initilize with paramters, in case failed, !!!abort the program
-        Socket(EventLoop* loop, int family, int type, int protocol = 0);
+        Socket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0);
 
         //For clent connect, you can set nonBlocking to true, so that it will not block the thread for waiting handshake, return 0 on success, -1 on error
         int connect(const InetAddress &addr);
@@ -50,7 +50,7 @@ namespace Hohnor
 
         SocketFd fd() const;
 
-        EventLoop *loop();
+        std::shared_ptr<EventLoop> loop();
 
         std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
 
@@ -76,7 +76,7 @@ namespace Hohnor
 
     public:
         ListenSocket(std::shared_ptr<IOHandler> socketHandler) : Socket(socketHandler) {}
-        ListenSocket(EventLoop * loop, int family, int type, int protocol = 0)
+        ListenSocket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0)
             : Socket(loop, family, type, protocol) {}
 
         //Bind the address. In case failed, !!!abort the program

@@ -10,7 +10,7 @@
 
 using namespace Hohnor;
 
-TCPConnector::TCPConnector(EventLoop* loop, const InetAddress& addr)
+TCPConnector::TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& addr)
     : Socket(loop, AF_INET, SOCK_STREAM),
       serverAddr_(addr),
       constantDelay_(false),
@@ -148,6 +148,15 @@ void TCPConnector::connecting()
             return;
         }
         sharedThis->handleConnectWrite();
+    });
+
+    Socket::setCloseCallback([weakThis]() {
+        auto sharedThis = weakThis.lock();
+        if(!sharedThis) {
+            LOG_ERROR << "TCPConnector::connecting() called on expired shared pointer";
+            return;
+        }
+        sharedThis->handleConnectError();
     });
 
     Socket::setErrorCallback([weakThis]() {

@@ -21,17 +21,18 @@ using namespace Hohnor;
 
 class EchoServer {
 private:
-    EventLoop* loop_;
+    std::shared_ptr<EventLoop> loop_;
     std::unique_ptr<TCPListenSocket> listenSocket_;
     std::unordered_map<int, std::shared_ptr<IOHandler>> clients_;
     uint16_t port_;
     bool running_;
 
 public:
-    EchoServer(EventLoop* loop, uint16_t port) 
+    EchoServer(std::shared_ptr<EventLoop> loop, uint16_t port) 
         : loop_(loop), port_(port), running_(false) {}
 
     void start() {
+        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
         if (running_) {
             std::cout << "Server is already running!" << std::endl;
             return;
@@ -198,24 +199,24 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        EventLoop loop;
+        auto loop = EventLoop::createEventLoop();
         
         // Create echo server
-        EchoServer server(&loop, port);
-        
+        EchoServer server(loop, port);
+
         // Set up signal handling for graceful shutdown
-        auto signalHandler = loop.handleSignal(SIGINT, SignalAction::Handled, [&]() {
+        loop->handleSignal(SIGINT, SignalAction::Handled, [&]() {
             std::cout << "\nReceived SIGINT (Ctrl+C), shutting down server..." << std::endl;
             server.stop();
-            loop.endLoop();
+            loop->endLoop();
         });
         
         // Start the server
         server.start();
         
         // Run the event loop
-        loop.loop();
-        
+        loop->loop();
+
         std::cout << "Server shutdown complete." << std::endl;
         
     } catch (const std::exception& e) {

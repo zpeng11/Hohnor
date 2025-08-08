@@ -25,16 +25,16 @@ namespace Hohnor
         SignalAction action_;
         int signal_;
         std::shared_ptr<IOHandler> ioHandler_;
-        EventLoop * loop_;
+        std::shared_ptr<EventLoop> loop_;
         void createIOHandler(int fd, Functor cb);
     protected:
-        SignalHandler(EventLoop* loop, int signal, SignalAction action, SignalCallback cb = nullptr);
+        SignalHandler(std::shared_ptr<EventLoop> loop, int signal, SignalAction action, SignalCallback cb = nullptr);
     public:
         SignalHandler() = delete;
-        ~SignalHandler(){}
+        ~SignalHandler() = default;
         SignalAction action() { return action_; }
         int signal() { return signal_; }
         void update(SignalAction action, SignalCallback cb = nullptr);
-        void disable() { update(SignalAction::Default); }
+        void disable();
     };
 } // namespace Hohnor

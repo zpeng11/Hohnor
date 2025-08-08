@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <string>
 #include <iostream>
+#include <atomic>
 #include <termios.h>
 #include "hohnor/log/Logging.h"
 
@@ -16,10 +17,9 @@ namespace Hohnor
 using namespace Hohnor;
 using namespace Hohnor::FdUtils;
 
-bool Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
+int Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
 {
     int oldOptions = fcntl(fd, F_GETFL);
-    bool isNonBlocking = (oldOptions & O_NONBLOCK) != 0;
     if (oldOptions == -1)
     {
         LOG_SYSERR << "FdUtils::setNonBlocking error";
@@ -32,13 +32,12 @@ bool Hohnor::FdUtils::setNonBlocking(int fd, bool nonBlocking)
         LOG_SYSERR << "FdUtils::setNonBlocking error";
         return -1;
     }
-    return isNonBlocking;
+    return oldOptions;
 }
 
-bool FdUtils::setCloseOnExec(int fd, bool closeOnExec)
+int FdUtils::setCloseOnExec(int fd, bool closeOnExec)
 {
     int oldOptions = fcntl(fd, F_GETFD);
-    bool isCloseOnExec = (oldOptions & FD_CLOEXEC) != 0;
     if (oldOptions == -1)
     {
         LOG_SYSERR << "FdUtils::setCloseOnExec error (F_GETFD)";
@@ -55,7 +54,7 @@ bool FdUtils::setCloseOnExec(int fd, bool closeOnExec)
         return -1;
     }
 
-    return isCloseOnExec;
+    return oldOptions;
 }
 
 
@@ -80,15 +79,26 @@ void FdGuard::setFd(int fd)
 
 // Store original terminal attributes to restore them on exit
 static struct termios saved_attributes;
+static std::atomic<bool> terminal_interactive_mode(false);
 
 // Function to reset terminal to its original settings
 void FdUtils::resetInputInteractive(void) {
+    if(terminal_interactive_mode.load() == false) {
+        LOG_WARN << "Terminal is not in interactive mode.";
+        return;
+    }
+    terminal_interactive_mode.store(false);
     tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
     printf("\nTerminal mode restored.\n");
 }
 
 // Function to set terminal to non-canonical, no-echo mode
 void FdUtils::setInputInteractive(void) {
+    if(terminal_interactive_mode.load()) {
+        LOG_WARN << "Terminal is already in interactive mode.";
+        return;
+    }
+    terminal_interactive_mode.store(true);
     struct termios tattr;
 
     // Make sure stdin is a terminal

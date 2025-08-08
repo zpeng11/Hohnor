@@ -28,7 +28,8 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created)
+IOHandler::IOHandler(std::shared_ptr<EventLoop> loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created),
+                                                                closeCallback_(nullptr), errorCallback_(nullptr), readCallback_(nullptr), writeCallback_(nullptr)
 {
     HCHECK(loop) << "EventLoop cannot be null";
     HCHECK(fd >= 0) << "File descriptor must be non-negative";
@@ -36,15 +37,40 @@ IOHandler::IOHandler(EventLoop *loop, int fd) : loop_(loop), events_(0), revents
     this->setFd(fd);
 }
 
-IOHandler::~IOHandler(){
+IOHandler::~IOHandler()
+{
+    //We can assure only one thread can access this IOHandler, so we can safely disable it
     LOG_DEBUG << "Destroying IOHandler as well as guard for fd " << fd();
+    if(loop_){
+        if(status_ == Status::Enabled){
+            if(loop_->state() == EventLoop::LoopState::End || loop_->quit_) 
+            {
+                status_ = Status::Disabled; //If the loop is ended, we can not remove the fd from epoll, so we just set it to Disabled
+                LOG_WARN << "EventLoop is ended, IOHandler for fd " << fd() << " will not be removed from epoll";
+            }
+            else {
+                LOG_DEBUG << "Using loop's removeFd for fd " << fd();
+                int fd = this->fd();
+                EventLoop *loop = loop_.get();
+                loop_->runInLoop([loop, fd]() {
+                    loop->removeFd(fd);
+                });
+                //If the loop is not ended, we can safely remove the fd from epoll
+            }
+        }
+        loop_.reset();
+    }
+    else{
+        HCHECK(status_ == Status::Disabled);
+        LOG_DEBUG << "Loop has been released beforehand, nothing to do in dtor for fd " << fd();
+    }
 }
 
 void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
 {
     loop_->assertInLoopThread();
     bool addNew = false;
-    if(status_ == Status::Created && nextStatus == Status::Enabled)
+    if((status_ == Status::Created && nextStatus == Status::Enabled) || (status_ == Status::Disabled && nextStatus == Status::Enabled)) //When switching from Created/Disabled to Enabled, we need to add new context to epoll
         addNew = true;
     status_ = nextStatus;
     loop_->updateIOHandler(handler, addNew);
@@ -90,16 +116,23 @@ void IOHandler::run()
 }
 
 void IOHandler::update(Status nextStatus){
-    std::weak_ptr<IOHandler> weak_self = shared_from_this();
-    loop_->runInLoop([weak_self, nextStatus](){
-        auto handler = weak_self.lock();
+    std::weak_ptr<IOHandler> weak_ptr = shared_from_this();
+    HCHECK(loop_) << "EventLoop cannot be null";
+    loop_->runInLoop([weak_ptr, nextStatus](){
+        auto handler = weak_ptr.lock();
+        LOG_DEBUG << "Updating IOHandler for fd " << handler->fd();
         if(handler){
+            if(handler->status() == Status::Disabled && nextStatus == Status::Disabled)
+            {
+                LOG_DEBUG << "Trying to disable a handler that has already been disabled";
+                return;
+            }
             if (handler->status() == Status::Created && nextStatus == Status::Disabled)
-                LOG_SYSERR << "Trying to disable a handler that has not been enabled";
-            if (handler->status() == Status::Disabled && nextStatus == Status::Enabled)
-                LOG_SYSERR << "Trying to enable a handler that has been disabled";
-            if (handler->status() == Status::Disabled && nextStatus == Status::Disabled)
-                LOG_SYSERR << "Trying to disable a handler multiple times";
+            {
+                LOG_WARN << "Trying to disable a handler that has not been enabled";
+                handler->status_ = Status::Disabled;
+                return;
+            }
             handler->updateInLoop(handler, nextStatus);
         }
         else{
@@ -113,6 +146,10 @@ void IOHandler::update(Status nextStatus){
 void IOHandler::disable()
 {
     LOG_DEBUG << "Disabling IOHandler for fd " << fd();
+    readCallback_ = nullptr;
+    writeCallback_ = nullptr;
+    closeCallback_ = nullptr;
+    errorCallback_ = nullptr;
     update(Status::Disabled);
 }
 
@@ -123,6 +160,8 @@ void IOHandler::enable()
 
 void IOHandler::setReadCallback(ReadCallback cb)
 {
+    HCHECK(loop_) << "EventLoop cannot be null";
+    LOG_DEBUG << "Setting read callback for IOHandler on fd " << fd();
     std::weak_ptr<IOHandler> weak_self = shared_from_this();
     loop_->runInLoop([weak_self, cb](){
         auto handler = weak_self.lock();

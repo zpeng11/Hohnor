@@ -25,7 +25,7 @@ namespace Hohnor
         Timestamp expiration_;
         //if greater than 0 means it is a repeated event
         double interval_;
-        bool disabled_;
+        std::atomic<bool> disabled_;
         const int64_t sequence_;
         EventLoop *loop_;
         static std::atomic<uint64_t> s_numCreated_;

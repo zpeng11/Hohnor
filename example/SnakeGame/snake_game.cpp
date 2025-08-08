@@ -6,6 +6,7 @@
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/core/Signal.h"
 #include "hohnor/log/Logging.h"
+#include "hohnor/core/Timer.h"
 #include <ncurses.h>
 #include <iostream>
 #include <vector>
@@ -32,7 +33,7 @@ enum Direction {
 
 class SnakeGame {
 private:
-    EventLoop* loop_;
+    std::shared_ptr<EventLoop> loop_;
     std::deque<Point> snake_;
     Point food_;
     Direction direction_;
@@ -51,7 +52,7 @@ private:
     static constexpr double GAME_SPEED = 0.15; // seconds between moves
     
 public:
-    SnakeGame(EventLoop* loop) 
+    SnakeGame(std::shared_ptr<EventLoop> loop) 
         : loop_(loop), direction_(RIGHT), nextDirection_(RIGHT), 
           score_(0), gameWidth_(30), gameHeight_(15), gameOver_(false), paused_(false),
           rng_(std::random_device{}()), 
@@ -113,7 +114,7 @@ public:
     
     void cleanup() {
         if (gameTimer_) {
-            gameTimer_.reset();
+            gameTimer_->disable();
         }
         endwin();
     }
@@ -291,19 +292,19 @@ int main() {
     
     try {
         // Create the event loop
-        EventLoop loop;
-        
+        auto loop = EventLoop::createEventLoop();
+
         // Create snake game
-        SnakeGame game(&loop);
-        
+        SnakeGame game(loop);
+
         // Set up signal handling for graceful shutdown (Ctrl+C)
-        auto signalHandler = loop.handleSignal(SIGINT, SignalAction::Handled, [&]() {
+        loop->handleSignal(SIGINT, SignalAction::Handled, [&]() {
             std::cout << "\nReceived SIGINT (Ctrl+C), shutting down gracefully..." << std::endl;
-            loop.endLoop();
+            loop->endLoop();
         });
         
         // Set up keyboard input handling
-        loop.handleKeyboard([&game](char key) {
+        loop->handleKeyboard([&game](char key) {
             game.onKeyPress(key);
         });
         
@@ -311,11 +312,11 @@ int main() {
         game.initialize();
         
         // Start the event loop
-        loop.loop();
-        
+        loop->loop();
+
         // Clean up keyboard handling
-        loop.unHandleKeyboard();
-        
+        loop->handleKeyboard(nullptr);
+
         std::cout << "Game ended. Thanks for playing!" << std::endl;
         
     } catch (const std::exception& e) {

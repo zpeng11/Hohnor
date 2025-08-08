@@ -76,12 +76,24 @@ void TimerHandler::run()
 
 void TimerHandler::disable()
 {
+    if(disabled_)
+    {
+        LOG_DEBUG << "Timer is already disabled"; 
+        return;
+    }
+    if(loop_->quit()){
+        interval_ = 0.0;
+        disabled_ = true;
+        callback_ = nullptr;
+        return;
+    }
     std::weak_ptr<TimerHandler> weak_ptr = shared_from_this();
     loop_->runInLoop([weak_ptr](){
         auto handler = weak_ptr.lock();
         if(handler){
             handler->interval_ = 0.0;
             handler->disabled_ = true;
+            handler->callback_ = nullptr;
         }
         else{
             LOG_WARN << "Calling TimerHandler disable after object is gone";
@@ -91,6 +103,11 @@ void TimerHandler::disable()
 
 void TimerHandler::updateCallback(TimerCallback callback)
 {
+    if(disabled_)
+    {
+        LOG_DEBUG << "Timer is already disabled"; 
+        return;
+    }
     std::weak_ptr<TimerHandler> weak_ptr = shared_from_this();
     loop_->runInLoop([weak_ptr, callback](){
         auto handler = weak_ptr.lock();
@@ -123,19 +140,24 @@ TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop), timerFdIOHandle_(nullptr)
                                           heap_(timerCmpLessThan)
 {
     int fd = createTimerfd();
+    LOG_DEBUG << "Created timerfd " << fd;
     timerFdIOHandle_ = loop->handleIO(fd);
     timerFdIOHandle_->setReadCallback(std::bind(&TimerQueue::handleRead, this));
     timerFdIOHandle_->enable();
+    LOG_DEBUG << "Created TimerQueue with fd " << fd;
 }
 
 TimerQueue::~TimerQueue()
 {
     while (heap_.size())
     {
-        heap_.popTop();
+        heap_.popTop()->disable();
     }
+    // Eventloop will take care of these
     // timerFdIOHandle_->disable();
+    // LOG_DEBUG << "disable TimerQueue fd ";
     // timerFdIOHandle_.reset();
+    // LOG_DEBUG << "Clean TimerQueue fd handler ";
 }
 
 void TimerQueue::handleRead()

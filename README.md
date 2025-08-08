@@ -35,6 +35,7 @@ Hohnor
 
 
 # TODO List:
+Still need a set<ptr<IOHandler>> in eventloop to disable all IOs
 * Github CI
 * Documents
 * Examples Chatroom

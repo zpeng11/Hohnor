@@ -8,7 +8,7 @@
 using namespace std;
 using namespace Hohnor;
 
-Socket::Socket(EventLoop* loop, int family, int type, int protocol)
+Socket::Socket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol)
 {
     int fd = SocketFuncs::socket(family, type, protocol);
     socketHandler_ = loop->handleIO(fd);
@@ -45,7 +45,7 @@ void Socket::resetSocketHandler(std::shared_ptr<IOHandler> handler) {
 
 int Socket::fd() const { return socketHandler_? socketHandler_->fd() : -1; }
 
-EventLoop * Socket::loop() { return loop_; }
+std::shared_ptr<EventLoop> Socket::loop() { return loop_; }
 
 void Socket::setReadCallback(ReadCallback cb)
 {

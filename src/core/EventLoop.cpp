@@ -32,35 +32,48 @@ EventLoop::EventLoop()
       threadId_(CurrentThread::tid()),
       iteration_(0), state_(Ready),
       pollReturnTime_(Timestamp::now()),
-      IOHandlers_(),
       wakeUpHandler_(), //initilize later
-      timers_(new TimerQueue(this)),
+      timers_(),
       pendingFunctorsLock_(new Mutex()), pendingFunctors_(), signalMap_(),
       threadPool_()
 {
+}
+
+std::shared_ptr<EventLoop> EventLoop::createEventLoop() {
+    LOG_DEBUG << "Enter EventLoop creation factory";
+    auto ptr = std::shared_ptr<EventLoop>(new EventLoop());
+    //Two step creation, because IOHandle needs shared_ptr of the EventLoop which is only available after the EventLoop is fully constructed
+    ptr->timers_ = new TimerQueue(ptr.get());
     //create eventfd for wake up
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0)
         LOG_SYSFATAL << "Fail to create eventfd for wake up";
-    wakeUpHandler_ = this->handleIO(evtfd);
-    wakeUpHandler_->setReadCallback(std::bind(&EventLoop::handleWakeUp, this));
-    wakeUpHandler_->enable();
-
-    LOG_DEBUG << "EventLoop created " << this << " in thread " << threadId_;
+    ptr->wakeUpHandler_ = ptr->handleIO(evtfd);
+    ptr->wakeUpHandler_->setReadCallback(std::bind(&EventLoop::handleWakeUp, ptr.get()));
+    ptr->wakeUpHandler_->enable();
+    LOG_DEBUG << "EventLoop created " << ptr.get() << " in thread " << ptr->threadId_;
+    return ptr;
 }
 
 EventLoop::~EventLoop()
 {
-    endLoop();
+    LOG_DEBUG << "Destroying EventLoop " << this << " in thread " << threadId_;
+    if (state_ != End)
+        endLoop();
     Loop::t_loopInThisThread = nullptr;
-    delete poller_;
     delete timers_;
+    delete poller_;
     delete pendingFunctorsLock_;
     LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_;
 }
 
 void EventLoop::loop()
 {
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, Please create a new one to run again";
+        return;
+    }
     //verify there is single loop in a thread
     if (Loop::t_loopInThisThread)
     {
@@ -110,22 +123,53 @@ void EventLoop::loop()
         }
     }
     state_ = End;
+
+    //Start resource clean up
+    LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended";
+    LOG_DEBUG << "Reset all IOHandler and TimerHandler stored in loop object to disabled state";
+    timers_->timerFdIOHandle_->status_ = IOHandler::Status::Disabled;
+    timers_->timerFdIOHandle_.reset();
+    wakeUpHandler_->status_ = IOHandler::Status::Disabled;
+    wakeUpHandler_.reset();
+    for (auto &pair : signalMap_)
+        pair.second->disable();
+    if (interactiveIOHandler_)
+    {
+        interactiveIOHandler_->status_ = IOHandler::Status::Disabled;
+        interactiveIOHandler_->loop_.reset();
+        //Do not reset interactiveIOHandler_ here, because closing STDIN_FILENO maynot be expected
+        // interactiveIOHandler_.reset();
+    }
+    {
+        MutexGuard guard(*pendingFunctorsLock_);
+        pendingFunctors_.clear();
+    }
+    Loop::t_loopInThisThread = nullptr;
 }
 
 void EventLoop::runInLoop(Functor cb)
 {
-    if (isLoopThread())
+    if(state_ == End)
     {
-        cb();
+        LOG_WARN << "EventLoop " << this << " is ended, can only run if in the same thread";
+        if (isLoopThread())
+            cb();
     }
-    else
-    {
-        queueInLoop(std::move(cb));
+    else{
+        if (isLoopThread())
+            cb();
+        else
+            queueInLoop(std::move(cb));
     }
 }
 
 void EventLoop::queueInLoop(Functor cb)
 {
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, can not queue in loop";
+        return;
+    }
     {
         MutexGuard guard(*pendingFunctorsLock_);
         pendingFunctors_.push_back(std::move(cb));
@@ -153,6 +197,10 @@ void EventLoop::setThreadPools(size_t size)
 
 void EventLoop::runInPool(Functor callback)
 {
+    if(state_ == End){
+        LOG_ERROR << "EventLoop " << this << " is ended, can not run in pool";
+        return;
+    }
     if (threadPool_)
     {
         threadPool_->run(std::move(callback));
@@ -166,6 +214,11 @@ void EventLoop::runInPool(Functor callback)
 
 void EventLoop::wakeUp()
 {
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, can not wake up";
+        return;
+    }
     uint64_t one = 1;
     ssize_t n = ::write(wakeUpHandler_->fd(), &one, sizeof one);
     if (n != sizeof one)
@@ -196,25 +249,25 @@ void EventLoop::assertInLoopThread()
 void EventLoop::endLoop()
 {
     quit_ = true;
-    wakeUp();
+    if(state_ != Ready && state_ != End)
+    {
+        LOG_DEBUG << "EventLoop " << this << " is ending, but not in Ready or End state, will wake up to end";
+        wakeUp();
+    }
+    if(state_ == Ready){
+        LOG_WARN << "Ending Eventloop In Ready state, need to run a quick loop.";
+        loop(); //Will quickly enter & exit the loop because we have quit_
+    }
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended by call";
 }
 
 std::shared_ptr<IOHandler> EventLoop::handleIO(int fd){
-    std::shared_ptr<IOHandler> handler(new IOHandler(this, fd));
-    runInLoop(std::bind(&EventLoop::addIOHandler, this, handler));
-    return handler;
-}
-
-void EventLoop::addIOHandler(std::shared_ptr<IOHandler> handler) //Use a set to reserve ownership of IOHandlers
-{
-    assertInLoopThread();
-    HCHECK(!hasIOHandler(handler)) << " the handler is already in set";
-    IOHandlers_.insert(handler);
-}
-
-bool EventLoop::hasIOHandler(std::shared_ptr<IOHandler> handler){
-    return IOHandlers_.find(handler) != IOHandlers_.end();
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, can not handle new IO";
+        return nullptr;
+    }
+    return std::shared_ptr<IOHandler>(new IOHandler(shared_from_this(), fd));
 }
 
 void EventLoop::updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew) //Load handle's epoll context to epoll, and manage context lifecycle. 
@@ -222,27 +275,34 @@ void EventLoop::updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew)
 {
     assertInLoopThread();
     HCHECK(handler) << "Handler has been free";
-    HCHECK(hasIOHandler(handler)) << " can not find the handler in set";
     if (addNew)
     {
-        HCHECK(handler->isEnabled())<< "Handler not enabled";
+        HCHECK(handler->isEnabled())<< "Handler should be enabled when adding to epoll";
         poller_->add(handler->fd(), handler->getEvents(), (void *)handler.get());
     }
-    else if (handler->isEnabled())
+    else if (handler->isEnabled()) // If is it enable and not addNew, it means we are modifying the events
     {
         poller_->modify(handler->fd(), handler->getEvents(), (void *)handler.get());
     }
-    else //diabled()
+    else // If it is not enabled, we are removing the handler from epoll
     {
-        HCHECK(!handler->isEnabled())<< "This should be handler disabled case";
         poller_->remove(handler->fd());
-        auto it = IOHandlers_.find(handler);
-        IOHandlers_.erase(it);
     }
+}
+
+void EventLoop::removeFd(int fd)
+{
+    assertInLoopThread();
+    poller_->remove(fd);
 }
 
 std::shared_ptr<TimerHandler> EventLoop::addTimer(TimerCallback cb, Timestamp when, double interval)
 {
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, can not add timer";
+        return nullptr;
+    }
     return timers_->addTimer(std::move(cb), when, interval);
 }
 
@@ -251,63 +311,73 @@ std::shared_ptr<TimerHandler> EventLoop::addTimer(TimerCallback cb, Timestamp wh
 //     timers_->cancel(id.timer_);
 // }
 
-std::shared_ptr<SignalHandler> EventLoop::handleSignal(int signal, SignalAction action, SignalCallback cb)
+void EventLoop::handleSignal(int signal, SignalAction action, SignalCallback cb)
 {
-    assertInLoopThread();
-    auto it = signalMap_.find(signal);
-    if(it == signalMap_.end()){
-        auto handle = std::shared_ptr<SignalHandler>(new SignalHandler(this, signal, action, cb));
-        signalMap_[signal] = handle;
-        return handle;
+    if(state_ == End)
+    {
+        LOG_ERROR << "EventLoop " << this << " is ended, can not handle signal";
+        return;
     }
-    else{
-        auto handle = it->second;
-        handle->update(action, cb);
-        return handle;
-    }
+    runInLoop([this, signal, action, cb](){
+        auto it = signalMap_.find(signal);
+        if(it == signalMap_.end()){
+            auto handle = std::shared_ptr<SignalHandler>(new SignalHandler(shared_from_this(), signal, action, cb));
+            signalMap_[signal] = handle;
+        }
+        else{
+            auto handle = it->second;
+            handle->update(action, cb);
+        }
+    });
 }
 
 std::shared_ptr<IOHandler> EventLoop::interactiveIOHandler_ = nullptr;
 
 void EventLoop::handleKeyboard(KeyboardCallback cb)
 {
-    assertInLoopThread();
-    auto fuc = [cb](){
-        char key;
-        int ret = read(STDIN_FILENO, &key, 1);
-        HCHECK_EQ(ret, 1) << "Failed to read from stdin, ret = " << ret;
-        cb(key);
-    };
-    if (interactiveIOHandler_)
+    if(state_ == End)
     {
-        LOG_WARN << "Interactive IO handler already exists, unhandle it first";
-        interactiveIOHandler_->setReadCallback(std::move(fuc));
+        LOG_WARN << "EventLoop " << this << " is ended, keyboard interactive input is already disabled";
+        return;
     }
-    else{
-        FdUtils::setInputInteractive();
-        //Create a new IOHandler for stdin
-        //This will take over the ownership of stdin file descriptor
-        //and set it to non-blocking and close-on-exec
-        interactiveIOHandler_ = handleIO(STDIN_FILENO);
-        interactiveIOHandler_->setReadCallback(std::move(fuc));
-        interactiveIOHandler_->enable();
-        LOG_DEBUG << "Interactive IO handler set for keyboard input";
-    }
-}
+    runInLoop([this, cb](){
+        if (cb == nullptr){
+            LOG_DEBUG << "Setup to disable interactive keyboard input";
+            if (interactiveIOHandler_)
+            {
+                LOG_DEBUG << "Handler existing";
+                // Disable the interactive IO handler by removing its read callback instead of disabling it.
+                interactiveIOHandler_->setReadCallback(nullptr);
+                interactiveIOHandler_->disable();
+                FdUtils::resetInputInteractive();
+            }
+            return;
+        }
 
-void EventLoop::unHandleKeyboard()
-{
-    assertInLoopThread();
-    if (interactiveIOHandler_)
-    {
-        // Disable the interactive IO handler by removing its read callback instead of disabling it.
-        interactiveIOHandler_->setReadCallback(nullptr);
-        FdUtils::resetInputInteractive();
-    }
-    else
-    {
-        LOG_WARN << "No interactive IO handler to unhandle";
-    }
+        auto fuc = [cb](){
+            char key;
+            int ret = read(STDIN_FILENO, &key, 1);
+            HCHECK_EQ(ret, 1) << "Failed to read from stdin, ret = " << ret;
+            cb(key);
+        };
+        if (interactiveIOHandler_)
+        {
+            LOG_WARN << "Interactive IO handler already exists, updated to new one";
+            interactiveIOHandler_->setReadCallback(std::move(fuc));
+            interactiveIOHandler_->enable();
+            FdUtils::setInputInteractive();
+        }
+        else{
+            HCHECK(!interactiveIOHandler_) << "Interactive IO handler does not exist, creating a new one";
+            FdUtils::setInputInteractive();
+            //Create a new IOHandler for stdin
+            //This will take over the ownership of stdin file descriptor
+            //and set it to non-blocking and close-on-exec
+            interactiveIOHandler_ = handleIO(STDIN_FILENO);
+            interactiveIOHandler_->setReadCallback(std::move(fuc));
+            interactiveIOHandler_->enable();
+            LOG_DEBUG << "Interactive IO handler set for keyboard input";
+        }});
 }
 
 bool EventLoop::isLoopThread() { return CurrentThread::tid() == threadId_; }

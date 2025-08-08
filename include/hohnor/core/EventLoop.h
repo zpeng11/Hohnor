@@ -30,11 +30,13 @@ namespace Hohnor
     /**
      * 
      */
-    class EventLoop : NonCopyable
+    class EventLoop : public NonCopyable, public std::enable_shared_from_this<EventLoop>
     {
         friend class IOHandler;
-    public:
+    private:
         EventLoop();
+    public:
+        static std::shared_ptr<EventLoop> createEventLoop();
         ~EventLoop();
 
         static EventLoop *loopOfCurrentThread();
@@ -70,13 +72,10 @@ namespace Hohnor
         std::shared_ptr<TimerHandler> addTimer(TimerCallback cb, Timestamp when, double interval = 0.0f);
 
         //Return a handler to manage signal, must be called in loop thread
-        std::shared_ptr<SignalHandler> handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
+        void handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
 
-        //Manage keyboard in an interactive Non-Canonical way, must be called in loop thread
+        //Manage keyboard in an interactive Non-Canonical way, put nullptr to be back to normal
         void handleKeyboard(KeyboardCallback cb);
-
-        //Unmanage keyboard and change back to normal Canonical way, must be called in loop thread
-        void unHandleKeyboard();
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
         //After ctor and Before calling loop(), it is Ready state,
@@ -92,6 +91,8 @@ namespace Hohnor
 
         LoopState state() const { return state_; }
 
+        bool quit() const { return quit_; }
+
     private:
         //The essential of eventloop
         Epoll * poller_;
@@ -105,9 +106,6 @@ namespace Hohnor
 
         //Time when epoll returns
         std::atomic<Timestamp> pollReturnTime_;
-
-        //To check if the IO handler is still available in the reactor
-        std::set<std::shared_ptr<IOHandler>> IOHandlers_;
 
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
         std::shared_ptr<IOHandler> wakeUpHandler_;
@@ -134,12 +132,12 @@ namespace Hohnor
 
         bool isLoopThread();
 
-        //if has the event
-        bool hasIOHandler(std::shared_ptr<IOHandler> handler);
-
-        //Add a handler to manage lifecycle
-        void addIOHandler(std::shared_ptr<IOHandler> handler);
         //modify or remove existing IO event in the epoll
         void updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew);
+
+        //Remove a fd from epoll, 
+        //used by IOHandler's destructor because 
+        //in dtor we can not take out smart ptr to pass into function closure.
+        void removeFd(int fd);
     };
 } // namespace Hohnor

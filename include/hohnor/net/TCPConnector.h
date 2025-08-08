@@ -17,7 +17,7 @@ namespace Hohnor
         typedef std::function<void ()> RetryConnectionCallback;
         typedef std::function<void ()> FailedConnectionCallback;
         // Constructor that initializes the connector with an EventLoop and connection parameters
-        TCPConnector(EventLoop* loop, const InetAddress& addr);
+        TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& addr);
 
         //will be called when the connection is established
         void setNewConnectionCallback(NewConnectionCallback cb) { newConnectionCallback_ = std::move(cb); }

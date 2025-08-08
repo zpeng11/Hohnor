@@ -22,7 +22,7 @@ using namespace Hohnor;
 
 class EchoClient {
 private:
-    EventLoop* loop_;
+    std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPConnector> connector_;
     std::shared_ptr<IOHandler> connection_;
     std::string serverHost_;
@@ -32,7 +32,7 @@ private:
     int messageCount_;
 
 public:
-    EchoClient(EventLoop* loop, const std::string& host, uint16_t port)
+    EchoClient(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port)
         : loop_(loop), serverHost_(host), serverPort_(port),
           connected_(false), running_(false), messageCount_(0) {}
 
@@ -234,23 +234,23 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        EventLoop loop;
-        
+        auto loop = EventLoop::createEventLoop();
+
         // Create echo client
-        EchoClient client(&loop, host, port);
-        
+        EchoClient client(loop, host, port);
+
         // Set up signal handling for graceful shutdown
-        auto signalHandler = loop.handleSignal(SIGINT, SignalAction::Handled, [&]() {
+        loop->handleSignal(SIGINT, SignalAction::Handled, [&]() {
             std::cout << "\nReceived SIGINT (Ctrl+C), shutting down client..." << std::endl;
             client.stop();
-            loop.endLoop();
+            loop->endLoop();
         });
         
         // Start the client
         client.start();
         
         // Run the event loop
-        loop.loop();
+        loop->loop();
 
         LOG_DEBUG << "Event loop exited";
         

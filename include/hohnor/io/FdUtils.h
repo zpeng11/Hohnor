@@ -15,9 +15,9 @@ namespace Hohnor
         void close(int socketfd);
 
         //Set the nonblocking flag for fd, return boolean value of old nonblocking state
-        bool setNonBlocking(int fd, bool nonBlocking = true);
+        int setNonBlocking(int fd, bool nonBlocking = true);
         //Set close on exec function, so that children process can not share this fd with parent, return boolean value of old close on exec state
-        bool setCloseOnExec(int fd, bool closeOnExec = true);
+        int setCloseOnExec(int fd, bool closeOnExec = true);
 
         // Function to reset terminal to its original settings
         void resetInputInteractive(void);

@@ -73,7 +73,7 @@ void SignalHandler::createIOHandler(int fd, Functor cb)
     ioHandler_->enable();
 }
 
-SignalHandler::SignalHandler(EventLoop* loop, int signal, SignalAction action, SignalCallback cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
+SignalHandler::SignalHandler(std::shared_ptr<EventLoop> loop, int signal, SignalAction action, SignalCallback cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
 {
     int fd = handleSignal(signal, action);
     if(action == SignalAction::Handled){
@@ -92,14 +92,29 @@ void SignalHandler::update(SignalAction action, SignalCallback cb)
     }
     else if(oldAction == SignalAction::Handled && action != oldAction){ //Switch from handle to default or ignore
         ioHandler_->disable();
-        ioHandler_ = nullptr;
         handleSignal(signal_, action);
     }
     else{//switch from default or ignore
-        int fd = handleSignal(signal_, action);
         if(action == SignalAction::Handled){ //switched to handle
-            createIOHandler(fd, cb);
+            if(ioHandler_){
+                LOG_DEBUG << "SignalHandler already has an IOHandler, updating callback";
+                ioHandler_->setReadCallback(cb);
+                ioHandler_->enable();
+            }
+            else{
+                LOG_DEBUG << "Creating new IOHandler for signal " << signal_;
+                int fd = handleSignal(signal_, action);
+                createIOHandler(fd, cb);
+            }
+        }
+        else{ //switch to ignore or default
+            handleSignal(signal_, action);
         }
     }
+}
+
+void SignalHandler::disable()
+{
+    handleSignal(signal_, SignalAction::Default);
 }
 

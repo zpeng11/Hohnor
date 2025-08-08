@@ -17,8 +17,9 @@ namespace Hohnor
     * IO handler, it handles the lifecycle of a fd, manage how the fd reactively works in event loop. 
     * An IOHandler's lifecycle has 3 phases: Create -> Enabled -> Disabled
     * Created phase is right after constructor in eventloop, give shared ownership to both user and eventloop. 
-    * Enabled phase create epoll ctx, loads the fd to epoll, ready for income event. Most of the time, it is enabled.
+    * Enabled phase create epoll ctx, loads the fd to epoll, ready for income event. Most of its lifecycle, it should be enabled.
     * Disabled phase deleted epoll ctx, unload the fd from epoll, do not respond income event, and remove ownership in eventloop.
+    * Please notice that IOHandler's lifecycle should be shorter than EventLoop's lifecycle, so that it can be safely deleted when eventloop is deleted.
     */
     class IOHandler: public FdGuard, public std::enable_shared_from_this<IOHandler> 
     {
@@ -33,7 +34,7 @@ namespace Hohnor
 
     private:
         //do not manage life cycle of this fd
-        EventLoop *loop_;
+        std::shared_ptr<EventLoop> loop_;
         int events_;
         int revents_;
         Status status_;
@@ -52,20 +53,20 @@ namespace Hohnor
         void retEvents(int revents) { revents_ = revents; }
 
     protected:
-        IOHandler(EventLoop *loop, int fd);
+        IOHandler(std::shared_ptr<EventLoop> loop, int fd);
     public:
         // Only allow Eventloop to create it
 
         IOHandler() = delete;
         ~IOHandler();
-        //Get current event setting
+        //Get current event setting, this is not thread safe
         int getEvents() { return events_; }
         
-        //if events are enabled
+        //if events are enabled, this is not thread safe
         bool inline isEnabled() { return status() == Status::Enabled; }
-        //Get current status of IOHandler
+        //Get current status of IOHandler, this is not thread safe
         Status inline status() { return status_;}
-        //Diable all events on this handler from the eventloop, thread safe
+        //Diable all events and reset callbacks on this handler from the eventloop, thread safe
         void disable();
         //Enable all events on this handler from the eventloop, thread safe
         void enable();
@@ -79,7 +80,7 @@ namespace Hohnor
         void setErrorCallback(ErrorCallback cb);
 
         //Get the loop that manages this handler
-        EventLoop* loop() { return loop_; }
+        std::shared_ptr<EventLoop> loop() { return loop_; }
     };
 
 } // namespace Hohnor

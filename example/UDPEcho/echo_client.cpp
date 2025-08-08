@@ -22,14 +22,14 @@ using namespace Hohnor;
 
 class UDPEchoClient {
 private:
-    EventLoop* loop_;
+    std::shared_ptr<EventLoop> loop_;
     std::unique_ptr<UDPSocket> socket_;
     InetAddress serverAddr_;
     bool running_;
     int messageCount_;
 
 public:
-    UDPEchoClient(EventLoop* loop, const std::string& host, uint16_t port)
+    UDPEchoClient(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port)
         : loop_(loop), serverAddr_(host, port), running_(false), messageCount_(0) {}
 
     void start() {
@@ -176,24 +176,24 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        EventLoop loop;
-        
+        auto loop = EventLoop::createEventLoop();
+
         // Create UDP echo client
-        UDPEchoClient client(&loop, host, port);
-        
+        UDPEchoClient client(loop, host, port);
+
         // Set up signal handling for graceful shutdown
-        auto signalHandler = loop.handleSignal(SIGINT, SignalAction::Handled, [&]() {
+        loop->handleSignal(SIGINT, SignalAction::Handled, [&]() {
             std::cout << "\nReceived SIGINT (Ctrl+C), shutting down client..." << std::endl;
             client.stop();
-            loop.endLoop();
+            loop->endLoop();
         });
         
         // Start the client
         client.start();
         
         // Run the event loop
-        loop.loop();
-        
+        loop->loop();
+
         std::cout << "Client shutdown complete." << std::endl;
         
     } catch (const std::exception& e) {

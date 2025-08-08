@@ -20,13 +20,13 @@ using namespace Hohnor;
 
 class UDPEchoServer {
 private:
-    EventLoop* loop_;
+    std::shared_ptr<EventLoop> loop_;
     std::unique_ptr<UDPListenSocket> listenSocket_;
     uint16_t port_;
     bool running_;
 
 public:
-    UDPEchoServer(EventLoop* loop, uint16_t port) 
+    UDPEchoServer(std::shared_ptr<EventLoop> loop, uint16_t port) 
         : loop_(loop), port_(port), running_(false) {}
 
     void start() {
@@ -135,24 +135,24 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        EventLoop loop;
-        
+        auto loop = EventLoop::createEventLoop();
+
         // Create UDP echo server
-        UDPEchoServer server(&loop, port);
-        
+        UDPEchoServer server(loop, port);
+
         // Set up signal handling for graceful shutdown
-        auto signalHandler = loop.handleSignal(SIGINT, SignalAction::Handled, [&]() {
+        loop->handleSignal(SIGINT, SignalAction::Handled, [&]() {
             std::cout << "\nReceived SIGINT (Ctrl+C), shutting down server..." << std::endl;
             server.stop();
-            loop.endLoop();
+            loop->endLoop();
         });
         
         // Start the server
         server.start();
         
         // Run the event loop
-        loop.loop();
-        
+        loop->loop();
+
         std::cout << "Server shutdown complete." << std::endl;
         
     } catch (const std::exception& e) {
