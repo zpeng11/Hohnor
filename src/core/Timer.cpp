@@ -81,7 +81,7 @@ void TimerHandler::disable()
         LOG_DEBUG << "Timer is already disabled"; 
         return;
     }
-    if(loop_->quit()){
+    if(loop_->isQuited()){
         interval_ = 0.0;
         disabled_ = true;
         callback_ = nullptr;
@@ -113,7 +113,7 @@ void TimerHandler::updateCallback(TimerCallback callback)
         auto handler = weak_ptr.lock();
         if(handler){
             handler->callback_ = std::move(callback);
-            if(Timestamp::now() >= handler->expiration() && handler->repeatInterval() <= 0.0)
+            if(Timestamp::now() >= handler->expiration() && handler->getRepeatInterval() <= 0.0)
             {
                 LOG_WARN << "Updated timer callback after time expired and no more repeat";
             }

@@ -35,11 +35,17 @@ namespace Hohnor
         //Reload expiration with interval, so that timer run next loop
         void reloadInLoop();
     public:
+        //Update callback, thread safe
         void updateCallback(TimerCallback callback);
+        //Disable the timer, thread safe
         void disable();
+        //Get expiration time
         Timestamp expiration() const { return expiration_; }
-        double repeatInterval() const { return interval_; }
+        //Get repeat interval
+        double getRepeatInterval() const { return interval_; }
+        //Check if it is a repeat timer
         inline bool isRepeat() const { return interval_ > 0.0; }
+        //Check sequence number as timer id
         int64_t sequence() const { return sequence_; }
         static int64_t numCreated() { return s_numCreated_; }
         ~TimerHandler() = default;

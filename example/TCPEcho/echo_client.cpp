@@ -67,7 +67,7 @@ public:
 
             running_ = true;
 
-            LOG_DEBUG << "Finished settup values";
+            LOG_DEBUG << "Finished setup values";
             
             std::cout << "Connecting to server " << serverAddr.toIpPort() << "..." << std::endl;
             

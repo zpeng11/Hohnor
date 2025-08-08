@@ -51,7 +51,7 @@ TEST_F(TimerTest, TimerHandlerBasicProperties) {
     
     EXPECT_NE(timer, nullptr);
     EXPECT_EQ(timer->sequence(), 0);
-    EXPECT_EQ(timer->repeatInterval(), 0.0);
+    EXPECT_EQ(timer->getRepeatInterval(), 0.0);
     EXPECT_FALSE(timer->isRepeat());
     EXPECT_GT(timer->expiration().microSecondsSinceEpoch(), Timestamp::now().microSecondsSinceEpoch());
 }
@@ -65,7 +65,7 @@ TEST_F(TimerTest, TimerHandlerRepeatingTimer) {
     }, when, interval);
     
     EXPECT_NE(timer, nullptr);
-    EXPECT_EQ(timer->repeatInterval(), interval);
+    EXPECT_EQ(timer->getRepeatInterval(), interval);
     EXPECT_TRUE(timer->isRepeat());
 }
 

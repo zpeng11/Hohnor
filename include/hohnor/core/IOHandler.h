@@ -24,7 +24,6 @@ namespace Hohnor
     class IOHandler: public FdGuard, public std::enable_shared_from_this<IOHandler> 
     {
         friend class EventLoop;
-        friend class TimerQueue; //temporary, need to change
     public:
         enum class Status {
             Created,
@@ -53,10 +52,10 @@ namespace Hohnor
         void retEvents(int revents) { revents_ = revents; }
 
     protected:
+        // Constructor, hinden so that only eventloop can call
         IOHandler(std::shared_ptr<EventLoop> loop, int fd);
     public:
-        // Only allow Eventloop to create it
-
+        // Delete default constructor
         IOHandler() = delete;
         ~IOHandler();
         //Get current event setting, this is not thread safe

@@ -67,14 +67,14 @@ namespace Hohnor
         //handle an IO FD into the loop, and create a handler for it, will take over fd's ownership and lifecycle, threadsafe
         std::shared_ptr<IOHandler> handleIO(int fd);
 
-        //Add timer event to the event set, threadsafe
+        //Add timer event, threadsafe
         //If interval > 0, it is a repeated timer
         std::shared_ptr<TimerHandler> addTimer(TimerCallback cb, Timestamp when, double interval = 0.0f);
 
-        //Return a handler to manage signal, must be called in loop thread
+        //Handle a signal in a way you expect, thread safe
         void handleSignal(int signal, SignalAction action, SignalCallback cb = nullptr);
 
-        //Manage keyboard in an interactive Non-Canonical way, put nullptr to be back to normal
+        //Manage keyboard in an interactive Non-Canonical way, put nullptr to be back to normal, thread safe
         void handleKeyboard(KeyboardCallback cb);
 
         //There are 3 working phases of a loop process: polling, IO handling, and pending handling
@@ -89,9 +89,11 @@ namespace Hohnor
             End
         };
 
+        //Get the current state of the loop
         LoopState state() const { return state_; }
 
-        bool quit() const { return quit_; }
+        //Check if the loop is quitting
+        bool isQuited() const { return quit_; }
 
     private:
         //The essential of eventloop
