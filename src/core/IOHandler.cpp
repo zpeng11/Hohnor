@@ -41,12 +41,14 @@ IOHandler::~IOHandler()
 {
     //We can assure only one thread can access this IOHandler, so we can safely disable it
     LOG_DEBUG << "Destroying IOHandler as well as guard for fd " << fd();
-    if(loop_){
-        if(status_ == Status::Enabled){
-            if(loop_->state() == EventLoop::LoopState::End || loop_->quit_) 
+    if(LIKELY(loop_)){
+        if(LIKELY(status_ == Status::Enabled)){ //This IOHandler is still enabled
+            if(UNLIKELY(loop_->state() == EventLoop::LoopState::End || loop_->quit_))
             {
-                status_ = Status::Disabled; //If the loop is ended, we can not remove the fd from epoll, so we just set it to Disabled
-                LOG_WARN << "EventLoop is ended, IOHandler for fd " << fd() << " will not be removed from epoll";
+                //If the loop is ended,
+                //we cannot & do not need to remove the fd from epoll, 
+                //so we just set self status to Disabled
+                LOG_DEBUG << "EventLoop is ended, IOHandler for fd " << fd() << " will not be removed from epoll";
             }
             else {
                 LOG_DEBUG << "Using loop's removeFd for fd " << fd();
@@ -58,9 +60,13 @@ IOHandler::~IOHandler()
                 //If the loop is not ended, we can safely remove the fd from epoll
             }
         }
+        status_ = Status::Disabled;
         loop_.reset();
     }
     else{
+        //This is only prepared for the case interactiveIOHandler_.
+        //at this time loop_->quit_==true, loop_->state_==End,
+        //and handler has been disabled
         HCHECK(status_ == Status::Disabled);
         LOG_DEBUG << "Loop has been released beforehand, nothing to do in dtor for fd " << fd();
     }
@@ -150,11 +156,25 @@ void IOHandler::disable()
     writeCallback_ = nullptr;
     closeCallback_ = nullptr;
     errorCallback_ = nullptr;
-    update(Status::Disabled);
+    if(loop_ && loop_->quit_){
+        LOG_DEBUG << "Disabling Handler after loop has quit";
+        //This means we do not need to take care about fd and epoll events
+        //because they will not trigger. Only need to handle status of self
+        status_ = Status::Disabled;
+    }
+    else
+    {
+        LOG_DEBUG << "Disabling Handler while loop is running";
+        //This means we need to take care about fd and epoll events
+        //because they may still trigger. Need to remove from epoll
+        //in loop using the update()
+        update(Status::Disabled);
+    }
 }
 
 void IOHandler::enable()
 {
+    //need to update the status in loop
     update(Status::Enabled);
 }
 

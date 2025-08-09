@@ -318,6 +318,8 @@ int main() {
         loop->handleKeyboard(nullptr);
 
         std::cout << "Game ended. Thanks for playing!" << std::endl;
+
+        usleep(10000);
         
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

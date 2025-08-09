@@ -127,18 +127,23 @@ void EventLoop::loop()
     //Start resource clean up
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended";
     LOG_DEBUG << "Reset all IOHandler and TimerHandler stored in loop object to disabled state";
-    timers_->timerFdIOHandle_->status_ = IOHandler::Status::Disabled;
+    timers_->timerFdIOHandle_->disable();
     timers_->timerFdIOHandle_.reset();
-    wakeUpHandler_->status_ = IOHandler::Status::Disabled;
+    wakeUpHandler_->disable();
     wakeUpHandler_.reset();
-    for (auto &pair : signalMap_)
-        pair.second->disable();
+    while (!signalMap_.empty())
+    {
+        signalMap_.begin()->second->disable();
+        signalMap_.erase(signalMap_.begin());
+    }
     if (interactiveIOHandler_)
     {
-        interactiveIOHandler_->status_ = IOHandler::Status::Disabled;
+        interactiveIOHandler_->disable();
+        //Do not reset interactiveIOHandler_ here, 
+        //because closing STDIN_FILENO maynot be expected
+        //Instead we free out the loop ptr in the handler
+        //To avoid infinite ownership looping
         interactiveIOHandler_->loop_.reset();
-        //Do not reset interactiveIOHandler_ here, because closing STDIN_FILENO maynot be expected
-        // interactiveIOHandler_.reset();
     }
     {
         MutexGuard guard(*pendingFunctorsLock_);
