@@ -113,8 +113,5 @@ void SignalHandler::update(SignalAction action, SignalCallback cb)
     }
 }
 
-void SignalHandler::disable()
-{
-    handleSignal(signal_, SignalAction::Default);
-}
+void SignalHandler::disable() { update(SignalAction::Default); }
 

@@ -78,6 +78,7 @@ public:
         noecho();
         curs_set(0);
         keypad(stdscr, TRUE);
+        Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
 
         // Initialize colors
         if (has_colors()) {
@@ -114,7 +115,9 @@ public:
     
     void cleanup() {
         if (gameTimer_) {
+            LOG_DEBUG<<"Reach here";
             gameTimer_->disable();
+            LOG_DEBUG<<"Reach here";
         }
         endwin();
     }
@@ -289,7 +292,7 @@ public:
 int main() {
     std::cout << "=== Hohnor Snake Game ===" << std::endl;
     std::cout << "Starting snake game..." << std::endl;
-    
+    {
     try {
         // Create the event loop
         auto loop = EventLoop::createEventLoop();
@@ -314,8 +317,8 @@ int main() {
         // Start the event loop
         loop->loop();
 
-        // Clean up keyboard handling
-        loop->handleKeyboard(nullptr);
+        // // Clean up keyboard handling
+        // loop->handleKeyboard(nullptr);
 
         std::cout << "Game ended. Thanks for playing!" << std::endl;
         
@@ -323,6 +326,10 @@ int main() {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
+
+}
+    sleep(1000);
+    LOG_DEBUG<< "Reached here";
     
     return 0;
 }

@@ -41,12 +41,17 @@ IOHandler::~IOHandler()
 {
     //We can assure only one thread can access this IOHandler, so we can safely disable it
     LOG_DEBUG << "Destroying IOHandler as well as guard for fd " << fd();
+    readCallback_ = nullptr;
+    writeCallback_ = nullptr;
+    closeCallback_ = nullptr;
+    errorCallback_ = nullptr;
     if(loop_){
         if(status_ == Status::Enabled){
+            status_ = Status::Disabled;
             if(loop_->state() == EventLoop::LoopState::End || loop_->quit_) 
             {
-                status_ = Status::Disabled; //If the loop is ended, we can not remove the fd from epoll, so we just set it to Disabled
-                LOG_WARN << "EventLoop is ended, IOHandler for fd " << fd() << " will not be removed from epoll";
+                //If the loop is ended, we can not remove the fd from epoll, so we just set it to Disabled
+                LOG_DEBUG << "EventLoop is ended, IOHandler for fd " << fd() << " does not need to be removed from epoll";
             }
             else {
                 LOG_DEBUG << "Using loop's removeFd for fd " << fd();
@@ -150,7 +155,14 @@ void IOHandler::disable()
     writeCallback_ = nullptr;
     closeCallback_ = nullptr;
     errorCallback_ = nullptr;
-    update(Status::Disabled);
+    if(loop_ && loop_->isQuited()){
+        LOG_DEBUG << "Loop is quited, resetting loop_, and dealing with status by self";
+        status_ = Status::Disabled;
+        loop_.reset();
+    }
+    else{   
+        update(Status::Disabled);
+    }
 }
 
 void IOHandler::enable()

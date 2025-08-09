@@ -127,24 +127,22 @@ void EventLoop::loop()
     //Start resource clean up
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended";
     LOG_DEBUG << "Reset all IOHandler and TimerHandler stored in loop object to disabled state";
-    timers_->timerFdIOHandle_->status_ = IOHandler::Status::Disabled;
-    timers_->timerFdIOHandle_.reset();
-    wakeUpHandler_->status_ = IOHandler::Status::Disabled;
-    wakeUpHandler_.reset();
+    timers_->timerFdIOHandle_->disable();
+    wakeUpHandler_->disable();
     for (auto &pair : signalMap_)
         pair.second->disable();
     if (interactiveIOHandler_)
     {
-        interactiveIOHandler_->status_ = IOHandler::Status::Disabled;
-        interactiveIOHandler_->loop_.reset();
+        LOG_DEBUG << "Reset interactive IOHandler to disabled state";
         //Do not reset interactiveIOHandler_ here, because closing STDIN_FILENO maynot be expected
-        // interactiveIOHandler_.reset();
+        interactiveIOHandler_->disable();
     }
     {
         MutexGuard guard(*pendingFunctorsLock_);
         pendingFunctors_.clear();
     }
     Loop::t_loopInThisThread = nullptr;
+    LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << "exited loop()";
 }
 
 void EventLoop::runInLoop(Functor cb)
@@ -335,9 +333,9 @@ std::shared_ptr<IOHandler> EventLoop::interactiveIOHandler_ = nullptr;
 
 void EventLoop::handleKeyboard(KeyboardCallback cb)
 {
-    if(state_ == End)
+    if(state_ == End || isQuited())
     {
-        LOG_WARN << "EventLoop " << this << " is ended, keyboard interactive input is already disabled";
+        LOG_DEBUG << "EventLoop " << this << " is ended, keyboard interactive input is already disabled";
         return;
     }
     runInLoop([this, cb](){
