@@ -1,10 +1,10 @@
-#include "hohnor/net/TCPSocket.h"
+#include "hohnor/net/TCPAcceptor.h"
 #include "hohnor/log/Logging.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/core/EventLoop.h"
 
 using namespace Hohnor;
-struct tcp_info TCPListenSocket::getTCPInfo() const
+struct tcp_info TCPAcceptor::getTCPInfo() const
 {
     struct tcp_info tcpi;
     socklen_t len = sizeof(tcpi);
@@ -12,12 +12,12 @@ struct tcp_info TCPListenSocket::getTCPInfo() const
     int ret = getsockopt(this->fd(), SOL_TCP, TCP_INFO, &tcpi, &len);
     if (ret != 0)
     {
-        LOG_FATAL << "Socket::getTCPInfo error ";
+        LOG_SYSERR << "Socket::getTCPInfo error ";
     }
     return tcpi;
 }
 
-std::string TCPListenSocket::getTCPInfoStr() const
+std::string TCPAcceptor::getTCPInfoStr() const
 {
     struct tcp_info ti = getTCPInfo();
     string str;
@@ -38,7 +38,21 @@ std::string TCPListenSocket::getTCPInfoStr() const
     return std::move(str);
 }
 
-std::pair<std::shared_ptr<IOHandler>, InetAddress> TCPListenSocket::accept()
+void TCPAcceptor::setAcceptCallback(AcceptCallback cb)
+{
+    std::weak_ptr<TCPAcceptor> weakSelf = shared_from_this();
+    this->setReadCallback([weakSelf, cb]() {
+
+        auto self = weakSelf.lock();
+        if (self)
+        {
+            auto pair = self->accept();
+            cb(std::move(pair.first), std::move(pair.second));
+        }
+    });
+}
+
+std::pair<std::shared_ptr<IOHandler>, InetAddress> TCPAcceptor::accept()
 {
     std::pair<std::shared_ptr<IOHandler>, InetAddress> pair{nullptr, InetAddress()};
     int acceptedFd = SocketFuncs::accept(this->fd(), reinterpret_cast<sockaddr_in6 *>(&pair.second));
@@ -51,7 +65,7 @@ std::pair<std::shared_ptr<IOHandler>, InetAddress> TCPListenSocket::accept()
     return pair;
 }
 
-void TCPListenSocket::setTCPNoDelay(bool on)
+void TCPAcceptor::setTCPNoDelay(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(fd(), IPPROTO_TCP, TCP_NODELAY,
@@ -62,7 +76,7 @@ void TCPListenSocket::setTCPNoDelay(bool on)
     }
 }
 
-void TCPListenSocket::setKeepAlive(bool on)
+void TCPAcceptor::setKeepAlive(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(fd(), SOL_SOCKET, SO_KEEPALIVE,

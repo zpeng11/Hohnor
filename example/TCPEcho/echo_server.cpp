@@ -5,7 +5,7 @@
 
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/core/Signal.h"
-#include "hohnor/net/TCPSocket.h"
+#include "hohnor/net/TCPAcceptor.h"
 #include "hohnor/net/InetAddress.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/log/Logging.h"
@@ -22,7 +22,7 @@ using namespace Hohnor;
 class EchoServer {
 private:
     std::shared_ptr<EventLoop> loop_;
-    std::unique_ptr<TCPListenSocket> listenSocket_;
+    std::shared_ptr<TCPAcceptor> listenSocket_;
     std::unordered_map<int, std::shared_ptr<IOHandler>> clients_;
     uint16_t port_;
     bool running_;
@@ -40,8 +40,8 @@ public:
 
         try {
             // Create TCP listen socket
-            listenSocket_ = std::make_unique<TCPListenSocket>(loop_);
-            
+            listenSocket_ = std::make_shared<TCPAcceptor>(loop_);
+
             // Set socket options
             listenSocket_->setReuseAddr(true);
             listenSocket_->setReusePort(true);
@@ -53,11 +53,7 @@ public:
             listenSocket_->listen();
             
             // Set accept callback
-            listenSocket_->setAcceptCallback([this]() {
-                this->handleNewConnection();
-            });
-
-            listenSocket_->enable();
+            listenSocket_->setAcceptCallback(std::bind(&EchoServer::handleNewConnection, this, std::placeholders::_1, std::placeholders::_2));
 
             running_ = true;
             std::cout << "Echo Server started on port " << port_ << std::endl;
@@ -89,10 +85,8 @@ public:
     }
 
 private:
-    void handleNewConnection() {
+    void handleNewConnection(std::shared_ptr<IOHandler> clientHandler, InetAddress clientAddr) {
         try {
-            // Accept new connection
-            auto [clientHandler, clientAddr] = listenSocket_->accept();
             
             if (!clientHandler) {
                 std::cerr << "Failed to accept connection" << std::endl;

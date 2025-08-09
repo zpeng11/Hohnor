@@ -64,6 +64,7 @@ namespace Hohnor
         using Socket::setErrorCallback;
         using Socket::enable;
         using Socket::disable;
+        using Socket::isEnabled;
 
         int connect(const InetAddress& addr);
 

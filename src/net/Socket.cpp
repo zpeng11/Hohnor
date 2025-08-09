@@ -20,13 +20,6 @@ Socket::Socket(std::shared_ptr<EventLoop> loop, int family, int type, int protoc
     }
 }
 
-Socket::Socket(std::shared_ptr<IOHandler> socketHandler){
-    HCHECK(socketHandler) << "Socket handler cannot be null";
-    socketHandler_ = std::move(socketHandler);
-    loop_ = socketHandler_->loop();
-    LOG_DEBUG << "Socket created with fd " << socketHandler_->fd();
-}
-
 Socket::~Socket()
 {
     if(socketHandler_)
@@ -71,6 +64,11 @@ void Socket::enable()
 void Socket::disable()
 {
     socketHandler_->disable();
+}
+
+bool Socket::isEnabled()
+{
+    return socketHandler_ && socketHandler_->isEnabled();
 }
 
 int Socket::connect(const InetAddress &addr)

@@ -19,7 +19,6 @@ namespace Hohnor
     class UDPSocket : public Socket
     {
     public:
-        explicit UDPSocket(std::shared_ptr<IOHandler> socketHandler) : Socket(socketHandler) {}
         explicit UDPSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : Socket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_DGRAM, 0) {}
 
@@ -74,7 +73,6 @@ namespace Hohnor
         int connect(const InetAddress &addr, bool blockin);
         
     public:
-        explicit UDPListenSocket(std::shared_ptr<IOHandler> socketHandler) : UDPSocket(socketHandler) {}
         explicit UDPListenSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : UDPSocket(loop, options, ipv6) {}
 

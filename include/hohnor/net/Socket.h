@@ -29,10 +29,11 @@ namespace Hohnor
         void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr);
     public:
         typedef int SocketFd;
-        //Initilize from existing IOHandler, used for accept
-        Socket(std::shared_ptr<IOHandler> socketHandler);
         ~Socket();
 
+        //Delete default constructor
+        Socket() = delete;
+        
         //Initilize with paramters, in case failed, !!!abort the program
         Socket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0);
 
@@ -61,6 +62,7 @@ namespace Hohnor
         void setErrorCallback(ErrorCallback cb);
         void enable();
         void disable();
+        bool isEnabled();
     };
 
     /*
@@ -75,7 +77,6 @@ namespace Hohnor
         bool isSelfConnect();
 
     public:
-        ListenSocket(std::shared_ptr<IOHandler> socketHandler) : Socket(socketHandler) {}
         ListenSocket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0)
             : Socket(loop, family, type, protocol) {}
 
