@@ -177,17 +177,8 @@ void IOHandler::setReadCallback(ReadCallback cb)
     LOG_DEBUG << "Setting read callback for IOHandler on fd " << fd();
     auto handler = shared_from_this();
     loop_->runInLoop([handler, cb](){
-        if (cb == nullptr)
-        {
-            handler->events_ &= ~EPOLLIN;
-        }
-        else
-        {
-            handler->events_ |= EPOLLIN;
-            handler->readCallback_ = std::move(cb);
-        }
-        if (handler->isEnabled())
-            handler->updateInLoop(handler, Status::Enabled);
+        handler->readCallback_ = std::move(cb);
+        handler->setReadEvent(cb != nullptr);
     });
 }
 
@@ -195,17 +186,8 @@ void IOHandler::setWriteCallback(WriteCallback cb)
 {
     auto handler = shared_from_this();
     loop_->runInLoop([handler, cb](){
-        if (cb == nullptr)
-        {
-            handler->events_ &= ~EPOLLOUT;
-        }
-        else
-        {
-            handler->events_ |= EPOLLOUT;
-            handler->writeCallback_ = std::move(cb);
-        }
-        if (handler->isEnabled())
-            handler->updateInLoop(handler, Status::Enabled);
+        handler->writeCallback_ = std::move(cb);
+        handler->setWriteEvent(cb != nullptr);
     });
 }
 
@@ -213,31 +195,81 @@ void IOHandler::setCloseCallback(CloseCallback cb)
 {
     auto handler = shared_from_this();
     loop_->runInLoop([handler, cb](){
-        if (cb == nullptr)
-        {
-            handler->events_ &= ~EPOLLRDHUP;
-        }
-        else
-        {
-            handler->events_ |= EPOLLRDHUP;
-            handler->closeCallback_ = std::move(cb);
-        }
-        if (handler->isEnabled())
-            handler->updateInLoop(handler, Status::Enabled);
+        handler->closeCallback_ = std::move(cb);
+        handler->setCloseEvent(cb != nullptr);
     });
 }
 void IOHandler::setErrorCallback(ErrorCallback cb)
 {
     auto handler = shared_from_this();
     loop_->runInLoop([handler, cb](){
-        if (cb == nullptr)
+        handler->errorCallback_ = std::move(cb);
+        handler->setErrorEvent(cb != nullptr);
+    });
+}
+
+void IOHandler::setReadEvent(bool on)
+{
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, on](){
+        if (on)
         {
-            handler->events_ &= ~EPOLLERR;
+            handler->events_ |= EPOLLIN;
         }
         else
         {
+            handler->events_ &= ~EPOLLIN;
+        }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
+    });
+}
+
+void IOHandler::setWriteEvent(bool on)
+{
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, on](){
+        if (on)
+        {
+            handler->events_ |= EPOLLOUT;
+        }
+        else
+        {
+            handler->events_ &= ~EPOLLOUT;
+        }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
+    });
+}
+
+void IOHandler::setCloseEvent(bool on)
+{
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, on](){
+        if (on)
+        {
+            handler->events_ |= EPOLLRDHUP;
+        }
+        else
+        {
+            handler->events_ &= ~EPOLLRDHUP;
+        }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
+    });
+}
+
+void IOHandler::setErrorEvent(bool on)
+{
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, on](){
+        if (on)
+        {
             handler->events_ |= EPOLLERR;
-            handler->errorCallback_ = std::move(cb);
+        }
+        else
+        {
+            handler->events_ &= ~EPOLLERR;
         }
         if (handler->isEnabled())
             handler->updateInLoop(handler, Status::Enabled);

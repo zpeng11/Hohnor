@@ -78,6 +78,11 @@ namespace Hohnor
         //thread safe
         void setErrorCallback(ErrorCallback cb);
 
+        void setReadEvent(bool on);
+        void setWriteEvent(bool on);
+        void setCloseEvent(bool on);
+        void setErrorEvent(bool on);
+
         void cleanCallbacks()
         {
             readCallback_ = nullptr;
