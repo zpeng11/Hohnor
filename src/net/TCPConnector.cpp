@@ -216,11 +216,10 @@ void TCPConnector::retry()
         LOG_DEBUG << "TCPConnector retrying connection to " << serverAddr_.toIpPort()
                   << " in " << retryDelayMs_ << "ms, " << (maxRetries_ < 0? -1: maxRetries_ - currentRetries_) << " retries left";
         
-        std::weak_ptr<TCPConnector> weakThis = shared_from_this();
+        auto sharedThis = shared_from_this();
         // Schedule retry
-        loop()->addTimer([weakThis]() {
-            auto sharedThis = weakThis.lock();
-            if (sharedThis && sharedThis->state_ == Disconnected) { // Only retry if still disconnected
+        loop()->addTimer([sharedThis]() {
+            if (sharedThis->state_ == Disconnected) { // Only retry if still disconnected
                 sharedThis->connect(sharedThis->serverAddr_);
             }
         }, addTime(Timestamp::now(), retryDelayMs_ / 1000.0));

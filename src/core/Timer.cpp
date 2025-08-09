@@ -68,9 +68,13 @@ TimerHandler::TimerHandler(EventLoop *loop, TimerCallback callback, Timestamp wh
 
 void TimerHandler::run()
 {
-    if (!disabled_)
+    if (!disabled_ && callback_)
     {
+        LOG_DEBUG << "Running timer callback for sequence " << sequence_ << " at " << expiration_.toString();
         callback_();
+    }
+    if(!isRepeat()){
+        callback_ = nullptr; // Clear callback to avoid running it again and release resources enclosed
     }
 }
 
