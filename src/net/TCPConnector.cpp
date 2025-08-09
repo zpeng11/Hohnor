@@ -27,13 +27,8 @@ TCPConnector::TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& a
 
 void TCPConnector::start()
 {
-    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
-    loop()->runInLoop([weakThis]() {
-        auto sharedThis = weakThis.lock();
-        if(!sharedThis) {
-            LOG_ERROR << "TCPConnector::start() called on expired shared pointer";
-            return;
-        }
+    auto sharedThis = shared_from_this();
+    loop()->runInLoop([sharedThis]() {
         if (sharedThis->state_ != Disconnected) {
             LOG_WARN << "TCPConnector restarting";
             sharedThis->stop();
@@ -53,13 +48,8 @@ void TCPConnector::start()
 
 void TCPConnector::stop()
 {
-    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
-    loop()->runInLoop([weakThis]() {
-        auto sharedThis = weakThis.lock();
-        if(!sharedThis) {
-            LOG_ERROR << "TCPConnector::stop() called on expired shared pointer";
-            return;
-        }
+    auto sharedThis = shared_from_this();
+    loop()->runInLoop([sharedThis]() {
         if (sharedThis->state_ == Disconnected) {
             LOG_WARN << "TCPConnector::stop() called but already Disconnected";
             return;
@@ -138,33 +128,18 @@ void TCPConnector::connecting()
     this->loop()->assertInLoopThread();
 
     HCHECK(state_ == Connecting) << "TCPConnector state must be Connecting";
-    
-    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
+
+    auto sharedThis = shared_from_this();
     // Set up write callback to detect when connection completes
-    Socket::setWriteCallback([weakThis]() {
-        auto sharedThis = weakThis.lock();
-        if(!sharedThis) {
-            LOG_ERROR << "TCPConnector::connecting() called on expired shared pointer";
-            return;
-        }
+    Socket::setWriteCallback([sharedThis]() {
         sharedThis->handleConnectWrite();
     });
 
-    Socket::setCloseCallback([weakThis]() {
-        auto sharedThis = weakThis.lock();
-        if(!sharedThis) {
-            LOG_ERROR << "TCPConnector::connecting() called on expired shared pointer";
-            return;
-        }
+    Socket::setCloseCallback([sharedThis]() {
         sharedThis->handleConnectError();
     });
 
-    Socket::setErrorCallback([weakThis]() {
-        auto sharedThis = weakThis.lock();
-        if(!sharedThis) {
-            LOG_ERROR << "TCPConnector::connecting() called on expired shared pointer";
-            return;
-        }
+    Socket::setErrorCallback([sharedThis]() {
         sharedThis->handleConnectError();
     });
     

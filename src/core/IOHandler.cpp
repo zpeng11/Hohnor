@@ -39,6 +39,7 @@ IOHandler::IOHandler(std::shared_ptr<EventLoop> loop, int fd) : loop_(loop), eve
 
 IOHandler::~IOHandler()
 {
+    cleanCallbacks();
     //We can assure only one thread can access this IOHandler, so we can safely disable it
     LOG_DEBUG << "Destroying IOHandler as well as guard for fd " << fd();
     if(LIKELY(loop_)){
@@ -80,6 +81,9 @@ void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStat
         addNew = true;
     status_ = nextStatus;
     loop_->updateIOHandler(handler, addNew);
+    if(status_ == Status::Disabled){
+        cleanCallbacks();
+    }
 }
 
 void IOHandler::run()
@@ -122,28 +126,20 @@ void IOHandler::run()
 }
 
 void IOHandler::update(Status nextStatus){
-    std::weak_ptr<IOHandler> weak_ptr = shared_from_this();
-    HCHECK(loop_) << "EventLoop cannot be null";
-    loop_->runInLoop([weak_ptr, nextStatus](){
-        auto handler = weak_ptr.lock();
-        LOG_DEBUG << "Updating IOHandler for fd " << handler->fd();
-        if(handler){
-            if(handler->status() == Status::Disabled && nextStatus == Status::Disabled)
-            {
-                LOG_DEBUG << "Trying to disable a handler that has already been disabled";
-                return;
-            }
-            if (handler->status() == Status::Created && nextStatus == Status::Disabled)
-            {
-                LOG_WARN << "Trying to disable a handler that has not been enabled";
-                handler->status_ = Status::Disabled;
-                return;
-            }
-            handler->updateInLoop(handler, nextStatus);
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, nextStatus](){
+        if(handler->status() == Status::Disabled && nextStatus == Status::Disabled)
+        {
+            LOG_DEBUG << "Trying to disable a handler that has already been disabled";
+            return;
         }
-        else{
-            LOG_WARN << "IOHandler is been freed, can not update status";
+        if (handler->status() == Status::Created && nextStatus == Status::Disabled)
+        {
+            LOG_WARN << "Trying to disable a handler that has not been enabled";
+            handler->status_ = Status::Disabled;
+            return;
         }
+        handler->updateInLoop(handler, nextStatus);
     });
 }
 
@@ -152,10 +148,7 @@ void IOHandler::update(Status nextStatus){
 void IOHandler::disable()
 {
     LOG_DEBUG << "Disabling IOHandler for fd " << fd();
-    readCallback_ = nullptr;
-    writeCallback_ = nullptr;
-    closeCallback_ = nullptr;
-    errorCallback_ = nullptr;
+    cleanCallbacks();
     if(loop_ && loop_->quit_){
         LOG_DEBUG << "Disabling Handler after loop has quit";
         //This means we do not need to take care about fd and epoll events
@@ -182,95 +175,71 @@ void IOHandler::setReadCallback(ReadCallback cb)
 {
     HCHECK(loop_) << "EventLoop cannot be null";
     LOG_DEBUG << "Setting read callback for IOHandler on fd " << fd();
-    std::weak_ptr<IOHandler> weak_self = shared_from_this();
-    loop_->runInLoop([weak_self, cb](){
-        auto handler = weak_self.lock();
-        if(handler){
-            if (cb == nullptr)
-            {
-                handler->events_ &= ~EPOLLIN;
-            }
-            else
-            {
-                handler->events_ |= EPOLLIN;
-                handler->readCallback_ = std::move(cb);
-            }
-            if (handler->isEnabled())
-                handler->updateInLoop(handler, Status::Enabled);
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, cb](){
+        if (cb == nullptr)
+        {
+            handler->events_ &= ~EPOLLIN;
         }
-        else{
-            LOG_WARN << "Calling IOHandler disable multiple times";
+        else
+        {
+            handler->events_ |= EPOLLIN;
+            handler->readCallback_ = std::move(cb);
         }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
     });
 }
 
 void IOHandler::setWriteCallback(WriteCallback cb)
 {
-    std::weak_ptr<IOHandler> weak_self = shared_from_this();
-    loop_->runInLoop([weak_self, cb](){
-        auto handler = weak_self.lock();
-        if(handler){
-            if (cb == nullptr)
-            {
-                handler->events_ &= ~EPOLLOUT;
-            }
-            else
-            {
-                handler->events_ |= EPOLLOUT;
-                handler->writeCallback_ = std::move(cb);
-            }
-            if (handler->isEnabled())
-                handler->updateInLoop(handler, Status::Enabled);
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, cb](){
+        if (cb == nullptr)
+        {
+            handler->events_ &= ~EPOLLOUT;
         }
-        else{
-            LOG_WARN << "Calling IOHandler disable multiple times";
+        else
+        {
+            handler->events_ |= EPOLLOUT;
+            handler->writeCallback_ = std::move(cb);
         }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
     });
 }
 
 void IOHandler::setCloseCallback(CloseCallback cb)
 {
-    std::weak_ptr<IOHandler> weak_self = shared_from_this();
-    loop_->runInLoop([weak_self, cb](){
-        auto handler = weak_self.lock();
-        if(handler){
-            if (cb == nullptr)
-            {
-                handler->events_ &= ~EPOLLRDHUP;
-            }
-            else
-            {
-                handler->events_ |= EPOLLRDHUP;
-                handler->closeCallback_ = std::move(cb);
-            }
-            if (handler->isEnabled())
-                handler->updateInLoop(handler, Status::Enabled);
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, cb](){
+        if (cb == nullptr)
+        {
+            handler->events_ &= ~EPOLLRDHUP;
         }
-        else{
-            LOG_WARN << "Calling IOHandler disable multiple times";
+        else
+        {
+            handler->events_ |= EPOLLRDHUP;
+            handler->closeCallback_ = std::move(cb);
         }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
     });
 }
 void IOHandler::setErrorCallback(ErrorCallback cb)
 {
-    std::weak_ptr<IOHandler> weak_self = shared_from_this();
-    loop_->runInLoop([weak_self, cb](){
-        auto handler = weak_self.lock();
-        if(handler){
-            if (cb == nullptr)
-            {
-                handler->events_ &= ~EPOLLERR;
-            }
-            else
-            {
-                handler->events_ |= EPOLLERR;
-                handler->errorCallback_ = std::move(cb);
-            }
-            if (handler->isEnabled())
-                handler->updateInLoop(handler, Status::Enabled);
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, cb](){
+        if (cb == nullptr)
+        {
+            handler->events_ &= ~EPOLLERR;
         }
-        else{
-            LOG_WARN << "Calling IOHandler disable multiple times";
+        else
+        {
+            handler->events_ |= EPOLLERR;
+            handler->errorCallback_ = std::move(cb);
         }
+        if (handler->isEnabled())
+            handler->updateInLoop(handler, Status::Enabled);
     });
 }

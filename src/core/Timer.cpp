@@ -87,17 +87,11 @@ void TimerHandler::disable()
         callback_ = nullptr;
         return;
     }
-    std::weak_ptr<TimerHandler> weak_ptr = shared_from_this();
-    loop_->runInLoop([weak_ptr](){
-        auto handler = weak_ptr.lock();
-        if(handler){
-            handler->interval_ = 0.0;
-            handler->disabled_ = true;
-            handler->callback_ = nullptr;
-        }
-        else{
-            LOG_WARN << "Calling TimerHandler disable after object is gone";
-        }
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler](){
+        handler->interval_ = 0.0;
+        handler->disabled_ = true;
+        handler->callback_ = nullptr;
     });
 }
 
@@ -108,18 +102,12 @@ void TimerHandler::updateCallback(TimerCallback callback)
         LOG_DEBUG << "Timer is already disabled"; 
         return;
     }
-    std::weak_ptr<TimerHandler> weak_ptr = shared_from_this();
-    loop_->runInLoop([weak_ptr, callback](){
-        auto handler = weak_ptr.lock();
-        if(handler){
-            handler->callback_ = std::move(callback);
-            if(Timestamp::now() >= handler->expiration() && handler->getRepeatInterval() <= 0.0)
-            {
-                LOG_WARN << "Updated timer callback after time expired and no more repeat";
-            }
-        }
-        else{
-            LOG_WARN << "Calling TimerHandler updateCallback after object is gone";
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, callback](){
+        handler->callback_ = std::move(callback);
+        if(Timestamp::now() >= handler->expiration() && handler->getRepeatInterval() <= 0.0)
+        {
+            LOG_WARN << "Updated timer callback after time expired and no more repeat";
         }
     });
 }

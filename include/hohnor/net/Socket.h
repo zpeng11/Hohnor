@@ -27,6 +27,10 @@ namespace Hohnor
         std::shared_ptr<EventLoop> loop_;
     protected:
         void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr);
+        Socket(std::shared_ptr<IOHandler> handler, std::shared_ptr<EventLoop> loop){
+            socketHandler_ = handler;
+            loop_ = loop;
+        }
     public:
         typedef int SocketFd;
         ~Socket();

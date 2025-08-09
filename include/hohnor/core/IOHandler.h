@@ -78,6 +78,14 @@ namespace Hohnor
         //thread safe
         void setErrorCallback(ErrorCallback cb);
 
+        void cleanCallbacks()
+        {
+            readCallback_ = nullptr;
+            writeCallback_ = nullptr;
+            closeCallback_ = nullptr;
+            errorCallback_ = nullptr;
+        }
+
         //Get the loop that manages this handler
         std::shared_ptr<EventLoop> loop() { return loop_; }
     };
