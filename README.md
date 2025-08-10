@@ -62,6 +62,8 @@ Hohnor Framework
 - **pthread** library
 
 ### Building
+
+#### Standalone Build
 ```bash
 git clone <repository-url>
 cd Hohnor
@@ -70,27 +72,51 @@ cmake ..
 make -j$(nproc)
 ```
 
+#### Integration with CMake FetchContent
+```cmake
+cmake_minimum_required(VERSION 3.14)
+project(MyProject)
+
+include(FetchContent)
+
+FetchContent_Declare(
+  Hohnor
+  GIT_REPOSITORY https://github.com/zpeng11/Hohnor.git
+  GIT_TAG        main  # or specific version tag
+)
+
+FetchContent_MakeAvailable(Hohnor)
+
+# Your executable
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE Hohnor)
+```
+
 ### Simple TCP Echo Server
 ```cpp
 #include "hohnor/core/EventLoop.h"
 #include "hohnor/net/TCPAcceptor.h"
+#include "hohnor/net/InetAddress.h"
 
 using namespace Hohnor;
 
 int main() {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
-    TCPAcceptor acceptor(loop, InetAddress(8080));
-    acceptor.setNewConnectionCallback([](TCPConnectionPtr conn) {
-        conn->setReadCompleteCallback([](TCPConnectionWeakPtr weakConn) {
-            if (auto conn = weakConn.lock()) {
-                // Echo back received data
-                conn->write(&conn->getReadBuffer());
-            }
+    auto acceptor = TCPAcceptor::create(loop);
+    acceptor->bindAddress(8080);
+    acceptor->setAcceptCallback([](TCPConnectionPtr conn) {
+        conn->setReadCompleteCallback([](TCPConnectionPtr conn) {
+            // Echo back received data
+            Buffer& readBuffer = conn->getReadBuffer();
+            std::string data = readBuffer.retrieveAllAsString();
+            conn->write(data);
+            conn->readRaw(); // Continue reading
         });
+        conn->readRaw(); // Start reading
     });
     
-    acceptor.listen();
+    acceptor->listen();
     loop->loop();  // Start event loop
     return 0;
 }
@@ -114,7 +140,7 @@ int main() {
 
 ### EventLoop - The Heart of Hohnor
 ```cpp
-auto loop = EventLoop::createEventLoop();
+auto loop = EventLoop::create();
 loop->setThreadPools(4);  // Background thread pool
 
 // Timer events
@@ -135,26 +161,27 @@ loop->loop();  // Start processing events
 ### High-Performance TCP Connections
 ```cpp
 // Server side
-TCPAcceptor acceptor(loop, InetAddress(8080));
-acceptor.setNewConnectionCallback([](TCPConnectionPtr conn) {
-    conn->setHighWaterMarkCallback(64*1024, [](TCPConnectionWeakPtr conn) {
+auto acceptor = TCPAcceptor::create(loop);
+acceptor->bindAddress(8080);
+acceptor->setAcceptCallback([](TCPConnectionPtr conn) {
+    conn->setHighWaterMarkCallback(64*1024, [](TCPConnectionPtr conn) {
         // Handle backpressure
     });
     
-    conn->setReadCompleteCallback([](TCPConnectionWeakPtr weakConn) {
-        if (auto conn = weakConn.lock()) {
-            // Process incoming data
-            Buffer& buf = conn->getReadBuffer();
-            // ... handle data ...
-        }
+    conn->setReadCompleteCallback([](TCPConnectionPtr conn) {
+        // Process incoming data
+        Buffer& buf = conn->getReadBuffer();
+        // ... handle data ...
     });
+    conn->readRaw(); // Start reading
 });
 
 // Client side
-TCPConnector connector(loop);
-connector.connect(InetAddress("127.0.0.1", 8080), [](TCPConnectionPtr conn) {
+auto connector = TCPConnector::create(loop, InetAddress("127.0.0.1", 8080));
+connector->setNewConnectionCallback([](TCPConnectionPtr conn) {
     conn->write("Hello, Server!");
 });
+connector->start();
 ```
 
 ### Thread-Safe Logging
