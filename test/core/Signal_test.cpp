@@ -15,7 +15,7 @@ using namespace Hohnor;
 class SignalTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        loop_ = EventLoop::createEventLoop();
+        loop_ = EventLoop::create();
         // Use SIGUSR1 and SIGUSR2 for testing as they are safe for testing
         test_signal1_ = SIGUSR1;
         test_signal2_ = SIGUSR2;
@@ -32,7 +32,7 @@ protected:
         loop_.reset();
     }
 
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     int test_signal1_;
     int test_signal2_;
 };

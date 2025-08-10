@@ -10,7 +10,9 @@
 namespace Hohnor
 {
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class TimerQueue; 
 
     /**
@@ -33,7 +35,7 @@ namespace Hohnor
 
     private:
         //do not manage life cycle of this fd
-        std::shared_ptr<EventLoop> loop_;
+        EventLoopPtr loop_;
         int events_;
         int revents_;
         Status status_;
@@ -42,7 +44,7 @@ namespace Hohnor
         CloseCallback closeCallback_;
         ErrorCallback errorCallback_;
         //update EPOLL in the loop
-        void updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus);
+        void updateInLoop(IOHandlerPtr handler, Status nextStatus);
         void update(Status nextStatus);
         
         //Run the events according to revents
@@ -53,7 +55,7 @@ namespace Hohnor
 
     protected:
         // Constructor, hinden so that only eventloop can call
-        IOHandler(std::shared_ptr<EventLoop> loop, int fd);
+        IOHandler(EventLoopPtr loop, int fd);
     public:
         // Delete default constructor
         IOHandler() = delete;
@@ -92,7 +94,7 @@ namespace Hohnor
         }
 
         //Get the loop that manages this handler
-        std::shared_ptr<EventLoop> loop() { return loop_; }
+        EventLoopPtr loop() { return loop_; }
     };
 
 } // namespace Hohnor

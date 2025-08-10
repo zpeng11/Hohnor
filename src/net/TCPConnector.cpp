@@ -10,7 +10,7 @@
 
 using namespace Hohnor;
 
-TCPConnector::TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& addr)
+TCPConnector::TCPConnector(EventLoopPtr loop, const InetAddress& addr)
     : Socket(loop, AF_INET, SOCK_STREAM),
       serverAddr_(addr),
       constantDelay_(false),

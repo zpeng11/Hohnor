@@ -12,7 +12,7 @@
 
 using namespace Hohnor;
 
-TCPConnection::TCPConnection(std::shared_ptr<IOHandler> handler)
+TCPConnection::TCPConnection(IOHandlerPtr handler)
     : Socket(handler, handler->loop()),
       writing_(false),
       readBuffer_(),

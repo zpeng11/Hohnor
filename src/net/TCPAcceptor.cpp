@@ -27,9 +27,9 @@ void TCPAcceptor::setAcceptCallback(AcceptCallback cb)
     });
 }
 
-std::shared_ptr<IOHandler> TCPAcceptor::accept()
+IOHandlerPtr TCPAcceptor::accept()
 {
-    std::shared_ptr<IOHandler> handler = nullptr;
+    IOHandlerPtr handler = nullptr;
     InetAddress addr;
     int acceptedFd = SocketFuncs::accept(this->fd(), reinterpret_cast<sockaddr_in6 *>(&addr));
     if (acceptedFd < 0)

@@ -16,6 +16,7 @@
 namespace Hohnor
 {
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class TimerQueue;
     class TimerHandler : NonCopyable, public std::enable_shared_from_this<TimerHandler> 
     {
@@ -52,6 +53,7 @@ namespace Hohnor
     };
 
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class Timestamp;
     class TimerQueue : public NonCopyable
     {
@@ -72,7 +74,7 @@ namespace Hohnor
         void addTimerInLoop(std::shared_ptr<TimerHandler> timerHandler);
         // called when timerfd alarms
         void handleRead();
-        std::shared_ptr<IOHandler> timerFdIOHandle_;
+        IOHandlerPtr timerFdIOHandle_;
         EventLoop *loop_;
         BinaryHeap<std::shared_ptr<TimerHandler>> heap_;
     };

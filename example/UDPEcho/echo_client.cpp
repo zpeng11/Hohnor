@@ -22,14 +22,14 @@ using namespace Hohnor;
 
 class UDPEchoClient {
 private:
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     std::unique_ptr<UDPSocket> socket_;
     InetAddress serverAddr_;
     bool running_;
     int messageCount_;
 
 public:
-    UDPEchoClient(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port)
+    UDPEchoClient(EventLoopPtr loop, const std::string& host, uint16_t port)
         : loop_(loop), serverAddr_(host, port), running_(false), messageCount_(0) {}
 
     void start() {
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
 
         // Create UDP echo client
         UDPEchoClient client(loop, host, port);

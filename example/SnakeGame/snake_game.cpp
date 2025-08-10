@@ -33,7 +33,7 @@ enum Direction {
 
 class SnakeGame {
 private:
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     std::deque<Point> snake_;
     Point food_;
     Direction direction_;
@@ -52,7 +52,7 @@ private:
     static constexpr double GAME_SPEED = 0.15; // seconds between moves
     
 public:
-    SnakeGame(std::shared_ptr<EventLoop> loop) 
+    SnakeGame(EventLoopPtr loop) 
         : loop_(loop), direction_(RIGHT), nextDirection_(RIGHT), 
           score_(0), gameWidth_(30), gameHeight_(15), gameOver_(false), paused_(false),
           rng_(std::random_device{}()), 
@@ -292,7 +292,7 @@ int main() {
     
     try {
         // Create the event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
 
         // Create snake game
         SnakeGame game(loop);

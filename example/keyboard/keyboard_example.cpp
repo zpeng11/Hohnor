@@ -14,11 +14,11 @@ using namespace Hohnor;
 
 class KeyboardHandler {
 private:
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     bool running_;
     
 public:
-    KeyboardHandler(std::shared_ptr<EventLoop> loop) : loop_(loop), running_(true) {}
+    KeyboardHandler(EventLoopPtr loop) : loop_(loop), running_(true) {}
     
     void onKeyPress(char key) {
         switch (key) {
@@ -74,7 +74,7 @@ int main() {
     
     try {
         // Create the event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create keyboard handler
         KeyboardHandler handler(loop);

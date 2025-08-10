@@ -15,7 +15,7 @@ using namespace Hohnor;
 class IOHandlerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        loop_ = EventLoop::createEventLoop();
+        loop_ = EventLoop::create();
         // Create a test file descriptor (eventfd)
         test_fd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         ASSERT_GT(test_fd_, 0);
@@ -26,7 +26,7 @@ protected:
         loop_.reset();
     }
 
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     int test_fd_;
 };
 
@@ -712,7 +712,7 @@ TEST_F(IOHandlerTest, HandlerReuse) {
 }
 
 TEST_F(IOHandlerTest, DestructorDisablesHandler) {
-    std::shared_ptr<IOHandler> handler;
+    IOHandlerPtr handler;
     std::atomic<bool> enable_verified{false};
     std::atomic<bool> cleanup_verified{false};
     

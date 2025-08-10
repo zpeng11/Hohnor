@@ -39,9 +39,9 @@ EventLoop::EventLoop()
 {
 }
 
-std::shared_ptr<EventLoop> EventLoop::createEventLoop() {
+EventLoopPtr EventLoop::create() {
     LOG_DEBUG << "Enter EventLoop creation factory";
-    auto ptr = std::shared_ptr<EventLoop>(new EventLoop());
+    auto ptr = EventLoopPtr(new EventLoop());
     //Two step creation, because IOHandle needs shared_ptr of the EventLoop which is only available after the EventLoop is fully constructed
     ptr->timers_ = new TimerQueue(ptr.get());
     //create eventfd for wake up
@@ -266,16 +266,16 @@ void EventLoop::endLoop()
     LOG_DEBUG << "EventLoop " << this << " in thread " << threadId_ << " is ended by call";
 }
 
-std::shared_ptr<IOHandler> EventLoop::handleIO(int fd){
+IOHandlerPtr EventLoop::handleIO(int fd){
     if(state_ == End)
     {
         LOG_ERROR << "EventLoop " << this << " is ended, can not handle new IO";
         return nullptr;
     }
-    return std::shared_ptr<IOHandler>(new IOHandler(shared_from_this(), fd));
+    return IOHandlerPtr(new IOHandler(shared_from_this(), fd));
 }
 
-void EventLoop::updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew) //Load handle's epoll context to epoll, and manage context lifecycle. 
+void EventLoop::updateIOHandler(IOHandlerPtr handler, bool addNew) //Load handle's epoll context to epoll, and manage context lifecycle. 
 // addNew == true && enabled == true means creating epoll node, addNew == false && enabled == true means modifing events in epoll, enable == false means deleting epoll node and remove ownership
 {
     assertInLoopThread();
@@ -336,7 +336,7 @@ void EventLoop::handleSignal(int signal, SignalAction action, SignalCallback cb)
     });
 }
 
-std::shared_ptr<IOHandler> EventLoop::interactiveIOHandler_ = nullptr;
+IOHandlerPtr EventLoop::interactiveIOHandler_ = nullptr;
 
 void EventLoop::handleKeyboard(KeyboardCallback cb)
 {

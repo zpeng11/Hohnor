@@ -12,9 +12,10 @@
 namespace Hohnor
 {
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class TCPConnection;
-
     // Forward declaration for callback types
     typedef std::shared_ptr<TCPConnection> TCPConnectionPtr;
 
@@ -29,7 +30,7 @@ namespace Hohnor
     public:
 
         // Constructor - should only be called by TCPAcceptor or TCPConnector
-        TCPConnection(std::shared_ptr<IOHandler> handler);
+        TCPConnection(IOHandlerPtr handler);
 
         ~TCPConnection();
 

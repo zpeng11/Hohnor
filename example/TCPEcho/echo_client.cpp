@@ -22,8 +22,8 @@ using namespace Hohnor;
 
 class EchoClient {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::shared_ptr<TCPConnector> connector_;
+    EventLoopPtr loop_;
+    TCPConnectorPtr connector_;
     TCPConnectionPtr connection_;
     std::string serverHost_;
     uint16_t serverPort_;
@@ -32,7 +32,7 @@ private:
     int messageCount_;
 
 public:
-    EchoClient(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port)
+    EchoClient(EventLoopPtr loop, const std::string& host, uint16_t port)
         : loop_(loop), serverHost_(host), serverPort_(port),
           connected_(false), running_(false), messageCount_(0) {}
 
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
 
         // Create echo client
         EchoClient client(loop, host, port);

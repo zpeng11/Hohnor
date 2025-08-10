@@ -73,7 +73,7 @@ void SignalHandler::createIOHandler(int fd, Functor cb)
     ioHandler_->enable();
 }
 
-SignalHandler::SignalHandler(std::shared_ptr<EventLoop> loop, int signal, SignalAction action, SignalCallback cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
+SignalHandler::SignalHandler(EventLoopPtr loop, int signal, SignalAction action, SignalCallback cb): loop_(loop), signal_(signal), action_(action), ioHandler_(nullptr)
 {
     int fd = handleSignal(signal, action);
     if(action == SignalAction::Handled){

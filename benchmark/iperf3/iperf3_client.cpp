@@ -26,8 +26,8 @@ using namespace Hohnor;
 
 class IPerf3Client {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::shared_ptr<TCPConnector> connector_;
+    EventLoopPtr loop_;
+    TCPConnectorPtr connector_;
     TCPConnectionPtr connection_;
     std::string serverHost_;
     uint16_t serverPort_;
@@ -50,7 +50,7 @@ private:
     static constexpr double REPORT_INTERVAL = 1.0; // Report every 1 second
 
 public:
-    IPerf3Client(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port, 
+    IPerf3Client(EventLoopPtr loop, const std::string& host, uint16_t port, 
                  int duration = 10, int parallel = 1, size_t bufSize = 128 * 1024)
         : loop_(loop), serverHost_(host), serverPort_(port),
           connected_(false), running_(false), testDuration_(duration), 
@@ -403,7 +403,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create iperf3 client
         IPerf3Client client(loop, serverHost, port, testDuration, parallelStreams, bufferSize);

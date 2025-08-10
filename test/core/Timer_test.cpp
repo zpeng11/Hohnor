@@ -15,7 +15,7 @@ using namespace Hohnor;
 class TimerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        loop_ = EventLoop::createEventLoop();
+        loop_ = EventLoop::create();
         callback_count_ = 0;
         timer_executed_ = false;
         // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
@@ -25,7 +25,7 @@ protected:
         loop_.reset();
     }
 
-    std::shared_ptr<EventLoop> loop_;
+    EventLoopPtr loop_;
     std::atomic<int> callback_count_{0};
     std::atomic<bool> timer_executed_{false};
     

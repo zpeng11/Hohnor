@@ -22,14 +22,14 @@ using namespace Hohnor;
 
 class EchoServer {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::shared_ptr<TCPAcceptor> listenSocket_;
+    EventLoopPtr loop_;
+    TCPAcceptorPtr listenSocket_;
     std::unordered_map<int, TCPConnectionPtr> clients_;
     uint16_t port_;
     bool running_;
 
 public:
-    EchoServer(std::shared_ptr<EventLoop> loop, uint16_t port) 
+    EchoServer(EventLoopPtr loop, uint16_t port) 
         : loop_(loop), port_(port), running_(false) {}
 
     void start() {
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create echo server
         EchoServer server(loop, port);

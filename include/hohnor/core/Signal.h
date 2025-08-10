@@ -17,18 +17,20 @@ namespace Hohnor
         Handled //Return signal fd that handles the signal
     };
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class SignalHandler : NonCopyable
     {
         friend class EventLoop;
     private:
         SignalAction action_;
         int signal_;
-        std::shared_ptr<IOHandler> ioHandler_;
-        std::shared_ptr<EventLoop> loop_;
+        IOHandlerPtr ioHandler_;
+        EventLoopPtr loop_;
         void createIOHandler(int fd, Functor cb);
     protected:
-        SignalHandler(std::shared_ptr<EventLoop> loop, int signal, SignalAction action, SignalCallback cb = nullptr);
+        SignalHandler(EventLoopPtr loop, int signal, SignalAction action, SignalCallback cb = nullptr);
     public:
         SignalHandler() = delete;
         ~SignalHandler() = default;

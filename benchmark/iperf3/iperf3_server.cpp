@@ -35,8 +35,8 @@ struct ConnectionStats {
 
 class IPerf3Server {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::shared_ptr<TCPAcceptor> listenSocket_;
+    EventLoopPtr loop_;
+    TCPAcceptorPtr listenSocket_;
     std::unordered_map<int, TCPConnectionPtr> clients_;
     std::unordered_map<int, ConnectionStats> clientStats_;
     uint16_t port_;
@@ -49,7 +49,7 @@ private:
     static constexpr double REPORT_INTERVAL = 1.0; // Report every 1 second
 
 public:
-    IPerf3Server(std::shared_ptr<EventLoop> loop, uint16_t port, int duration = 0) 
+    IPerf3Server(EventLoopPtr loop, uint16_t port, int duration = 0) 
         : loop_(loop), port_(port), running_(false), testDuration_(duration), 
           totalBytesReceived_(0), serverStartTime_(Timestamp::now()) {}
 
@@ -366,7 +366,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create iperf3 server
         IPerf3Server server(loop, port, testDuration);

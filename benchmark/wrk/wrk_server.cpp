@@ -39,8 +39,8 @@ struct ConnectionStats {
 
 class WrkHttpServer {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::shared_ptr<TCPAcceptor> listenSocket_;
+    EventLoopPtr loop_;
+    TCPAcceptorPtr listenSocket_;
     std::unordered_map<int, TCPConnectionPtr> clients_;
     std::unordered_map<int, ConnectionStats> clientStats_;
     uint16_t port_;
@@ -58,7 +58,7 @@ private:
     static constexpr double REPORT_INTERVAL = 5.0; // Report every 5 seconds
 
 public:
-    WrkHttpServer(std::shared_ptr<EventLoop> loop, uint16_t port) 
+    WrkHttpServer(EventLoopPtr loop, uint16_t port) 
         : loop_(loop), port_(port), running_(false), 
           totalRequests_(0), totalBytesReceived_(0), totalBytesSent_(0),
           serverStartTime_(Timestamp::now()) {
@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create wrk HTTP server
         WrkHttpServer server(loop, port);

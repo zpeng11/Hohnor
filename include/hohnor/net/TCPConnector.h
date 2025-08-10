@@ -7,6 +7,9 @@
 namespace Hohnor
 {
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
+    class TCPConnector;
+    typedef std::shared_ptr<TCPConnector> TCPConnectorPtr;
     /*
     * TCPConnector is a class that handles the connection to a TCP server.
     * It uses the Socket class to manage the socket and provides a way to connect to a server.
@@ -18,7 +21,7 @@ namespace Hohnor
         typedef std::function<void ()> RetryConnectionCallback;
         typedef std::function<void ()> FailedConnectionCallback;
         // Constructor that initializes the connector with an EventLoop and connection parameters
-        TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& addr);
+        TCPConnector(EventLoopPtr loop, const InetAddress& addr);
 
         //will be called when the connection is established
         void setNewConnectionCallback(NewConnectionCallback cb);

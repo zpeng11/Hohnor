@@ -9,7 +9,9 @@
 namespace Hohnor
 {
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     
     /**
      * UDP Socket, used for both client and server
@@ -19,7 +21,7 @@ namespace Hohnor
     class UDPSocket : public Socket
     {
     public:
-        explicit UDPSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
+        explicit UDPSocket(EventLoopPtr loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : Socket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_DGRAM, 0) {}
 
         // Send data to a specific address (for client or server)
@@ -73,7 +75,7 @@ namespace Hohnor
         int connect(const InetAddress &addr, bool blockin);
         
     public:
-        explicit UDPListenSocket(std::shared_ptr<EventLoop> loop, int options = SOCK_DGRAM, bool ipv6 = false)
+        explicit UDPListenSocket(EventLoopPtr loop, int options = SOCK_DGRAM, bool ipv6 = false)
             : UDPSocket(loop, options, ipv6) {}
 
         // Bind the address. In case failed, !!!abort the program

@@ -17,9 +17,11 @@
 #include <memory>
 namespace Hohnor
 {
-
+    class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class Event;
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class TimerQueue;
     class TimerHandler;
     class Timestamp;
@@ -36,7 +38,7 @@ namespace Hohnor
     private:
         EventLoop();
     public:
-        static std::shared_ptr<EventLoop> createEventLoop();
+        static EventLoopPtr create();
         ~EventLoop();
 
         static EventLoop *loopOfCurrentThread();
@@ -65,7 +67,7 @@ namespace Hohnor
         void assertInLoopThread();
 
         //handle an IO FD into the loop, and create a handler for it, will take over fd's ownership and lifecycle, threadsafe
-        std::shared_ptr<IOHandler> handleIO(int fd);
+        IOHandlerPtr handleIO(int fd);
 
         //Add timer event, threadsafe
         //If interval > 0, it is a repeated timer
@@ -110,7 +112,7 @@ namespace Hohnor
         std::atomic<Timestamp> pollReturnTime_;
 
         //Real time wakeup pipe, wakeup the loop from epoll to deal with pending Functors
-        std::shared_ptr<IOHandler> wakeUpHandler_;
+        IOHandlerPtr wakeUpHandler_;
 
         TimerQueue * timers_;
 
@@ -127,7 +129,7 @@ namespace Hohnor
         //ThreadPool for running tasks in background threads
         std::unique_ptr<ThreadPool> threadPool_;
 
-        static std::shared_ptr<IOHandler> interactiveIOHandler_;
+        static IOHandlerPtr interactiveIOHandler_;
 
         //To bind for wake up event
         void handleWakeUp();
@@ -135,7 +137,7 @@ namespace Hohnor
         bool isLoopThread();
 
         //modify or remove existing IO event in the epoll
-        void updateIOHandler(std::shared_ptr<IOHandler> handler, bool addNew);
+        void updateIOHandler(IOHandlerPtr handler, bool addNew);
 
         //Remove a fd from epoll, 
         //used by IOHandler's destructor because 

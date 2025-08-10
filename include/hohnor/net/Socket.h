@@ -14,7 +14,9 @@
 namespace Hohnor
 {
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
 
     /*
     * General Socket class, used for both client and server(mostly for client), it takes care of the socket fd
@@ -23,15 +25,15 @@ namespace Hohnor
     class Socket : public NonCopyable
     {
     private:
-        std::shared_ptr<IOHandler> socketHandler_;
-        std::shared_ptr<EventLoop> loop_;
+        IOHandlerPtr socketHandler_;
+        EventLoopPtr loop_;
     protected:
-        void resetSocketHandler(std::shared_ptr<IOHandler> handler = nullptr);
-        Socket(std::shared_ptr<IOHandler> handler, std::shared_ptr<EventLoop> loop){
+        void resetSocketHandler(IOHandlerPtr handler = nullptr);
+        Socket(IOHandlerPtr handler, EventLoopPtr loop){
             socketHandler_ = handler;
             loop_ = loop;
         }
-        std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
+        IOHandlerPtr getSocketHandler() const { return socketHandler_; }
     public:
         typedef int SocketFd;
         ~Socket();
@@ -40,7 +42,7 @@ namespace Hohnor
         Socket() = delete;
         
         //Initilize with paramters, in case failed, !!!abort the program
-        Socket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0);
+        Socket(EventLoopPtr loop, int family, int type, int protocol = 0);
 
         //For clent connect, you can set nonBlocking to true, so that it will not block the thread for waiting handshake, return 0 on success, -1 on error
         int connect(const InetAddress &addr);
@@ -56,7 +58,7 @@ namespace Hohnor
 
         SocketFd fd() const;
 
-        std::shared_ptr<EventLoop> loop();
+        EventLoopPtr loop();
 
         //Expose IOHandler's interface
         void setReadCallback(ReadCallback cb);
@@ -80,7 +82,7 @@ namespace Hohnor
         bool isSelfConnect();
 
     public:
-        ListenSocket(std::shared_ptr<EventLoop> loop, int family, int type, int protocol = 0)
+        ListenSocket(EventLoopPtr loop, int family, int type, int protocol = 0)
             : Socket(loop, family, type, protocol) {}
 
         //Bind the address. In case failed, !!!abort the program

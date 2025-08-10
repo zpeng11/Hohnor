@@ -10,7 +10,11 @@
 namespace Hohnor
 {
     class EventLoop;
+    typedef std::shared_ptr<EventLoop> EventLoopPtr;
     class IOHandler;
+    typedef std::shared_ptr<IOHandler> IOHandlerPtr;
+    class TCPAcceptor;
+    typedef std::shared_ptr<TCPAcceptor> TCPAcceptorPtr;
     /**
      * TCP Listen Socket, used for server
      * It is a wrapper of ListenSocket, which is a Socket with listen(2) and accept(2) functions
@@ -20,7 +24,7 @@ namespace Hohnor
     public:
         //Accept callback should take care if the handler is nullptr
         typedef std::function<void (TCPConnectionPtr)> AcceptCallback;
-        explicit TCPAcceptor(std::shared_ptr<EventLoop> loop, int options = SOCK_STREAM, bool ipv6 = false)
+        explicit TCPAcceptor(EventLoopPtr loop, int options = SOCK_STREAM, bool ipv6 = false)
             : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
 
         ~TCPAcceptor() = default;
@@ -54,7 +58,7 @@ namespace Hohnor
         void setKeepAlive(bool on);
     private:
         //Actively accept a connection, return IOHandler
-        std::shared_ptr<IOHandler> accept();
+        IOHandlerPtr accept();
 
         //Hide setCallbacks from Socket into private, we don't need them
         using Socket::setReadCallback;

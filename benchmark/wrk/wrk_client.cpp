@@ -39,8 +39,8 @@ struct ClientStats {
 
 class HttpClient {
 private:
-    std::shared_ptr<EventLoop> loop_;
-    std::vector<std::shared_ptr<TCPConnector>> connectors_;
+    EventLoopPtr loop_;
+    std::vector<TCPConnectorPtr> connectors_;
     std::vector<TCPConnectionPtr> connections_;
     std::string serverHost_;
     uint16_t serverPort_;
@@ -56,7 +56,7 @@ private:
     Timestamp testEndTime_;
 
 public:
-    HttpClient(std::shared_ptr<EventLoop> loop, const std::string& host, uint16_t port, 
+    HttpClient(EventLoopPtr loop, const std::string& host, uint16_t port, 
                int connections, int duration)
         : loop_(loop), serverHost_(host), serverPort_(port), 
           numConnections_(connections), testDuration_(duration), running_(false) {
@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
 
     try {
         // Create event loop
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         
         // Create HTTP client
         HttpClient client(loop, host, port, connections, duration);

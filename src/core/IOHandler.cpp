@@ -28,7 +28,7 @@ namespace Hohnor
 
 using namespace Hohnor;
 
-IOHandler::IOHandler(std::shared_ptr<EventLoop> loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created),
+IOHandler::IOHandler(EventLoopPtr loop, int fd) : loop_(loop), events_(0), revents_(0), status_(Status::Created),
                                                                 closeCallback_(nullptr), errorCallback_(nullptr), readCallback_(nullptr), writeCallback_(nullptr)
 {
     HCHECK(loop) << "EventLoop cannot be null";
@@ -73,7 +73,7 @@ IOHandler::~IOHandler()
     }
 }
 
-void IOHandler::updateInLoop(std::shared_ptr<IOHandler> handler, Status nextStatus) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
+void IOHandler::updateInLoop(IOHandlerPtr handler, Status nextStatus) //addNew is True only when IOHandle call enable(), which works to add new context to epoll
 {
     loop_->assertInLoopThread();
     bool addNew = false;

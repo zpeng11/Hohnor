@@ -26,7 +26,7 @@ protected:
 
 TEST_F(EventLoopTest, ConstructorAndDestructor) {
     LOG_DEBUG << "Creating loop";
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     LOG_DEBUG << "Created loop";
     EXPECT_NE(loop, nullptr);
     EXPECT_EQ(loop->iteration(), 0);
@@ -42,7 +42,7 @@ TEST_F(EventLoopTest, ConstructorAndDestructor) {
 }
 
 TEST_F(EventLoopTest, OnlyOneLoopPerThread) {
-    auto loop1 = EventLoop::createEventLoop();
+    auto loop1 = EventLoop::create();
     // Creating another loop in the same thread should cause a fatal error
     // We can't test this directly as it would terminate the test
     // But we can verify the current loop is set correctly
@@ -50,7 +50,7 @@ TEST_F(EventLoopTest, OnlyOneLoopPerThread) {
 }
 
 TEST_F(EventLoopTest, RunInLoopSameThread) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     bool callback_executed = false;
     
     loop->runInLoop([&callback_executed]() {
@@ -61,7 +61,7 @@ TEST_F(EventLoopTest, RunInLoopSameThread) {
 }
 
 TEST_F(EventLoopTest, QueueInLoop) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     bool callback_executed = false;
     
     loop->queueInLoop([&callback_executed]() {
@@ -73,7 +73,7 @@ TEST_F(EventLoopTest, QueueInLoop) {
 }
 
 TEST_F(EventLoopTest, RunInLoopFromDifferentThread) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> callback_executed{false};
     std::atomic<bool> thread_finished{false};
     
@@ -105,7 +105,7 @@ TEST_F(EventLoopTest, RunInLoopFromDifferentThread) {
 }
 
 TEST_F(EventLoopTest, WakeUpMechanism) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> wakeup_called{false};
     
     Thread t([loop, &wakeup_called]() {
@@ -124,7 +124,7 @@ TEST_F(EventLoopTest, WakeUpMechanism) {
 }
 
 TEST_F(EventLoopTest, EndLoop) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     int iterations = 0;
     
     loop->runInLoop([loop, &iterations]() {
@@ -151,7 +151,7 @@ TEST_F(EventLoopTest, EndLoop) {
 }
 
 TEST_F(EventLoopTest, HandleIOCreation) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Create a simple eventfd for testing
     int fd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -167,7 +167,7 @@ TEST_F(EventLoopTest, HandleIOCreation) {
 }
 
 TEST_F(EventLoopTest, IterationCounter) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     EXPECT_EQ(loop->iteration(), 0);
     
     int callback_count = 0;
@@ -196,7 +196,7 @@ TEST_F(EventLoopTest, IterationCounter) {
 }
 
 TEST_F(EventLoopTest, AssertInLoopThread) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Should not throw when called from the loop thread
     loop->assertInLoopThread();
@@ -207,7 +207,7 @@ TEST_F(EventLoopTest, AssertInLoopThread) {
 }
 
 TEST_F(EventLoopTest, PollReturnTime) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Initial poll return time should be set
     Timestamp initial_time = loop->pollReturnTime();
@@ -224,7 +224,7 @@ TEST_F(EventLoopTest, PollReturnTime) {
 }
 
 TEST_F(EventLoopTest, MultipleCallbacksInQueue) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::vector<int> execution_order;
     
     // Queue multiple callbacks
@@ -250,7 +250,7 @@ TEST_F(EventLoopTest, MultipleCallbacksInQueue) {
 
 // ThreadPool functionality tests
 TEST_F(EventLoopTest, ThreadPoolInitialization) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Initially no thread pool should be configured
     // Test setting up thread pool with different sizes
@@ -264,7 +264,7 @@ TEST_F(EventLoopTest, ThreadPoolInitialization) {
 }
 
 TEST_F(EventLoopTest, RunInPoolWithoutThreadPool) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> callback_executed{false};
     std::atomic<pid_t> execution_thread_id{0};
     
@@ -279,7 +279,7 @@ TEST_F(EventLoopTest, RunInPoolWithoutThreadPool) {
 }
 
 TEST_F(EventLoopTest, RunInPoolWithThreadPool) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> callback_executed{false};
     std::atomic<pid_t> execution_thread_id{0};
     std::atomic<pid_t> main_thread_id{CurrentThread::tid()};
@@ -304,7 +304,7 @@ TEST_F(EventLoopTest, RunInPoolWithThreadPool) {
 }
 
 TEST_F(EventLoopTest, MultipleTasksInThreadPool) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     const int num_tasks = 10;
     std::atomic<int> completed_tasks{0};
     std::vector<std::atomic<pid_t>> thread_ids(num_tasks);
@@ -345,7 +345,7 @@ TEST_F(EventLoopTest, MultipleTasksInThreadPool) {
 }
 
 TEST_F(EventLoopTest, ThreadPoolWithEventLoopIntegration) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> pool_task_executed{false};
     std::atomic<bool> loop_task_executed{false};
     std::atomic<pid_t> pool_thread_id{0};
@@ -381,7 +381,7 @@ TEST_F(EventLoopTest, ThreadPoolWithEventLoopIntegration) {
 }
 
 TEST_F(EventLoopTest, ThreadPoolReconfiguration) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<int> task_count{0};
     
     // Start with 2 threads
@@ -418,7 +418,7 @@ TEST_F(EventLoopTest, ThreadPoolReconfiguration) {
 }
 
 TEST_F(EventLoopTest, ThreadPoolDisableAfterUse) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> pool_task_executed{false};
     std::atomic<bool> fallback_task_executed{false};
     std::atomic<pid_t> pool_thread_id{0};
@@ -455,7 +455,7 @@ TEST_F(EventLoopTest, ThreadPoolDisableAfterUse) {
 }
 
 TEST_F(EventLoopTest, ThreadPoolTaskExceptionHandling) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::atomic<bool> normal_task_executed{false};
     
     // Set up thread pool
@@ -483,7 +483,7 @@ TEST_F(EventLoopTest, ThreadPoolWithEventLoopLifecycle) {
     std::atomic<bool> pool_task_completed{false};
     
     {
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         loop->setThreadPools(2);
         CurrentThread::sleepUsec(50 * 1000); // 50ms
         
@@ -509,7 +509,7 @@ TEST_F(EventLoopTest, ThreadPoolWithEventLoopLifecycle) {
 }
 // New tests for EventLoop state management
 TEST_F(EventLoopTest, EventLoopStateManagement) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Initial state should be Ready
     EXPECT_EQ(loop->state(), EventLoop::LoopState::Ready);
@@ -535,7 +535,7 @@ TEST_F(EventLoopTest, EventLoopStateManagement) {
 }
 
 TEST_F(EventLoopTest, EventLoopStateTransitions) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::vector<EventLoop::LoopState> observed_states;
     
     // Monitor state changes
@@ -562,7 +562,7 @@ TEST_F(EventLoopTest, EventLoopStateTransitions) {
 
 // New tests for IOHandler enable/disable functionality
 TEST_F(EventLoopTest, IOHandlerEnableDisable) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Create a simple eventfd for testing
     int fd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -588,7 +588,7 @@ TEST_F(EventLoopTest, IOHandlerEnableDisable) {
 }
 
 TEST_F(EventLoopTest, IOHandlerCallbackSetters) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     
     // Create a simple eventfd for testing
     int fd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -628,7 +628,7 @@ TEST_F(EventLoopTest, IOHandlerCallbackSetters) {
 }
 
 TEST_F(EventLoopTest, IOHandlerLifecycleWithEventLoop) {
-    auto loop = EventLoop::createEventLoop();
+    auto loop = EventLoop::create();
     std::weak_ptr<IOHandler> weak_handler;
     
     {
@@ -658,8 +658,8 @@ TEST_F(EventLoopTest, IOHandlerLifecycleWithEventLoop) {
 }
 
 TEST_F(EventLoopTest, MultipleIOHandlers) {
-    auto loop = EventLoop::createEventLoop();
-    std::vector<std::shared_ptr<IOHandler>> handlers;
+    auto loop = EventLoop::create();
+    std::vector<IOHandlerPtr> handlers;
     
     // Create multiple handlers
     for (int i = 0; i < 5; ++i) {
@@ -693,7 +693,7 @@ TEST_F(EventLoopTest, SharedPtrEventLoopLifecycle) {
     std::weak_ptr<EventLoop> weak_loop;
     
     {
-        auto loop = EventLoop::createEventLoop();
+        auto loop = EventLoop::create();
         weak_loop = loop;
         
         EXPECT_FALSE(weak_loop.expired());
@@ -720,8 +720,8 @@ TEST_F(EventLoopTest, SharedPtrEventLoopLifecycle) {
 }
 
 TEST_F(EventLoopTest, EventLoopSharedFromThis) {
-    auto loop = EventLoop::createEventLoop();
-    std::shared_ptr<EventLoop> shared_loop;
+    auto loop = EventLoop::create();
+    EventLoopPtr shared_loop;
     
     // Test that we can get shared_ptr from within callbacks
     loop->runInLoop([loop, &shared_loop]() {
