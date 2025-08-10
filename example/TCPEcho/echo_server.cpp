@@ -7,6 +7,7 @@
 #include "hohnor/core/Signal.h"
 #include "hohnor/net/TCPAcceptor.h"
 #include "hohnor/net/InetAddress.h"
+#include "hohnor/net/TCPConnection.h"
 #include "hohnor/core/IOHandler.h"
 #include "hohnor/log/Logging.h"
 #include <iostream>
@@ -23,7 +24,7 @@ class EchoServer {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPAcceptor> listenSocket_;
-    std::unordered_map<int, std::shared_ptr<IOHandler>> clients_;
+    std::unordered_map<int, std::shared_ptr<TCPConnection>> clients_;
     uint16_t port_;
     bool running_;
 
@@ -53,7 +54,7 @@ public:
             listenSocket_->listen();
             
             // Set accept callback
-            listenSocket_->setAcceptCallback(std::bind(&EchoServer::handleNewConnection, this, std::placeholders::_1, std::placeholders::_2));
+            listenSocket_->setAcceptCallback(std::bind(&EchoServer::handleNewConnection, this, std::placeholders::_1));
 
             running_ = true;
             std::cout << "Echo Server started on port " << port_ << std::endl;
@@ -72,7 +73,7 @@ public:
         
         // Close all client connections
         for (auto& pair : clients_) {
-            pair.second->disable();
+            pair.second->forceClose();
         }
         clients_.clear();
         
@@ -85,36 +86,37 @@ public:
     }
 
 private:
-    void handleNewConnection(std::shared_ptr<IOHandler> clientHandler, InetAddress clientAddr) {
+    void handleNewConnection(std::shared_ptr<TCPConnection> clientConnection) {
         try {
             
-            if (!clientHandler) {
+            if (!clientConnection) {
                 std::cerr << "Failed to accept connection" << std::endl;
                 return;
             }
 
-            int clientFd = clientHandler->fd();
-            std::cout << "New client connected from " << clientAddr.toIpPort() 
-                      << " (fd: " << clientFd << ")" << std::endl;
+            int clientFd = clientConnection->fd();
+            std::cout << "New client connected (fd: " << clientFd << ")" << std::endl;
 
-            // Store client handler
-            clients_[clientFd] = clientHandler;
+            // Store client connection
+            clients_[clientFd] = clientConnection;
 
-            // Set up client callbacks
-            clientHandler->setReadCallback([this, clientFd]() {
-                this->handleClientData(clientFd);
+            // Set up client callbacks using TCPConnection's callback system
+            clientConnection->setReadCompleteCallback([this, clientFd](TCPConnectionWeakPtr weakConn) {
+                if (auto conn = weakConn.lock()) {
+                    this->handleClientData(clientFd);
+                }
             });
 
-            clientHandler->setCloseCallback([this, clientFd]() {
+            clientConnection->setCloseCallback([this, clientFd]() {
                 this->handleClientDisconnect(clientFd);
             });
 
-            clientHandler->setErrorCallback([this, clientFd]() {
+            clientConnection->setErrorCallback([this, clientFd]() {
                 this->handleClientError(clientFd);
             });
 
-            // Enable the client handler
-            clientHandler->enable();
+            // Start reading from the client
+            clientConnection->readRaw();
 
         } catch (const std::exception& e) {
             std::cerr << "Error handling new connection: " << e.what() << std::endl;
@@ -127,30 +129,22 @@ private:
             return;
         }
 
-        auto clientHandler = it->second;
+        auto clientConnection = it->second;
         
         try {
-            // Read data from client
-            char buffer[4096];
-            ssize_t bytesRead = ::read(clientFd, buffer, sizeof(buffer) - 1);
+            // Get data from the read buffer
+            Buffer& readBuffer = clientConnection->getReadBuffer();
             
-            if (bytesRead > 0) {
-                buffer[bytesRead] = '\0';
-                std::cout << "Received from client " << clientFd << ": " << buffer;
+            if (readBuffer.readableBytes() > 0) {
+                // Get the data as string
+                std::string data = readBuffer.retrieveAllAsString();
+                std::cout << "Received from client " << clientFd << ": " << data;
                 
-                // Echo the data back
-                ssize_t bytesWritten = ::write(clientFd, buffer, bytesRead);
-                if (bytesWritten != bytesRead) {
-                    std::cerr << "Failed to echo all data to client " << clientFd << std::endl;
-                }
-            } else if (bytesRead == 0) {
-                // Client closed connection
-                std::cout << "Client " << clientFd << " closed connection" << std::endl;
-                handleClientDisconnect(clientFd);
-            } else {
-                // Error reading
-                std::cerr << "Error reading from client " << clientFd << ": " << strerror(errno) << std::endl;
-                handleClientError(clientFd);
+                // Echo the data back using TCPConnection's write method
+                clientConnection->write(data);
+                
+                // Continue reading
+                clientConnection->readRaw();
             }
         } catch (const std::exception& e) {
             std::cerr << "Error handling client data: " << e.what() << std::endl;
@@ -163,7 +157,7 @@ private:
         
         auto it = clients_.find(clientFd);
         if (it != clients_.end()) {
-            it->second->disable();
+            it->second->forceClose();
             clients_.erase(it);
         }
     }

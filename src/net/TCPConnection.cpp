@@ -34,8 +34,8 @@ TCPConnection::TCPConnection(std::shared_ptr<IOHandler> handler)
     getSocketHandler()->setCloseCallback(std::bind(&TCPConnection::handleClose, this));
     getSocketHandler()->setErrorCallback(std::bind(&TCPConnection::handleError, this));
 
-    // Enable the handler to start receiving events
-    getSocketHandler()->enable();
+    // Disable write events initially
+    setWriteEvent(false);
 }
 
 TCPConnection::~TCPConnection()
@@ -97,6 +97,8 @@ void TCPConnection::readRaw()
     loop()->runInLoop([sharedThis]() {
         sharedThis->readStopCondition_ = nullptr;
     });
+
+    enable(); // Ensure the read event is enabled
 }
 
 void TCPConnection::readUntil(const std::string& delimiter)
@@ -124,6 +126,7 @@ void TCPConnection::readUntilCondition(ReadStopCondition condition)
     loop()->runInLoop([sharedThis, condition]() {
         sharedThis->readStopCondition_ = condition;
     });
+    enable(); // Ensure the read event is enabled
 }
 
 // --- Write Operations ---
@@ -143,6 +146,7 @@ void TCPConnection::write(const StringPiece message)
         }
         sharedThis->writeInLoop(message);
     });
+    enable(); // Ensure the read event is enabled
 }
 
 void TCPConnection::write(const std::string& message)
@@ -168,6 +172,7 @@ void TCPConnection::write()
         }
         sharedThis->getSocketHandler()->setWriteEvent(true);
     });
+    enable(); // Ensure the read event is enabled
 }
 
 // --- Connection Management ---

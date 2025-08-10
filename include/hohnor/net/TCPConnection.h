@@ -41,6 +41,9 @@ namespace Hohnor
         void setCloseCallback(const CloseCallback& cb);
         void setErrorCallback(const ErrorCallback& cb);
 
+        using Socket::enable;
+        void disable(){ forceClose(); }
+
         // --- Connection Management ---
 
         // --- I/O Operations ---
@@ -113,8 +116,8 @@ namespace Hohnor
         //Hide methods
         using Socket::setReadCallback;
         using Socket::setWriteCallback;
-        using Socket::disable;
-        using Socket::enable;
+        
+        
     };
 
 } // namespace Hohnor

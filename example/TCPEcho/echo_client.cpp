@@ -24,7 +24,7 @@ class EchoClient {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPConnector> connector_;
-    std::shared_ptr<IOHandler> connection_;
+    std::shared_ptr<TCPConnection> connection_;
     std::string serverHost_;
     uint16_t serverPort_;
     bool connected_;
@@ -48,8 +48,8 @@ public:
             connector_ = std::make_shared<TCPConnector>(loop_, serverAddr);
             
             // Set up connection callbacks
-            connector_->setNewConnectionCallback([this](std::shared_ptr<IOHandler> handler) {
-                this->handleNewConnection(handler);
+            connector_->setNewConnectionCallback([this](std::shared_ptr<TCPConnection> connection) {
+                this->handleNewConnection(connection);
             });
 
             connector_->setRetryConnectionCallback([this]() {
@@ -87,7 +87,7 @@ public:
         connected_ = false;
         
         if (connection_) {
-            connection_->disable();
+            connection_->forceClose();
             connection_.reset();
             LOG_DEBUG << "Connection handler reset and disabled";
         }
@@ -102,15 +102,17 @@ public:
     }
 
 private:
-    void handleNewConnection(std::shared_ptr<IOHandler> handler) {
+    void handleNewConnection(std::shared_ptr<TCPConnection> connection) {
         std::cout << "Connected to server successfully!" << std::endl;
         
-        connection_ = handler;
+        connection_ = connection;
         connected_ = true;
         
         // Set up callbacks for the connection
-        connection_->setReadCallback([this]() {
-            this->handleServerResponse();
+        connection_->setReadCompleteCallback([this](TCPConnectionWeakPtr weakConn) {
+            if (auto conn = weakConn.lock()) {
+                this->handleServerResponse();
+            }
         });
 
         connection_->setCloseCallback([this]() {
@@ -121,8 +123,8 @@ private:
             this->handleError();
         });
         
-        // Enable the connection handler
-        connection_->enable();
+        // Start reading from the connection
+        connection_->readRaw();
         
         // Start sending messages periodically
         scheduleNextMessage();
@@ -148,15 +150,8 @@ private:
             
             std::cout << "Sending: " << message;
             
-            // Send message to server
-            int fd = connection_->fd();
-            ssize_t bytesWritten = ::write(fd, message.c_str(), message.length());
-            
-            if (bytesWritten != static_cast<ssize_t>(message.length())) {
-                std::cerr << "Failed to send complete message" << std::endl;
-                handleError();
-                return;
-            }
+            // Send message to server using TCPConnection's write method
+            connection_->write(message);
             
             // Schedule next message
             scheduleNextMessage();
@@ -171,22 +166,16 @@ private:
         if (!connected_) return;
         
         try {
-            // Read response from server
-            char buffer[4096];
-            int fd = connection_->fd();
-            ssize_t bytesRead = ::read(fd, buffer, sizeof(buffer) - 1);
+            // Get data from the read buffer
+            Buffer& readBuffer = connection_->getReadBuffer();
             
-            if (bytesRead > 0) {
-                buffer[bytesRead] = '\0';
-                std::cout << "Received echo: " << buffer;
-            } else if (bytesRead == 0) {
-                // Server closed connection
-                std::cout << "Server closed connection" << std::endl;
-                handleDisconnect();
-            } else {
-                // Error reading
-                std::cerr << "Error reading from server: " << strerror(errno) << std::endl;
-                handleError();
+            if (readBuffer.readableBytes() > 0) {
+                // Get the data as string
+                std::string data = readBuffer.retrieveAllAsString();
+                std::cout << "Received echo: " << data;
+                
+                // Continue reading
+                connection_->readRaw();
             }
         } catch (const std::exception& e) {
             std::cerr << "Error handling server response: " << e.what() << std::endl;
