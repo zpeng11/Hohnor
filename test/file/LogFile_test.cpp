@@ -47,16 +47,28 @@ protected:
     
     std::vector<std::string> getLogFiles() {
         std::vector<std::string> files;
-        DIR* dir = opendir("test_logs");
-        if (dir) {
-            struct dirent* entry;
-            while ((entry = readdir(dir)) != nullptr) {
-                if (strstr(entry->d_name, "test_log") != nullptr) {
-                    files.push_back(entry->d_name);
+        
+        // Retry mechanism for CI environments where file system operations might be delayed
+        int retries = 10;
+        while (retries > 0 && files.empty()) {
+            DIR* dir = opendir("test_logs");
+            if (dir) {
+                struct dirent* entry;
+                while ((entry = readdir(dir)) != nullptr) {
+                    if (strstr(entry->d_name, "test_log") != nullptr) {
+                        files.push_back(entry->d_name);
+                    }
                 }
+                closedir(dir);
             }
-            closedir(dir);
+            
+            if (files.empty() && retries > 1) {
+                // Small delay to allow file system synchronization
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+            retries--;
         }
+        
         std::sort(files.begin(), files.end());
         return files;
     }
@@ -88,6 +100,7 @@ TEST_F(LogFileTest, ConstructorWithDefaultParameters) {
     {
         LogFile logFile(testBasename_, testDirectory_);
         // Constructor should create initial log file
+        logFile.flush(); // Ensure file is flushed before destruction
     }
     
     auto files = getLogFiles();
@@ -100,6 +113,7 @@ TEST_F(LogFileTest, ConstructorWithCustomParameters) {
     {
         LogFile logFile(testBasename_, testDirectory_, 512, 1, 1024, 3600, Timestamp::GMT);
         // Constructor should create initial log file with custom parameters
+        logFile.flush(); // Ensure file is flushed before destruction
     }
     
     auto files = getLogFiles();
@@ -112,21 +126,30 @@ TEST_F(LogFileTest, ConstructorWithCurrentDirectory) {
     {
         LogFile logFile(testBasename_);
         // Should create log file in current directory
+        logFile.flush(); // Ensure file is flushed before destruction
     }
     
-    // Check if file was created in current directory
-    DIR* dir = opendir(".");
+    // Check if file was created in current directory with retry mechanism
     bool found = false;
-    if (dir) {
-        struct dirent* entry;
-        while ((entry = readdir(dir)) != nullptr) {
-            if (strstr(entry->d_name, "test_log") != nullptr && strstr(entry->d_name, ".log") != nullptr) {
-                found = true;
-                unlink(entry->d_name); // Clean up
-                break;
+    int retries = 10;
+    while (!found && retries > 0) {
+        DIR* dir = opendir(".");
+        if (dir) {
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                if (strstr(entry->d_name, "test_log") != nullptr && strstr(entry->d_name, ".log") != nullptr) {
+                    found = true;
+                    unlink(entry->d_name); // Clean up
+                    break;
+                }
             }
+            closedir(dir);
         }
-        closedir(dir);
+        
+        if (!found && retries > 1) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        retries--;
     }
     EXPECT_TRUE(found);
 }
@@ -280,6 +303,7 @@ TEST_F(LogFileTest, AutoFlushBasedOnTimeInterval) {
 // Filename Generation Tests
 TEST_F(LogFileTest, FilenameFormatUTC) {
     LogFile logFile(testBasename_, testDirectory_, 1024, 3, 65536 * 256, 60 * 60 * 24, Timestamp::UTC);
+    logFile.flush(); // Ensure file is created and flushed
     
     auto files = getLogFiles();
     EXPECT_EQ(files.size(), 1);
@@ -291,6 +315,7 @@ TEST_F(LogFileTest, FilenameFormatUTC) {
 
 TEST_F(LogFileTest, FilenameFormatGMT) {
     LogFile logFile(testBasename_, testDirectory_, 1024, 3, 65536 * 256, 60 * 60 * 24, Timestamp::GMT);
+    logFile.flush(); // Ensure file is created and flushed
     
     auto files = getLogFiles();
     EXPECT_EQ(files.size(), 1);
@@ -368,6 +393,7 @@ TEST_F(LogFileTest, LargeMessage) {
 TEST_F(LogFileTest, DirectoryWithoutTrailingSlash) {
     std::string dirWithoutSlash = "test_logs";
     LogFile logFile(testBasename_, dirWithoutSlash);
+    logFile.flush(); // Ensure file is created and flushed
     
     auto files = getLogFiles();
     EXPECT_EQ(files.size(), 1);
