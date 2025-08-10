@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <endian.h>
 #include <sys/sendfile.h>
+#include <netinet/tcp.h>
+#include <string>
 
 namespace Hohnor
 {
@@ -60,6 +62,10 @@ namespace Hohnor
         struct sockaddr_in6 getPeerAddr(int sockfd);
         //compare if local and peer address are the same
         bool isSelfConnect(int sockfd);
+
+        struct tcp_info getTCPInfo(int fd);
+
+        std::string getTCPInfoStr(int fd);
 
         /**
          * IO functions are not wrapped at this level

@@ -31,6 +31,7 @@ namespace Hohnor
             socketHandler_ = handler;
             loop_ = loop;
         }
+        std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
     public:
         typedef int SocketFd;
         ~Socket();
@@ -56,8 +57,6 @@ namespace Hohnor
         SocketFd fd() const;
 
         std::shared_ptr<EventLoop> loop();
-
-        std::shared_ptr<IOHandler> getSocketHandler() const { return socketHandler_; }
 
         //Expose IOHandler's interface
         void setReadCallback(ReadCallback cb);

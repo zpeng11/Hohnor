@@ -25,6 +25,45 @@ TCPConnector::TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& a
     LOG_DEBUG << "TCPConnector created for " << serverAddr_.toIpPort();
 }
 
+void TCPConnector::setNewConnectionCallback(NewConnectionCallback cb)
+{
+    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
+    loop()->runInLoop([weakThis, cb]() {
+        auto sharedThis = weakThis.lock();
+        if (sharedThis) {
+            sharedThis->newConnectionCallback_ = std::move(cb);
+        } else {
+            LOG_WARN << "TCPConnector is already destroyed, cannot set new connection callback";
+        }
+    });
+}
+
+void TCPConnector::setRetryConnectionCallback(RetryConnectionCallback cb)
+{
+    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
+    loop()->runInLoop([weakThis, cb]() {
+        auto sharedThis = weakThis.lock();
+        if (sharedThis) {
+            sharedThis->retryCallback_ = std::move(cb);
+        } else {
+            LOG_WARN << "TCPConnector is already destroyed, cannot set retry connection callback";
+        }
+    });
+}
+
+void TCPConnector::setFailedConnectionCallback(FailedConnectionCallback cb)
+{
+    std::weak_ptr<TCPConnector> weakThis = shared_from_this();
+    loop()->runInLoop([weakThis, cb]() {
+        auto sharedThis = weakThis.lock();
+        if (sharedThis) {
+            sharedThis->failedCallback_ = std::move(cb);
+        } else {
+            LOG_WARN << "TCPConnector is already destroyed, cannot set failed connection callback";
+        }
+    });
+}
+
 void TCPConnector::start()
 {
     auto sharedThis = shared_from_this();

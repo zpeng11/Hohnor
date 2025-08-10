@@ -25,7 +25,8 @@ public:
     explicit Buffer(size_t initialSize = kInitialSize)
         : buffer_(kCheapPrepend + initialSize),
           readerIndex_(kCheapPrepend),
-          writerIndex_(kCheapPrepend) {}
+          writerIndex_(kCheapPrepend),
+          lastWriteBytes_(0) {}
 
     // --- Capacity and Index Info ---
     size_t readableBytes() const { return writerIndex_ - readerIndex_; }
@@ -152,6 +153,8 @@ public:
     void hasWritten(size_t len) {
         assert(len <= writableBytes());
         writerIndex_ += len;
+        //Set last written bytes
+        lastWriteBytes_ = static_cast<int>(len);
     }
     
     void ensureWritable(size_t len) {
@@ -165,9 +168,29 @@ public:
     {
         assert(len <= readableBytes());
         writerIndex_ -= len;
+        //Set last written to be all
+        lastWriteBytes_ = readableBytes();
     }
 
     ssize_t readFd(int fd, int* savedErrno);
+
+    void swap(Buffer& rhs)
+    {
+        buffer_.swap(rhs.buffer_);
+        std::swap(readerIndex_, rhs.readerIndex_);
+        std::swap(writerIndex_, rhs.writerIndex_);
+    }
+
+    void shrink(size_t reserve)
+    {
+        // FIXME: use vector::shrink_to_fit() in C++ 11 if possible.
+        Buffer other;
+        other.ensureWritable(readableBytes()+reserve);
+        other.append(readableSlice());
+        swap(other);
+    }
+
+    ssize_t lastWriteBytes() const { return lastWriteBytes_; }
 
 private:
     char* begin() { return &*buffer_.begin(); }
@@ -191,6 +214,7 @@ private:
     std::vector<char> buffer_;
     size_t readerIndex_;
     size_t writerIndex_;
+    size_t lastWriteBytes_;
 };
 
 } // namespace

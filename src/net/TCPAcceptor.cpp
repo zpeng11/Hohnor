@@ -6,36 +6,12 @@
 using namespace Hohnor;
 struct tcp_info TCPAcceptor::getTCPInfo() const
 {
-    struct tcp_info tcpi;
-    socklen_t len = sizeof(tcpi);
-    memZero(&tcpi, len);
-    int ret = getsockopt(this->fd(), SOL_TCP, TCP_INFO, &tcpi, &len);
-    if (ret != 0)
-    {
-        LOG_SYSERR << "Socket::getTCPInfo error ";
-    }
-    return tcpi;
+    return SocketFuncs::getTCPInfo(this->fd());
 }
 
 std::string TCPAcceptor::getTCPInfoStr() const
 {
-    struct tcp_info ti = getTCPInfo();
-    string str;
-    const char *percentU = "%u";
-    str.append("unrecovered=").append(Fmt(percentU, ti.tcpi_retransmits).data()); // Number of unrecovered [RTO] timeouts
-    str.append(" rto=").append(Fmt(percentU, ti.tcpi_rto).data());                // Retransmit timeout in usec
-    str.append(" ato=").append(Fmt(percentU, ti.tcpi_ato).data());                // Predicted tick of soft clock in usec
-    str.append(" snd_mss=").append(Fmt(percentU, ti.tcpi_snd_mss).data());
-    str.append(" rcv_mss=").append(Fmt(percentU, ti.tcpi_rcv_mss).data());
-    str.append(" lost=").append(Fmt(percentU, ti.tcpi_lost).data());       // Lost packets
-    str.append(" retrans=").append(Fmt(percentU, ti.tcpi_retrans).data()); // Retransmitted packets out
-    str.append(" rtt=").append(Fmt(percentU, ti.tcpi_rtt).data());         // Smoothed round trip time in usec
-    str.append(" rttvar=").append(Fmt(percentU, ti.tcpi_rttvar).data());   // Medium deviation
-    str.append(" ssthresh=").append(Fmt(percentU, ti.tcpi_snd_ssthresh).data());
-    str.append(" cwnd=").append(Fmt(percentU, ti.tcpi_snd_cwnd).data());
-    str.append(" total_retrans=").append(Fmt(percentU, ti.tcpi_total_retrans).data()); // Total retransmits for entire connection
-
-    return std::move(str);
+    return SocketFuncs::getTCPInfoStr(this->fd());
 }
 
 void TCPAcceptor::setAcceptCallback(AcceptCallback cb)

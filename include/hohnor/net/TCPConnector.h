@@ -20,11 +20,11 @@ namespace Hohnor
         TCPConnector(std::shared_ptr<EventLoop> loop, const InetAddress& addr);
 
         //will be called when the connection is established
-        void setNewConnectionCallback(NewConnectionCallback cb) { newConnectionCallback_ = std::move(cb); }
+        void setNewConnectionCallback(NewConnectionCallback cb);
         //will be called when the connection is retried
-        void setRetryConnectionCallback(RetryConnectionCallback cb) { retryCallback_ = std::move(cb); }
+        void setRetryConnectionCallback(RetryConnectionCallback cb);
         //will be called when the connection fails after all retries
-        void setFailedConnectionCallback(FailedConnectionCallback cb) { failedCallback_ = std::move(cb); }
+        void setFailedConnectionCallback(FailedConnectionCallback cb);
 
         //By default the Connector uses exponential delay from 500ms, you can set a constant delay
         //This is useful for testing or when you want to control the retry timing
