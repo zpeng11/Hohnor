@@ -1,0 +1,205 @@
+#include "hohnor/core/Timer.h"
+#include "hohnor/core/EventLoop.h"
+#include "hohnor/core/Timer.h"
+#include "hohnor/core/IOHandler.h"
+#include "hohnor/log/Logging.h"
+#include <sys/timerfd.h>
+
+using namespace Hohnor;
+
+int createTimerfd()
+{
+    int timerfd = ::timerfd_create(CLOCK_MONOTONIC,
+                                    TFD_NONBLOCK | TFD_CLOEXEC);
+    if (timerfd < 0)
+    {
+        LOG_SYSFATAL << "Failed in timerfd_create";
+    }
+    return timerfd;
+}
+
+struct timespec howMuchTimeFromNow(Timestamp when)
+{
+    int64_t microseconds = when.microSecondsSinceEpoch() - Timestamp::now().microSecondsSinceEpoch();
+    if (microseconds < 100)
+    {
+        microseconds = 100;
+    }
+    struct timespec ts;
+    ts.tv_sec = static_cast<time_t>(
+        microseconds / Timestamp::kMicroSecondsPerSecond);
+    ts.tv_nsec = static_cast<long>(
+        (microseconds % Timestamp::kMicroSecondsPerSecond) * 1000);
+    return ts;
+}
+
+bool timerCmpLessThan(std::shared_ptr<TimerHandler> &lhs, std::shared_ptr<TimerHandler> &rhs)
+{
+    if (lhs->expiration().microSecondsSinceEpoch() < rhs->expiration().microSecondsSinceEpoch())
+        return true;
+    else if (lhs->expiration().microSecondsSinceEpoch() > rhs->expiration().microSecondsSinceEpoch())
+        return false;
+    else
+        return lhs->sequence() < rhs->sequence();
+}
+
+void resetTimerfd(int timerfd, Timestamp expiration)
+{
+    // wake up loop by timerfd_settime()
+    struct itimerspec newValue;
+    memZero(&newValue, sizeof newValue);
+    newValue.it_value = howMuchTimeFromNow(expiration);
+    int ret = ::timerfd_settime(timerfd, 0, &newValue, NULL);
+    if (ret)
+    {
+        LOG_SYSERR << "timerfd_settime()";
+    }
+}
+
+std::atomic<uint64_t> TimerHandler::s_numCreated_;
+
+TimerHandler::TimerHandler(EventLoop *loop, TimerCallback callback, Timestamp when, double interval) : loop_(loop), callback_(callback),
+                                                                        expiration_(when),
+                                                                        interval_(interval),
+                                                                        disabled_(false),
+                                                                        sequence_(s_numCreated_++)
+{
+}
+
+void TimerHandler::run()
+{
+    if (!disabled_ && callback_)
+    {
+        LOG_DEBUG << "Running timer callback for sequence " << sequence_ << " at " << expiration_.toString();
+        callback_();
+    }
+    if(!isRepeat()){
+        callback_ = nullptr; // Clear callback to avoid running it again and release resources enclosed
+    }
+}
+
+void TimerHandler::disable()
+{
+    if(disabled_)
+    {
+        LOG_DEBUG << "Timer is already disabled"; 
+        return;
+    }
+    if(loop_->isQuited()){
+        interval_ = 0.0;
+        disabled_ = true;
+        callback_ = nullptr;
+        return;
+    }
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler](){
+        handler->interval_ = 0.0;
+        handler->disabled_ = true;
+        handler->callback_ = nullptr;
+    });
+}
+
+void TimerHandler::updateCallback(TimerCallback callback)
+{
+    if(disabled_)
+    {
+        LOG_DEBUG << "Timer is already disabled"; 
+        return;
+    }
+    auto handler = shared_from_this();
+    loop_->runInLoop([handler, callback](){
+        handler->callback_ = std::move(callback);
+        if(Timestamp::now() >= handler->expiration() && handler->getRepeatInterval() <= 0.0)
+        {
+            LOG_WARN << "Updated timer callback after time expired and no more repeat";
+        }
+    });
+}
+
+void TimerHandler::reloadInLoop()
+{
+    if (interval_ > 0.0)
+    {
+        expiration_ = addTime(expiration_, interval_);
+    }
+    else
+    {
+        expiration_ = Timestamp::invalid();
+    }
+}
+
+TimerQueue::TimerQueue(EventLoop *loop) : loop_(loop), timerFdIOHandle_(nullptr),
+                                          heap_(timerCmpLessThan)
+{
+    int fd = createTimerfd();
+    LOG_DEBUG << "Created timerfd " << fd;
+    timerFdIOHandle_ = loop->handleIO(fd);
+    timerFdIOHandle_->setReadCallback(std::bind(&TimerQueue::handleRead, this));
+    timerFdIOHandle_->enable();
+    LOG_DEBUG << "Created TimerQueue with fd " << fd;
+}
+
+TimerQueue::~TimerQueue()
+{
+    while (heap_.size())
+    {
+        heap_.popTop()->disable();
+    }
+    // Eventloop will take care of these
+    // timerFdIOHandle_->disable();
+    // LOG_DEBUG << "disable TimerQueue fd ";
+    // timerFdIOHandle_.reset();
+    // LOG_DEBUG << "Clean TimerQueue fd handler ";
+}
+
+void TimerQueue::handleRead()
+{
+    loop_->assertInLoopThread();
+    Timestamp now(Timestamp::now());
+    uint64_t howmany;
+    ssize_t n = ::read(timerFdIOHandle_->fd(), &howmany, sizeof howmany);
+    LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at " << now.toString();
+    if (UNLIKELY(n != sizeof howmany))
+    {
+        LOG_ERROR << "TimerQueue::handleRead() reads " << n << " bytes instead of 8";
+    }
+
+    while (heap_.size() && heap_.top()->expiration().microSecondsSinceEpoch() <= now.microSecondsSinceEpoch())
+    {
+        auto timerHandler = heap_.popTop();
+        timerHandler->run();
+        if (timerHandler->isRepeat())
+        {
+            timerHandler->reloadInLoop();
+            loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timerHandler));
+        }
+        else //For non-repeating timers, mark it as disabled.
+        {
+            timerHandler->disabled_ = true;
+        }
+    }
+    if (heap_.size())
+    {
+        resetTimerfd(timerFdIOHandle_->fd(), heap_.top()->expiration());
+    }
+}
+
+std::shared_ptr<TimerHandler> TimerQueue::addTimer(TimerCallback cb,
+                             Timestamp when,
+                             double interval)
+{
+    std::shared_ptr<TimerHandler> timerHandler(new TimerHandler(loop_, std::move(cb), when, interval));
+    loop_->queueInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timerHandler));
+    return timerHandler;
+}
+
+void TimerQueue::addTimerInLoop(std::shared_ptr<TimerHandler> timerHandler)
+{
+    loop_->assertInLoopThread();
+    HCHECK_NE(timerHandler, nullptr) << "Adding a nullptr to timerqueue";
+    heap_.insert(timerHandler);
+    if(heap_.top() == timerHandler)
+    {
+        resetTimerfd(timerFdIOHandle_->fd(), timerHandler->expiration());
+    }
+}
