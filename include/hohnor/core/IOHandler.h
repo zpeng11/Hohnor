@@ -59,6 +59,12 @@ namespace Hohnor
     public:
         // Delete default constructor
         IOHandler() = delete;
+
+        static IOHandlerPtr create(EventLoopPtr loop, int fd)
+        {
+            return IOHandlerPtr(new IOHandler(loop, fd));
+        }
+
         ~IOHandler();
         //Get current event setting, this is not thread safe
         int getEvents() { return events_; }

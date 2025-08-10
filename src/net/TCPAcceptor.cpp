@@ -22,7 +22,7 @@ void TCPAcceptor::setAcceptCallback(AcceptCallback cb)
         if (self)
         {
             auto handler = self->accept();
-            cb(std::make_shared<TCPConnection>(handler));
+            cb(TCPConnection::create(handler));
         }
     });
 }

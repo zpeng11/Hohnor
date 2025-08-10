@@ -20,8 +20,14 @@ namespace Hohnor
         typedef std::function<void (TCPConnectionPtr)> NewConnectionCallback;
         typedef std::function<void ()> RetryConnectionCallback;
         typedef std::function<void ()> FailedConnectionCallback;
-        // Constructor that initializes the connector with an EventLoop and connection parameters
-        TCPConnector(EventLoopPtr loop, const InetAddress& addr);
+        
+        // Static factory method to create shared_ptr instances
+        static TCPConnectorPtr create(EventLoopPtr loop, const InetAddress& addr)
+        {
+            return TCPConnectorPtr(new TCPConnector(loop, addr));
+        }
+
+        TCPConnector() = delete;
 
         //will be called when the connection is established
         void setNewConnectionCallback(NewConnectionCallback cb);
@@ -48,6 +54,10 @@ namespace Hohnor
         InetAddress getServerAddr() const { return serverAddr_; }
 
         enum State { Disconnected, Connecting, Connected };
+        
+    protected:
+        // Constructor that initializes the connector with an EventLoop and connection parameters
+        TCPConnector(EventLoopPtr loop, const InetAddress& addr);
     
     private:
         InetAddress serverAddr_;

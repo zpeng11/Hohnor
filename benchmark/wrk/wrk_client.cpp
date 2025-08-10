@@ -137,7 +137,7 @@ private:
     void createConnection(int connId) {
         try {
             InetAddress serverAddr(serverHost_, serverPort_);
-            auto connector = std::make_shared<TCPConnector>(loop_, serverAddr);
+            auto connector = TCPConnector::create(loop_, serverAddr);
             
             // Set connection callbacks
             connector->setNewConnectionCallback([this, connId](TCPConnectionPtr conn) {

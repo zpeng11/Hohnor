@@ -74,7 +74,7 @@ public:
         try {
             // Create TCP connector
             InetAddress serverAddr(serverHost_, serverPort_);
-            connector_ = std::make_shared<TCPConnector>(loop_, serverAddr);
+            connector_ = TCPConnector::create(loop_, serverAddr);
             
             // Set up connection callbacks
             connector_->setNewConnectionCallback([this](TCPConnectionPtr connection) {

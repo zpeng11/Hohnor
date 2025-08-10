@@ -28,9 +28,13 @@ namespace Hohnor
     class TCPConnection : public Socket, public std::enable_shared_from_this<TCPConnection>
     {
     public:
+        // Static factory method to create shared_ptr instances
+        static TCPConnectionPtr create(IOHandlerPtr handler)
+        {
+            return TCPConnectionPtr(new TCPConnection(handler));
+        }
 
-        // Constructor - should only be called by TCPAcceptor or TCPConnector
-        TCPConnection(IOHandlerPtr handler);
+        TCPConnection() = delete;
 
         ~TCPConnection();
 
@@ -78,6 +82,10 @@ namespace Hohnor
         struct tcp_info getTCPInfo() const;
         //Get Tcp information string. In case failed return empty string
         std::string getTCPInfoStr() const;
+
+    protected:
+        // Constructor - should only be called by TCPAcceptor or TCPConnector
+        TCPConnection(IOHandlerPtr handler);
 
     private:
         bool isReadingUntilCondition() const { return readStopCondition_ != nullptr; }

@@ -216,7 +216,7 @@ void TCPConnector::handleConnectWrite()
         auto socketHandler = getSocketHandler();
         resetSocketHandler(nullptr);
         if (newConnectionCallback_) {
-            newConnectionCallback_(std::make_shared<TCPConnection>(socketHandler));
+            newConnectionCallback_(TCPConnection::create(socketHandler));
         }
     }
 }

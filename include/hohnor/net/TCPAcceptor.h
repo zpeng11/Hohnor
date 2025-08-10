@@ -24,8 +24,14 @@ namespace Hohnor
     public:
         //Accept callback should take care if the handler is nullptr
         typedef std::function<void (TCPConnectionPtr)> AcceptCallback;
-        explicit TCPAcceptor(EventLoopPtr loop, int options = SOCK_STREAM, bool ipv6 = false)
-            : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
+        
+        // Static factory method to create shared_ptr instances
+        static TCPAcceptorPtr create(EventLoopPtr loop, int options = SOCK_STREAM, bool ipv6 = false)
+        {
+            return TCPAcceptorPtr(new TCPAcceptor(loop, options, ipv6));
+        }
+
+        TCPAcceptor() = delete;
 
         ~TCPAcceptor() = default;
 
@@ -56,6 +62,11 @@ namespace Hohnor
 
         // Enable/disable SO_KEEPALIVE
         void setKeepAlive(bool on);
+        
+    protected:
+        explicit TCPAcceptor(EventLoopPtr loop, int options = SOCK_STREAM, bool ipv6 = false)
+            : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
+            
     private:
         //Actively accept a connection, return IOHandler
         IOHandlerPtr accept();

@@ -41,7 +41,7 @@ public:
 
         try {
             // Create TCP listen socket
-            listenSocket_ = std::make_shared<TCPAcceptor>(loop_);
+            listenSocket_ = TCPAcceptor::create(loop_);
 
             // Set socket options
             listenSocket_->setReuseAddr(true);
