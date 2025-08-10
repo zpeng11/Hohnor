@@ -68,7 +68,7 @@ SERVER_PID=$!
 sleep 2
 
 echo "Starting client test with $CONNECTIONS connections for $DURATION seconds..."
-$CLIENT_BINARY -h localhost -p $PORT -c $CONNECTIONS -t $DURATION
+$CLIENT_BINARY -h 127.0.0.1 -p $PORT -c $CONNECTIONS -t $DURATION
 
 # Stop the server
 echo "Stopping server..."
