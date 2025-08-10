@@ -41,7 +41,7 @@ class HttpClient {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::vector<std::shared_ptr<TCPConnector>> connectors_;
-    std::vector<std::shared_ptr<TCPConnection>> connections_;
+    std::vector<TCPConnectionPtr> connections_;
     std::string serverHost_;
     uint16_t serverPort_;
     int numConnections_;
@@ -140,7 +140,7 @@ private:
             auto connector = std::make_shared<TCPConnector>(loop_, serverAddr);
             
             // Set connection callbacks
-            connector->setNewConnectionCallback([this, connId](std::shared_ptr<TCPConnection> conn) {
+            connector->setNewConnectionCallback([this, connId](TCPConnectionPtr conn) {
                 this->handleNewConnection(connId, conn);
             });
             
@@ -166,7 +166,7 @@ private:
         }
     }
 
-    void handleNewConnection(int connId, std::shared_ptr<TCPConnection> conn) {
+    void handleNewConnection(int connId, TCPConnectionPtr conn) {
         if (!conn) {
             std::cerr << "Connection " << connId << " is null" << std::endl;
             stats_.errors++;
@@ -187,10 +187,8 @@ private:
         conn->setTCPNoDelay(true);
         
         // Set up connection callbacks
-        conn->setReadCompleteCallback([this, connId](TCPConnectionWeakPtr weakConn) {
-            if (auto connection = weakConn.lock()) {
-                this->handleHttpResponse(connId, connection);
-            }
+        conn->setReadCompleteCallback([this, connId](TCPConnectionPtr conn) {
+            this->handleHttpResponse(connId, conn);
         });
         
         conn->setCloseCallback([this, connId]() {
@@ -205,7 +203,7 @@ private:
         sendHttpRequest(connId, conn);
     }
 
-    void sendHttpRequest(int connId, std::shared_ptr<TCPConnection> conn) {
+    void sendHttpRequest(int connId, TCPConnectionPtr conn) {
         if (!running_ || !conn || conn->isClosed()) {
             return;
         }
@@ -229,7 +227,7 @@ private:
         }
     }
 
-    void handleHttpResponse(int connId, std::shared_ptr<TCPConnection> conn) {
+    void handleHttpResponse(int connId, TCPConnectionPtr conn) {
         try {
             Buffer& readBuffer = conn->getReadBuffer();
             

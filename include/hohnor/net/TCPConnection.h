@@ -17,11 +17,10 @@ namespace Hohnor
 
     // Forward declaration for callback types
     typedef std::shared_ptr<TCPConnection> TCPConnectionPtr;
-    typedef std::weak_ptr<TCPConnection> TCPConnectionWeakPtr;
 
-    typedef std::function<void (TCPConnectionWeakPtr)> HighWaterMarkCallback;
-    typedef std::function<void (TCPConnectionWeakPtr)> ReadCompleteCallback;
-    typedef std::function<void (TCPConnectionWeakPtr)> WriteCompleteCallback;
+    typedef std::function<void (TCPConnectionPtr)> HighWaterMarkCallback;
+    typedef std::function<void (TCPConnectionPtr)> ReadCompleteCallback;
+    typedef std::function<void (TCPConnectionPtr)> WriteCompleteCallback;
     // A filter class that returns true to stop reading
     typedef std::function<bool (Buffer&)> ReadStopCondition;
 

@@ -24,7 +24,7 @@ class EchoServer {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPAcceptor> listenSocket_;
-    std::unordered_map<int, std::shared_ptr<TCPConnection>> clients_;
+    std::unordered_map<int, TCPConnectionPtr> clients_;
     uint16_t port_;
     bool running_;
 
@@ -86,7 +86,7 @@ public:
     }
 
 private:
-    void handleNewConnection(std::shared_ptr<TCPConnection> clientConnection) {
+    void handleNewConnection(TCPConnectionPtr clientConnection) {
         try {
             
             if (!clientConnection) {
@@ -101,10 +101,8 @@ private:
             clients_[clientFd] = clientConnection;
 
             // Set up client callbacks using TCPConnection's callback system
-            clientConnection->setReadCompleteCallback([this, clientFd](TCPConnectionWeakPtr weakConn) {
-                if (auto conn = weakConn.lock()) {
-                    this->handleClientData(clientFd);
-                }
+            clientConnection->setReadCompleteCallback([this, clientFd](TCPConnectionPtr conn) {
+                this->handleClientData(clientFd);
             });
 
             clientConnection->setCloseCallback([this, clientFd]() {

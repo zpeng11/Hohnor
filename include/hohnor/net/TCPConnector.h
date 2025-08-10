@@ -14,7 +14,7 @@ namespace Hohnor
     class TCPConnector : public Socket, public std::enable_shared_from_this<TCPConnector>
     {
     public:
-        typedef std::function<void (std::shared_ptr<TCPConnection>)> NewConnectionCallback;
+        typedef std::function<void (TCPConnectionPtr)> NewConnectionCallback;
         typedef std::function<void ()> RetryConnectionCallback;
         typedef std::function<void ()> FailedConnectionCallback;
         // Constructor that initializes the connector with an EventLoop and connection parameters

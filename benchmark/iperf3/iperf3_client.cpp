@@ -28,7 +28,7 @@ class IPerf3Client {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPConnector> connector_;
-    std::shared_ptr<TCPConnection> connection_;
+    TCPConnectionPtr connection_;
     std::string serverHost_;
     uint16_t serverPort_;
     bool connected_;
@@ -77,7 +77,7 @@ public:
             connector_ = std::make_shared<TCPConnector>(loop_, serverAddr);
             
             // Set up connection callbacks
-            connector_->setNewConnectionCallback([this](std::shared_ptr<TCPConnection> connection) {
+            connector_->setNewConnectionCallback([this](TCPConnectionPtr connection) {
                 LOG_DEBUG << "Reach here";
                 this->handleNewConnection(connection);
             });
@@ -134,7 +134,7 @@ public:
     }
 
 private:
-    void handleNewConnection(std::shared_ptr<TCPConnection> connection) {
+    void handleNewConnection(TCPConnectionPtr connection) {
         std::cout << "[  4] local " << connection->getLocalAddr().toIpPort() 
                   << " port " << connection->getLocalAddr().port()
                   << " connected to " << connection->getPeerAddr().toIpPort() 
@@ -149,10 +149,8 @@ private:
         LOG_DEBUG << "TCP_NODELAY set";
 
         // Set up callbacks for the connection
-        connection_->setWriteCompleteCallback([this](TCPConnectionWeakPtr weakConn) {
-            if (auto conn = weakConn.lock()) {
-                this->handleWriteComplete();
-            }
+        connection_->setWriteCompleteCallback([this](TCPConnectionPtr conn) {
+            this->handleWriteComplete();
         });
 
         connection_->setCloseCallback([this]() {

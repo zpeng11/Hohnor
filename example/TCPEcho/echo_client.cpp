@@ -24,7 +24,7 @@ class EchoClient {
 private:
     std::shared_ptr<EventLoop> loop_;
     std::shared_ptr<TCPConnector> connector_;
-    std::shared_ptr<TCPConnection> connection_;
+    TCPConnectionPtr connection_;
     std::string serverHost_;
     uint16_t serverPort_;
     bool connected_;
@@ -41,14 +41,14 @@ public:
             std::cout << "Client is already running!" << std::endl;
             return;
         }
-        Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
+        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
         try {
             // Create TCP connector
             InetAddress serverAddr(serverHost_, serverPort_);
             connector_ = std::make_shared<TCPConnector>(loop_, serverAddr);
             
             // Set up connection callbacks
-            connector_->setNewConnectionCallback([this](std::shared_ptr<TCPConnection> connection) {
+            connector_->setNewConnectionCallback([this](TCPConnectionPtr connection) {
                 this->handleNewConnection(connection);
             });
 
@@ -102,17 +102,15 @@ public:
     }
 
 private:
-    void handleNewConnection(std::shared_ptr<TCPConnection> connection) {
+    void handleNewConnection(TCPConnectionPtr connection) {
         std::cout << "Connected to server successfully!" << std::endl;
         
         connection_ = connection;
         connected_ = true;
         
         // Set up callbacks for the connection
-        connection_->setReadCompleteCallback([this](TCPConnectionWeakPtr weakConn) {
-            if (auto conn = weakConn.lock()) {
-                this->handleServerResponse();
-            }
+        connection_->setReadCompleteCallback([this](TCPConnectionPtr conn) {
+            this->handleServerResponse();
         });
 
         connection_->setCloseCallback([this]() {
@@ -123,12 +121,6 @@ private:
             this->handleError();
         });
 
-        connection_->setWriteCompleteCallback([this](TCPConnectionWeakPtr weakConn) {
-            if (auto conn = weakConn.lock()) {
-                this->sendMessage();
-            }
-        });
-        
         // Start reading from the connection
         connection_->readRaw();
 
@@ -162,7 +154,7 @@ private:
             connection_->write(message);
             
             // Schedule next message
-            // scheduleNextMessage();
+            scheduleNextMessage();
             
         } catch (const std::exception& e) {
             std::cerr << "Error sending message: " << e.what() << std::endl;
