@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Test script for wrk benchmark
+# This script will be configured by CMake
+
+SERVER_BINARY="@CMAKE_CURRENT_BINARY_DIR@/wrk_server"
+CLIENT_BINARY="@CMAKE_CURRENT_BINARY_DIR@/wrk_client"
+
+echo "=== Hohnor wrk Benchmark Test Script ==="
+echo "Server binary: $SERVER_BINARY"
+echo "Client binary: $CLIENT_BINARY"
+echo ""
+
+# Check if binaries exist
+if [ ! -f "$SERVER_BINARY" ]; then
+    echo "Error: Server binary not found at $SERVER_BINARY"
+    echo "Please build the project first: make wrk_benchmark_all"
+    exit 1
+fi
+
+if [ ! -f "$CLIENT_BINARY" ]; then
+    echo "Error: Client binary not found at $CLIENT_BINARY"
+    echo "Please build the project first: make wrk_benchmark_all"
+    exit 1
+fi
+
+# Default test parameters
+PORT=8080
+CONNECTIONS=100
+DURATION=10
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -p|--port)
+            PORT="$2"
+            shift 2
+            ;;
+        -c|--connections)
+            CONNECTIONS="$2"
+            shift 2
+            ;;
+        -t|--time)
+            DURATION="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  -p, --port <port>         Server port (default: 8080)"
+            echo "  -c, --connections <num>   Number of connections (default: 100)"
+            echo "  -t, --time <seconds>      Test duration (default: 10)"
+            echo "  -h, --help               Show this help"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+echo "Starting server on port $PORT..."
+$SERVER_BINARY -p $PORT &
+SERVER_PID=$!
+
+# Wait for server to start
+sleep 2
+
+echo "Starting client test with $CONNECTIONS connections for $DURATION seconds..."
+$CLIENT_BINARY -h localhost -p $PORT -c $CONNECTIONS -t $DURATION
+
+# Stop the server
+echo "Stopping server..."
+kill $SERVER_PID 2>/dev/null
+wait $SERVER_PID 2>/dev/null
+
+echo "Test completed."

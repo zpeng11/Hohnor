@@ -36,7 +36,6 @@ TCPConnection::TCPConnection(std::shared_ptr<IOHandler> handler)
 
     // Disable write events initially
     setWriteEvent(false);
-    enable();
 }
 
 TCPConnection::~TCPConnection()
@@ -98,6 +97,10 @@ void TCPConnection::readRaw()
     loop()->runInLoop([sharedThis]() {
         sharedThis->readStopCondition_ = nullptr;
     });
+    if(UNLIKELY(!Socket::isEnabled())){
+        // If the socket is not enabled, we need to enable it
+        enable();
+    }
 }
 
 void TCPConnection::readUntil(const std::string& delimiter)
@@ -125,6 +128,10 @@ void TCPConnection::readUntilCondition(ReadStopCondition condition)
     loop()->runInLoop([sharedThis, condition]() {
         sharedThis->readStopCondition_ = condition;
     });
+    if(UNLIKELY(!Socket::isEnabled())){
+        // If the socket is not enabled, we need to enable it
+        enable();
+    }
 }
 
 // --- Write Operations ---
@@ -144,6 +151,10 @@ void TCPConnection::write(const StringPiece message)
         }
         sharedThis->writeInLoop(message);
     });
+    if(UNLIKELY(!Socket::isEnabled())) {
+        // If the socket is not enabled, we need to enable it
+        enable();
+    }
 }
 
 void TCPConnection::write(const std::string& message)
@@ -169,7 +180,10 @@ void TCPConnection::write()
         }
         sharedThis->getSocketHandler()->setWriteEvent(true);
     });
-    enable(); // Ensure the read event is enabled
+    if(UNLIKELY(!Socket::isEnabled())) {
+        // If the socket is not enabled, we need to enable it
+        enable();
+    }
 }
 
 // --- Connection Management ---
@@ -245,7 +259,7 @@ void TCPConnection::handleRead()
     ssize_t n = readBuffer_.readFd(this->fd(), &savedErrno);
     
     if (n > 0) {
-        // LOG_TRACE << "TCPConnection::handleRead fd [" << fd() << "] read " << n << " bytes to " << getTCPInfoStr();
+        LOG_TRACE << "TCPConnection::handleRead fd [" << fd() << "] read " << n << " bytes to " << getTCPInfoStr();
 
         // Check if we should stop reading based on the current read mode
         if(isReadingUntilCondition() && readStopCondition_(readBuffer_)) //Reading until condition && condition meets
@@ -287,7 +301,7 @@ void TCPConnection::handleWrite()
     ssize_t n = ::write(fd(), writeBuffer_.peek(), writeBuffer_.readableBytes());
     if (n > 0) {
         writeBuffer_.retrieve(n);
-        // LOG_TRACE << "TCPConnection::handleWrite fd [" << fd() << "] wrote " << n << " bytes to " << getTCPInfoStr();
+        LOG_TRACE << "TCPConnection::handleWrite fd [" << fd() << "] wrote " << n << " bytes to " << getTCPInfoStr();
 
         if (writeBuffer_.readableBytes() == 0) {
             // All data written

@@ -41,7 +41,7 @@ public:
             std::cout << "Client is already running!" << std::endl;
             return;
         }
-        // Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
+        Logger::setGlobalLogLevel(Logger::LogLevel::DEBUG);
         try {
             // Create TCP connector
             InetAddress serverAddr(serverHost_, serverPort_);
@@ -122,12 +122,20 @@ private:
         connection_->setErrorCallback([this]() {
             this->handleError();
         });
+
+        connection_->setWriteCompleteCallback([this](TCPConnectionWeakPtr weakConn) {
+            if (auto conn = weakConn.lock()) {
+                this->sendMessage();
+            }
+        });
         
         // Start reading from the connection
         connection_->readRaw();
+
+        this->sendMessage();
         
         // Start sending messages periodically
-        scheduleNextMessage();
+        // scheduleNextMessage();
     }
 
     void scheduleNextMessage() {
@@ -154,7 +162,7 @@ private:
             connection_->write(message);
             
             // Schedule next message
-            scheduleNextMessage();
+            // scheduleNextMessage();
             
         } catch (const std::exception& e) {
             std::cerr << "Error sending message: " << e.what() << std::endl;
