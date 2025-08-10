@@ -36,6 +36,7 @@ TCPConnection::TCPConnection(std::shared_ptr<IOHandler> handler)
 
     // Disable write events initially
     setWriteEvent(false);
+    enable();
 }
 
 TCPConnection::~TCPConnection()
@@ -97,8 +98,6 @@ void TCPConnection::readRaw()
     loop()->runInLoop([sharedThis]() {
         sharedThis->readStopCondition_ = nullptr;
     });
-
-    enable(); // Ensure the read event is enabled
 }
 
 void TCPConnection::readUntil(const std::string& delimiter)
@@ -126,7 +125,6 @@ void TCPConnection::readUntilCondition(ReadStopCondition condition)
     loop()->runInLoop([sharedThis, condition]() {
         sharedThis->readStopCondition_ = condition;
     });
-    enable(); // Ensure the read event is enabled
 }
 
 // --- Write Operations ---
@@ -146,7 +144,6 @@ void TCPConnection::write(const StringPiece message)
         }
         sharedThis->writeInLoop(message);
     });
-    enable(); // Ensure the read event is enabled
 }
 
 void TCPConnection::write(const std::string& message)
@@ -193,7 +190,7 @@ void TCPConnection::forceClose()
             return;
         }
         sharedThis->disable();
-        sharedThis->Socket::resetSocketHandler();
+        // sharedThis->Socket::resetSocketHandler();
     });
 }
 
@@ -248,7 +245,7 @@ void TCPConnection::handleRead()
     ssize_t n = readBuffer_.readFd(this->fd(), &savedErrno);
     
     if (n > 0) {
-        LOG_TRACE << "TCPConnection::handleRead fd [" << fd() << "] read " << n << " bytes to " << getTCPInfoStr();
+        // LOG_TRACE << "TCPConnection::handleRead fd [" << fd() << "] read " << n << " bytes to " << getTCPInfoStr();
 
         // Check if we should stop reading based on the current read mode
         if(isReadingUntilCondition() && readStopCondition_(readBuffer_)) //Reading until condition && condition meets
@@ -290,7 +287,7 @@ void TCPConnection::handleWrite()
     ssize_t n = ::write(fd(), writeBuffer_.peek(), writeBuffer_.readableBytes());
     if (n > 0) {
         writeBuffer_.retrieve(n);
-        LOG_TRACE << "TCPConnection::handleWrite fd [" << fd() << "] wrote " << n << " bytes to " << getTCPInfoStr();
+        // LOG_TRACE << "TCPConnection::handleWrite fd [" << fd() << "] wrote " << n << " bytes to " << getTCPInfoStr();
 
         if (writeBuffer_.readableBytes() == 0) {
             // All data written
@@ -298,7 +295,8 @@ void TCPConnection::handleWrite()
             writing_ = false;
             
             if (writeCompleteCallback_) {
-                writeCompleteCallback_(shared_from_this());
+                //Must put into queue, otherwise it may be called immediately and cause re-entrancy issues and oveerflow
+                loop()->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
             }
             
             // Shrink write buffer if it's getting too large and empty
@@ -366,7 +364,7 @@ void TCPConnection::writeInLoop(const StringPiece& message)
         if (nwrote >= 0) {
             remaining = message.size() - nwrote;
             if (remaining == 0 && writeCompleteCallback_) {
-                writeCompleteCallback_(shared_from_this());
+                loop()->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
             }
         }
         else {

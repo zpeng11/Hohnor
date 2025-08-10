@@ -41,9 +41,6 @@ namespace Hohnor
         void setCloseCallback(const CloseCallback& cb);
         void setErrorCallback(const ErrorCallback& cb);
 
-        using Socket::enable;
-        void disable(){ forceClose(); }
-
         // --- Connection Management ---
 
         // --- I/O Operations ---
@@ -110,13 +107,14 @@ namespace Hohnor
         // --- Internal Helper Methods ---
         void writeInLoop(const StringPiece& message);
         void writeInLoop(const void* data, size_t len);
-        void stopReadInLoop();
         void setWriteEvent(bool on);
 
         //Hide methods
         using Socket::setReadCallback;
         using Socket::setWriteCallback;
-        
+        using Socket::enable;
+        using Socket::disable;
+        using Socket::isEnabled;
         
     };
 
