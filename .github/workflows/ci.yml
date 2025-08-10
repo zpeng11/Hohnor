@@ -1,0 +1,155 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    name: Build Library and Run Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+        
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      
+    - name: Build project
+      run: cmake --build build --parallel
+      
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure --parallel
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: hohnor-library
+        path: build/libhohnor.a
+        retention-days: 1
+
+  build_examples:
+    runs-on: ubuntu-latest
+    name: Build Examples
+    needs: build_and_test
+    
+    strategy:
+      matrix:
+        example: [TCPEcho, UDPEcho, keyboard, SnakeGame]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: hohnor-library
+        path: build/
+        
+    - name: Configure and build main library
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --parallel
+        
+    - name: Build example - ${{ matrix.example }}
+      run: |
+        cd example/${{ matrix.example }}
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --parallel
+        
+    - name: Upload example artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: example-${{ matrix.example }}
+        path: example/${{ matrix.example }}/build/
+        retention-days: 1
+
+  build_benchmarks:
+    runs-on: ubuntu-latest
+    name: Build Benchmarks
+    needs: build_and_test
+    
+    strategy:
+      matrix:
+        benchmark: [iperf3, wrk]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: hohnor-library
+        path: build/
+        
+    - name: Configure and build main library
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --parallel
+        
+    - name: Build benchmark - ${{ matrix.benchmark }}
+      run: |
+        cd benchmark/${{ matrix.benchmark }}
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --parallel
+        
+    - name: Upload benchmark artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-${{ matrix.benchmark }}
+        path: benchmark/${{ matrix.benchmark }}/build/
+        retention-days: 1
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Build Summary
+    needs: [build_and_test, build_examples, build_benchmarks]
+    if: always()
+    
+    steps:
+    - name: Check build results
+      run: |
+        echo "Build and Test: ${{ needs.build_and_test.result }}"
+        echo "Build Examples: ${{ needs.build_examples.result }}"
+        echo "Build Benchmarks: ${{ needs.build_benchmarks.result }}"
+        
+        if [[ "${{ needs.build_and_test.result }}" != "success" ]]; then
+          echo "❌ Main library build or tests failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.build_examples.result }}" != "success" ]]; then
+          echo "❌ Examples build failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.build_benchmarks.result }}" != "success" ]]; then
+          echo "❌ Benchmarks build failed"
+          exit 1
+        fi
+        
+        echo "✅ All builds completed successfully!"
