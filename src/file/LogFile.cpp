@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <atomic>
+#include <cassert>
 
 using namespace Hohnor;
 LogFile::LogFile(const string &basename,

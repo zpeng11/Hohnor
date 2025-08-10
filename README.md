@@ -48,6 +48,16 @@ Hohnor is a modern C++11 networking framework built around the Reactor pattern, 
 - **Buffer management** - Efficient read/write buffers with automatic growth
 - **Flow control** - Backpressure handling and high water mark callbacks
 
+## 📖 Design Deep Dive
+
+For a comprehensive understanding of Hohnor's architecture, design patterns, and implementation details, we encourage you to explore our detailed **[Design Specifications](doc/DesignSpecific.md)**. This document covers:
+
+- Complete architecture breakdown with module dependencies
+- Core design patterns (Reactor, RAII, Observer, Producer-Consumer)
+- Detailed component design and lifecycle management
+- Performance considerations and thread safety guarantees
+- Real-world use cases and production examples
+
 ## 📁 Architecture Overview
 
 ```
