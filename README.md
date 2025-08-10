@@ -2,6 +2,15 @@
 
 **A high-performance, event-driven C++ networking library for Linux applications**
 
+
+[![CI](https://github.com/zpeng11/Hohnor/actions/workflows/ci.yml/badge.svg)](https://github.com/zpeng11/Hohnor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Language](https://img.shields.io/badge/language-C%2B%2B11-blue.svg)](https://isocpp.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)](https://www.linux.org/)
+[![CMake](https://img.shields.io/badge/CMake-3.1%2B-064F8C.svg)](https://cmake.org/)
+[![GitHub stars](https://img.shields.io/github/stars/zpeng11/Hohnor.svg?style=social&label=Star)](https://github.com/zpeng11/Hohnor)
+
+
 Hohnor is a modern C++11 networking framework built around the Reactor pattern, providing asynchronous I/O, TCP/UDP networking, and comprehensive utilities for building scalable Linux applications. Inspired by industry-proven designs, it offers a clean, efficient API for developing everything from simple network services to high-performance servers.
 
 ## 🚀 Key Features
