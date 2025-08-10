@@ -233,7 +233,7 @@ HCHECK_EQ(status, 0) << "Operation must succeed";
 | Metric | Performance |
 |--------|-------------|
 | **Concurrent Connections** | 10,000+ simultaneous |
-| **Request Throughput** | 50,000+ req/sec (TCP), 200,000+ req/sec (HTTP) |
+| **Request Throughput** | 50,000+ req/sec (TCP) |
 | **Latency** | Sub-millisecond for simple operations |
 | **Memory Usage** | ~2KB per connection |
 | **CPU Efficiency** | Single-threaded event loop + worker threads |

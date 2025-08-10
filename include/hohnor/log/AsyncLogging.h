@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <cassert>
 #include "hohnor/common/Types.h"
 #include "hohnor/common/NonCopyable.h"
 #include "hohnor/thread/BlockingQueue.h"

@@ -4,6 +4,7 @@
 #include "hohnor/thread/Thread.h"
 #include <unistd.h>
 #include <exception>
+#include <cassert>
 #include "hohnor/thread/Exception.h"
 #include "signal.h"
 #ifndef __CYGWIN__

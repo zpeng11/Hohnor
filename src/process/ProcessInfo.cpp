@@ -4,6 +4,7 @@
 #include <pwd.h>
 #include <sys/resource.h>
 #include <algorithm>
+#include <cassert>
 #include "hohnor/thread/CurrentThread.h"
 #include "hohnor/file/FileUtils.h"
 

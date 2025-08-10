@@ -9,6 +9,7 @@
 #include <time.h>
 #include <execinfo.h>
 #include <stdlib.h>
+#include <type_traits> 
 
 namespace Hohnor
 {

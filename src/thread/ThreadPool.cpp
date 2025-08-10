@@ -1,6 +1,7 @@
 #include "hohnor/thread/ThreadPool.h"
 #include "hohnor/thread/Exception.h"
 #include <memory>
+#include <cassert>
 
 namespace Hohnor
 {

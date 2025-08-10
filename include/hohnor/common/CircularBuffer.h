@@ -10,6 +10,7 @@
 #pragma once
 #include <memory>
 #include <type_traits>
+#include <cassert>
 #include "hohnor/common/Types.h"
 #include "hohnor/common/NonCopyable.h"
 

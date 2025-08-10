@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cassert>
+#include <type_traits> 
 
 using namespace Hohnor;
 using namespace Hohnor::FileUtils;

@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <vector>
 #include <functional>
+#include <cassert>
 #include "hohnor/common/Types.h"
 #include "hohnor/common/Copyable.h"
 

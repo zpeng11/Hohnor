@@ -11,6 +11,7 @@
 #include "hohnor/common/CircularBuffer.h"
 #include "hohnor/thread/SyncQueue.h"
 #include <atomic>
+#include <cassert>
 
 namespace Hohnor
 {

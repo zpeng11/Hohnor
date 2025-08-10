@@ -9,6 +9,7 @@
 #include "hohnor/core/Timer.h"
 #include "hohnor/core/Timer.h"
 #include <sys/eventfd.h>
+#include <cassert>
 
 namespace Hohnor
 {

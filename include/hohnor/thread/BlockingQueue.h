@@ -10,6 +10,7 @@
 #include "hohnor/thread/SyncQueue.h"
 #include <deque>
 #include <atomic>
+#include <cassert>
 
 namespace Hohnor
 {
