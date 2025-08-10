@@ -109,6 +109,12 @@ namespace Hohnor
         void writeInLoop(const void* data, size_t len);
         void stopReadInLoop();
         void setWriteEvent(bool on);
+
+        //Hide methods
+        using Socket::setReadCallback;
+        using Socket::setWriteCallback;
+        using Socket::disable;
+        using Socket::enable;
     };
 
 } // namespace Hohnor

@@ -4,6 +4,7 @@
 #pragma once
 #include "hohnor/net/Socket.h"
 #include "hohnor/common/Callbacks.h"
+#include "hohnor/net/TCPConnection.h"
 #include <memory>
 
 namespace Hohnor
@@ -18,7 +19,7 @@ namespace Hohnor
     {
     public:
         //Accept callback should take care if the handler is nullptr
-        typedef std::function<void (std::shared_ptr<IOHandler>, InetAddress)> AcceptCallback;
+        typedef std::function<void (TCPConnectionPtr)> AcceptCallback;
         explicit TCPAcceptor(std::shared_ptr<EventLoop> loop, int options = SOCK_STREAM, bool ipv6 = false)
             : ListenSocket(loop, ipv6 ? AF_INET6 : AF_INET, options | SOCK_STREAM, 0) {}
 
@@ -52,9 +53,8 @@ namespace Hohnor
         // Enable/disable SO_KEEPALIVE
         void setKeepAlive(bool on);
     private:
-        //Actively accept a connection, return a pair of IOHandler and InetAddress, can be
-        //used for in a socket read callback
-        std::pair<std::shared_ptr<IOHandler>, InetAddress> accept();
+        //Actively accept a connection, return IOHandler
+        std::shared_ptr<IOHandler> accept();
 
         //Hide setCallbacks from Socket into private, we don't need them
         using Socket::setReadCallback;

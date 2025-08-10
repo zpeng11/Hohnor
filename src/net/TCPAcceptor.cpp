@@ -18,27 +18,26 @@ void TCPAcceptor::setAcceptCallback(AcceptCallback cb)
 {
     std::weak_ptr<TCPAcceptor> weakSelf = shared_from_this();
     this->setReadCallback([weakSelf, cb]() {
-
         auto self = weakSelf.lock();
         if (self)
         {
-            auto pair = self->accept();
-            cb(std::move(pair.first), std::move(pair.second));
+            auto handler = self->accept();
+            cb(std::make_shared<TCPConnection>(handler));
         }
     });
 }
 
-std::pair<std::shared_ptr<IOHandler>, InetAddress> TCPAcceptor::accept()
+std::shared_ptr<IOHandler> TCPAcceptor::accept()
 {
-    std::pair<std::shared_ptr<IOHandler>, InetAddress> pair{nullptr, InetAddress()};
-    int acceptedFd = SocketFuncs::accept(this->fd(), reinterpret_cast<sockaddr_in6 *>(&pair.second));
+    std::shared_ptr<IOHandler> handler = nullptr;
+    InetAddress addr;
+    int acceptedFd = SocketFuncs::accept(this->fd(), reinterpret_cast<sockaddr_in6 *>(&addr));
     if (acceptedFd < 0)
     {
-        pair.second = InetAddress();
-        return pair;
+        return handler;
     }
-    pair.first = this->loop()->handleIO(acceptedFd);
-    return pair;
+    handler = this->loop()->handleIO(acceptedFd);
+    return handler;
 }
 
 void TCPAcceptor::setTCPNoDelay(bool on)
