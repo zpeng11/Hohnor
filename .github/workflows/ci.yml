@@ -34,7 +34,7 @@ jobs:
         ctest --output-on-failure --parallel
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: hohnor-library
         path: build/libhohnor.a
@@ -76,7 +76,7 @@ jobs:
         cmake --build build --parallel
         
     - name: Upload example artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: example-${{ matrix.example }}
         path: example/${{ matrix.example }}/build/
@@ -118,7 +118,7 @@ jobs:
         cmake --build build --parallel
         
     - name: Upload benchmark artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: benchmark-${{ matrix.benchmark }}
         path: benchmark/${{ matrix.benchmark }}/build/
